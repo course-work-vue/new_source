@@ -424,7 +424,7 @@ export default {
         dateFormat: "dd/mm/yy",
         size: "sm",
         showIcon: true,
-        validation: [requiredRule],
+        validation: [],
       }),
       new DateInput({
         key: "enrolled_date",
@@ -432,7 +432,7 @@ export default {
         dateFormat: "dd/mm/yy",
         size: "sm",
         showIcon: true,
-        validation: [requiredRule],
+        validation: [],
       }),
 
       new ComboboxInput({
@@ -456,56 +456,56 @@ export default {
         label: "ИНН",
         placeholder: "ИНН",
         icon: "pi pi-credit-card",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "SNILS",
         label: "СНИЛС",
         placeholder: "СНИЛС",
         icon: "pi pi-credit-card",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "place_of_birth",
         label: "Место рождения",
         placeholder: "Место рождения",
         icon: "pi pi-map-marker",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "email",
         label: "Электронная почта",
         placeholder: "Электронная почта",
         icon: "pi pi-send",
-        validation: [requiredRule, emailRule],
+        validation: [emailRule],
       }),
       new TextInput({
         key: "student_login",
         label: "Логин студента",
         placeholder: "Логин студента",
         icon: "pi pi-user",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "enrollment_order",
         label: "Приказ о зачислении",
         placeholder: "Приказ о зачислении",
         icon: "pi pi-file",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "phone_number",
         label: "Номер телефона",
         icon: "pi pi-phone",
         placeholder: "Номер телефона",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "phone_number_rod",
         label: "Номер телефона (РОД)",
         icon: "pi pi-phone",
         placeholder: "Номер телефона (РОД)",
-        validation: [requiredRule],
+        validation: [],
       }),
       new TextInput({
         key: "zachetka_number",
@@ -555,7 +555,7 @@ export default {
         label: "Подгруппа",
         placeholder: "Подгруппа",
         icon: "pi pi-users",
-        validation: [],
+        validation: [requiredRule],
         options: [
           {
             label: "Нет",
@@ -576,7 +576,7 @@ export default {
         label: "Серия и номер паспорта",
         placeholder: "Серия и номер паспорта",
         icon: "pi pi-id-card",
-        validation: [requiredRule],
+        validation: [],
       }),
     ]);
   },
@@ -647,6 +647,7 @@ export default {
       }
       this.formVisible = false;
       this.resetStd();
+      this.loadStudentsData();
     },
 
     async deleteStd() {
@@ -655,6 +656,7 @@ export default {
       await this.deleteStudent(student);
       this.formVisible = false;
       this.resetStd();
+      this.loadStudentsData();
     },
 
     async loadStudentsData() {
