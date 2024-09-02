@@ -31,7 +31,7 @@ export const useStudentStore = defineStore('student', {
 
             if (response.success === true) {
 
-                this.studentList.push(new Student(student));
+                await this.getStudentList();
             }
         },
 
