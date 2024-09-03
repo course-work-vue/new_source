@@ -17,11 +17,11 @@ const RightsTable = () => import("./components/RightsTable.vue")
 const DirectionList = () => import("./components/student/DirectionList.vue")
 const AddDirection = () => import("./components/AddDirection.vue")
 const DirectionDetail = () => import("./components/DirectionDetail.vue")
-const ProfileList = () => import("./components/ProfileList.vue")
+const ProfileList = () => import("./components/student/ProfileList.vue")
 const AddProfile = () => import("./components/AddProfile.vue")
 const ProfileDetail = () => import("./components/ProfileDetail.vue")
 
-const GroupList = () => import("./components/GroupList.vue")
+const GroupList = () => import("./components/student/GroupList.vue")
 const AddGroup = () => import("./components/AddGroup.vue")
 const GroupDetail = () => import("./components/GroupDetail.vue")
 

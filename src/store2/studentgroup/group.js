@@ -1,42 +1,58 @@
-import api from '@/api/api'; // Assuming API methods for groups are defined here
-import Group from '@/model/student-group/Group'; // Import the Group model
+import api from '@/api/api';
+import Group from '@/model/student-group/Group'; // Путь к модели Group
 import { defineStore } from 'pinia';
 
 export const useGroupStore = defineStore('group', {
     state: () => ({
-        groupList: [], // Holds the list of groups
+        groupList: [],
     }),
     getters: {
         groupMap(state) {
             return state.groupList.reduce((map, group) => {
-                map[group.group_id] = group; // Using group_id as the key for the map
+                map[group.group_id] = group;
                 return map;
             }, {});
         },
     },
     actions: {
         async getGroupList() {
-            const responseData = await api.getGroupList(); // Assuming this method fetches the list of groups
+            const responseData = await api.getGroupList();
             this.groupList = responseData.map((group) => {
-                return new Group(group); // Create new Group instances
+                return new Group(group);
             });
         },
 
-        async getGroup(groupId) {
-            const groupData = await api.getGroup(groupId); // Fetch a single group by ID
-            return new Group(groupData); // Return as a Group instance
+        async getGroup(group_id) {
+            const groupData = await api.getGroup(group_id);
+            return new Group(groupData);
         },
 
         async postGroup(group) {
-            await api.postGroup(group); // Send a new group to the server
+            const response = await api.postGroup(group);
+
+            if (response.success === true) {
+                await this.getGroupList();
+            }
         },
 
         async putGroup(group) {
-            await api.putGroup(group.group_id, group); // Update an existing group by ID
+            const response = await api.putGroup(group.group_id, group);
+            if (response.success === true) {
+                const index = this.groupList.findIndex(g => g.group_id === group.group_id);
+                if (index !== -1) {
+                    this.groupList.splice(index, 1, new Group(group));
+                }
+            }
         },
 
-        async deleteGroup(groupId) {
-            await api.deleteGroup(groupId); // Delete a group by ID
+        async deleteGroup(group) {
+            const response = await api.deleteGroup(group);
+            if (response.success === true) {
+                const index = this.groupList.findIndex(g => g.group_id === group.group_id);
+                if (index !== -1) {
+                    this.groupList[index].deleted_at = new Date().toISOString();
+                }
+            }
         },
     },
 });
