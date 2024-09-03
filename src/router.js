@@ -66,20 +66,6 @@ const lGroupDetail = () => import("./components/LgroupDetail.vue")
 
 
 const xlparse = () => import("./components/xlparse.vue")
-const ManageExcel = () => import("./components/ManageExcel.vue")
-const ManageExcel2 = () => import("./components/ManageExcel2.vue")
-const ManageExcel3 = () => import("./components/ManageExcel3.vue")
-const ManageExcel4 = () => import("./components/ManageExcel4.vue")
-const ManageExcel5 = () => import("./components/ManageExcel5.vue")
-const ManageExcel6 = () => import("./components/ManageExcel6.vue")
-const ManageExcel7 = () => import("./components/ManageExcel7.vue")
-const ManageExcel8 = () => import("./components/ManageExcel8.vue")
-const ManageExcel9 = () => import("./components/ManageExcel9.vue")
-const ManageExcel10 = () => import("./components/ManageExcel10.vue")
-const ManageExcel11 = () => import("./components/ManageExcel11.vue")
-const ManageExcel12 = () => import("./components/ManageExcel12.vue")
-const ManageExcel13 = () => import("./components/ManageExcel13.vue")
-
 
 const routes = [
   {
@@ -112,84 +98,7 @@ const routes = [
         // lazy-loaded
         component: xlparse,
       },
-      {
-        path: "/ManageExcel",
-        name: "ManageExcel",
-        // lazy-loaded
-        component: ManageExcel,
-      },
-      {
-        path: "/ManageExcel2",
-        name: "ManageExcel2",
-        // lazy-loaded
-        component: ManageExcel2,
-      },
-      {
-        path: "/ManageExcel3",
-        name: "ManageExcel3",
-        // lazy-loaded
-        component: ManageExcel3,
-      },
-      {
-        path: "/ManageExcel4",
-        name: "ManageExcel4",
-        // lazy-loaded
-        component: ManageExcel4,
-      },
-      {
-        path: "/ManageExcel5",
-        name: "ManageExcel5",
-        // lazy-loaded
-        component: ManageExcel5,
-      },
-      {
-        path: "/ManageExcel6",
-        name: "ManageExcel6",
-        // lazy-loaded
-        component: ManageExcel6,
-      },
-      {
-        path: "/ManageExcel7",
-        name: "ManageExcel7",
-        // lazy-loaded
-        component: ManageExcel7,
-      },
-      {
-        path: "/ManageExcel8",
-        name: "ManageExcel8",
-        // lazy-loaded
-        component: ManageExcel8,
-      },
-      {
-        path: "/ManageExcel9",
-        name: "ManageExcel9",
-        // lazy-loaded
-        component: ManageExcel9,
-      },
-      {
-        path: "/ManageExcel10",
-        name: "ManageExcel10",
-        // lazy-loaded
-        component: ManageExcel10,
-      },
-      {
-        path: "/ManageExcel11",
-        name: "ManageExcel11",
-        // lazy-loaded
-        component: ManageExcel11,
-      },
-      {
-        path: "/ManageExcel12",
-        name: "ManageExcel12",
-        // lazy-loaded
-        component: ManageExcel12,
-      },
-      {
-        path: "/ManageExcel13",
-        name: "ManageExcel13",
-        // lazy-loaded
-        component: ManageExcel13,
-      },
+      
       { path: '/students', component: StudentList },
 
       { path: '/students/:studentId', component: StudentDetail },
