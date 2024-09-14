@@ -5,6 +5,9 @@ import Register from "./components/Register.vue";
 import jwt_decode from "jwt-decode";
 import AuthService from './services/auth.service';
 import AppLayout from './layout/AppLayout.vue'
+
+
+
 // lazy-loaded
 const Profile = () => import("./components/Profile.vue")
 
@@ -24,6 +27,11 @@ const ProfileDetail = () => import("./components/ProfileDetail.vue")
 const GroupList = () => import("./components/student/GroupList.vue")
 const AddGroup = () => import("./components/AddGroup.vue")
 const GroupDetail = () => import("./components/GroupDetail.vue")
+const AddCw = () => import("./components/AddCw.vue")
+const CWList = () => import("./components/student/CwList.vue")
+const CWdetail = () => import("./components/CwDetail.vue")
+
+
 
 const ListenerList = () => import("./components/ListenerList.vue")
 const ListenerDetail = () => import("./components/ListenerDetail.vue")
@@ -39,9 +47,7 @@ const AddContract = () => import("./components/AddContract.vue")
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue")
 
-const AddCw = () => import("./components/AddCw.vue")
-const CWList = () => import("./components/CwList.vue")
-const CWdetail = () => import("./components/CwDetail.vue")
+
 
 const ProgramList = () => import("./components/ProgramList.vue")
 const AddProgram = () => import("./components/AddProgram.vue")
@@ -80,14 +86,19 @@ const ManageExcel11 = () => import("./components/ManageExcel11.vue")
 const ManageExcel12 = () => import("./components/ManageExcel12.vue")
 const ManageExcel13 = () => import("./components/ManageExcel13.vue")
 
+const Test = () => import("./components/base/ExampleComponent.vue")
 
 const routes = [
+
   {
     path: "/",
     name: "home",
     component: AppLayout,
     children: [
-
+      {
+        path: "/test",
+        component: Test,
+      },
       {
         path: "/home",
         component: Home,
@@ -254,6 +265,7 @@ const routes = [
       { path: '/AddStudent', component: AddStudent },
       { path: '/AddStudent/:groupName', component: AddStudent },]
   },
+
 ];
 
 const router = createRouter({
