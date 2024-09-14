@@ -26,4 +26,16 @@ export default {
     postGroup: (group) => ReqExec.post(endpoints.rest.group, group),
     putGroup: (group_id, group) => ReqExec.put(endpoints.rest.group, group_id, group),
     deleteGroup: (group) => ReqExec.put(endpoints.procedure.group, group.group_id, group),
+
+    //courseWork
+    getCourseWorkList: () => ReqExec.get(endpoints.rest.courseWork, null, true),
+    postCourseWork: (courseWork) => ReqExec.post(endpoints.rest.courseWork, courseWork),
+    putCourseWork: (courseWork_id, courseWork) => ReqExec.put(endpoints.rest.courseWork, courseWork_id, courseWork),
+    deleteCourseWork: (courseWork) => ReqExec.put(endpoints.procedure.courseWork, courseWork.courseWork_id, courseWork),
+
+    //departament
+    getDepartamentList: () => ReqExec.get(endpoints.rest.departament, null, true),
+
+    //teacher
+    getTeacherList: () => ReqExec.get(endpoints.rest.teacher, null, true),
 };

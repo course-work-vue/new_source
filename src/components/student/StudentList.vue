@@ -221,7 +221,7 @@ export default {
     Field,
     ErrorMessage,
     AutoForm,
-    DocumentEditor,
+
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API

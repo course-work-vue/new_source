@@ -96,6 +96,11 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import { mapState, mapActions } from "pinia";
+import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
+import { useDepartamentStore } from "@/store2/teachergroup/departament";
+import { useTeacherStore } from "@/store2/teachergroup/teacher";
+import { useStudentStore } from "@/store2/studentgroup/student";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -187,11 +192,19 @@ export default {
       CourseWork: new CourseWork(),
     };
   },
+  computed: {
+    ...mapState(useCourseWorkStore, ["courseWorkList"]),
+    ...mapState(useTeacherStore, ["teacherList"]),
+    ...mapState(useDepartamentStore, ["departamentList"]),
+    ...mapState(useStudentStore, ["studentList"]),
+  },
   async mounted() {
     await this.getTeacherList();
-    await this.getStudentList();
-    await this.getKafedraList();
 
+    await this.getDepartamentList();
+    await this.getStudentList();
+    await this.getCourseWorkList();
+    this.loadCourseWorksData();
     this.scheme = new FormScheme([
       new TextInput({
         key: "course_work_theme",
@@ -226,9 +239,9 @@ export default {
         key: "course_work_kafedra",
         label: "Кафедра",
         options: [
-          ...[...this.kafedraList].map((kafedra) => ({
-            label: kafedra.name,
-            value: kafedra.kafedra_id,
+          ...[...this.departamentList].map((departament) => ({
+            label: departament.dep_name,
+            value: departament.dep_id,
           })),
         ],
         validation: [requiredRule],
@@ -259,26 +272,45 @@ export default {
   },
 
   methods: {
+    ...mapActions(useCourseWorkStore, [
+      "getCourseWorkList",
+      "postCourseWork",
+      ,
+      "putCourseWork",
+      "deleteCourseWork",
+    ]),
+    ...mapActions(useTeacherStore, ["getTeacherList"]),
+    ...mapActions(useDepartamentStore, ["getDepartamentList"]),
+    ...mapActions(useStudentStore, ["getStudentList"]),
     previewDocx() {
       window.open(
         `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/CourseWork/ExportCourseWorks`
       );
     },
-    async loadGroupsData() {
+
+    navigateToAddCW() {
+      this.$router.push(`/addCw`); // Navigate to the AddStudent route
+    },
+
+    async loadCourseWorksData() {
       try {
-        const response = await UserService.getAllCws(); // Replace with your API endpoint
-        this.rowData.value = Array.isArray(response.data)
-          ? response.data
-          : [response.data];
+        if (Array.isArray(this.courseWorkList)) {
+          this.rowData.value = this.courseWorkList
+            .filter((courseWorkList) => courseWorkList.deleted_at === null)
+            .sort((a, b) => a.student_name.localeCompare(b.student_name));
+        } else {
+          // Handle case where studentList is not an array
+          if (this.courseWorkList.deleted_at === null) {
+            this.rowData.value = [this.courseWorkList];
+          } else {
+            this.rowData.value = [];
+          }
+        }
         this.loading = false;
       } catch (error) {
         console.error("Error loading students data:", error);
       }
     },
-    navigateToAddCW() {
-      this.$router.push(`/addCw`); // Navigate to the AddStudent route
-    },
-
     onFirstDataRendered(params) {
       this.gridApi = params.api;
       this.columnApi = params.columnApi;
@@ -343,9 +375,7 @@ export default {
     },
   },
 
-  created() {
-    this.loadGroupsData();
-  },
+  created() {},
 };
 </script>
 

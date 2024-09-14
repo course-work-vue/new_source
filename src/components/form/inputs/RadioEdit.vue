@@ -6,7 +6,6 @@
         :key="option.value"
         class="flex align-items-center mr-2"
       >
-        <!-- https://primevue.org/radiobutton/-->
         <RadioButton
           v-model="model"
           :input-id="itemKey + '_' + option.value"

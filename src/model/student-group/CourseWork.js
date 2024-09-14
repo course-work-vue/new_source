@@ -1,3 +1,5 @@
+import { useStudentStore } from '@/store2/studentgroup/student';
+import { useTeacherStore } from '@/store2/teachergroup/teacher';
 export default class CourseWork {
     course_work_id;
     course_work_teacher_id;
