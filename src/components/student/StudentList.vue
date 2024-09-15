@@ -11,41 +11,25 @@
         </div>
 
         <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить студента
-          </button>
-          <button
-            @click="previewDocx"
-            class="mx-2 btn btn-primary float-start"
-            type="button"
-          >
-            Отчёт о формах обучения
-          </button>
-          <div class="col col-6 float-end d-inline-flex align-items-center">
+          <div class="float-start">
             <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
+              @click="openCreatingForm"
+              class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
+              <i class="material-icons-outlined">add</i>Добавить студента
             </button>
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
+            <button
+              @click="previewDocx"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
+              Отчёт о формах обучения
+            </button>
           </div>
         </div>
       </div>
-      <div>
+      <div class="col col-12">
         <div class="col col-6 float-start">
           <div class="form-group d-inline-flex align-items-center">
             <label class="bigger form-label" for="group_id"
@@ -69,23 +53,41 @@
             </select>
           </div>
         </div>
-        <div class="col col-6 float-start">
-          <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="subgroup_id"
-              >Фильтр по подгруппе:</label
-            >
+        <div class="col col-6 float-end d-inline-flex align-items-center">
+          <button
+            @click="clearFilters"
+            :disabled="!filters"
+            class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button"
+          >
+            <i class="material-icons-outlined">close</i>Очистить фильтры
+          </button>
+          <input
+            class="form-control"
+            type="text"
+            v-model="quickFilterValue"
+            id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()"
+            placeholder="Поиск..."
+          />
+        </div>
+      </div>
+      <div class="col col-6 float-start">
+        <div class="form-group d-inline-flex align-items-center">
+          <label class="bigger form-label" for="subgroup_id"
+            >Фильтр по подгруппе:</label
+          >
 
-            <select
-              class="form-select"
-              id="subgroup_id"
-              v-model="myValue4"
-              @change="handleSelectChange2(myValue4)"
-            >
-              <option selected="selected" value="">Нет</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </div>
+          <select
+            class="form-select"
+            id="subgroup_id"
+            v-model="myValue4"
+            @change="handleSelectChange2(myValue4)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
         </div>
       </div>
       <div style="height: 90vh">
@@ -169,7 +171,11 @@
     :header="props.name"
     class="w-full h-full md:w-5/6"
   >
-    <OnlyDocumentEditor v-if="filePath" :documentUrl="filePath" />
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      documentTitle="Отчёт по студентам"
+    />
   </Dialog>
 </template>
 
@@ -902,6 +908,41 @@ export default {
                     text: "«Кубанский государственный университет»",
                     size: 28,
                     bold: true,
+                    break: 1,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 }, // No space after this paragraph
+                children: [
+                  new TextRun({
+                    text: "(ФГБОУ ВО «КубГУ»)",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+              }),
+              // Fifth line - Regular alignment and spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "Факультет компьютерных технологий и прикладной математики",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+              // Sixth line - Bold, with spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "ОТЧЕТ ПО ФОРМАМ ОБУЧЕНИЯ СТУДЕНТОВ",
+                    size: 28,
                     break: 1,
                   }),
                 ],

@@ -103,6 +103,22 @@
       Удалить
     </Button>
   </Dialog>
+
+  <Dialog
+    v-model:visible="docPreview"
+    header="Предпросмотр документа отчёт по научным руководителям"
+    maximizable
+    ref="maxDialog"
+    @show="biggifyDialog"
+    :header="props.name"
+    class="w-full h-full md:w-5/6"
+  >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      documentTitle="Отчёт по научным руководителям"
+    />
+  </Dialog>
 </template>
 
 <script>
@@ -134,6 +150,11 @@ import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
 import { useDepartamentStore } from "@/store2/teachergroup/departament";
 import { useTeacherStore } from "@/store2/teachergroup/teacher";
 import { useStudentStore } from "@/store2/studentgroup/student";
+
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
+
+import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -142,6 +163,7 @@ export default {
     ButtonCell,
     GroupHref,
     AutoForm,
+    OnlyDocumentEditor,
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
@@ -195,19 +217,23 @@ export default {
         document.getElementById("filter-text-box").value
       );
     };
-
+    const maxDialog = ref();
+    function biggifyDialog() {
+      maxDialog.value.maximized = true;
+    }
     return {
       onGridReady,
       columnDefs,
       rowData,
       defaultColDef,
-
+      maxDialog,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
 
       onFilterTextBoxChanged,
       paginationPageSize,
+      biggifyDialog,
     };
   },
   data() {
@@ -221,6 +247,7 @@ export default {
       valid: false,
       scheme: null,
       formVisible: false,
+      docPreview: false,
     };
   },
   computed: {
@@ -309,6 +336,7 @@ export default {
       ,
       "putCourseWork",
       "deleteCourseWork",
+      "uploadGeneratedFile",
     ]),
     ...mapActions(useTeacherStore, ["getTeacherList"]),
     ...mapActions(useDepartamentStore, ["getDepartamentList"]),
@@ -318,10 +346,130 @@ export default {
         this.edit(event);
       }
     },
-    previewDocx() {
-      window.open(
-        `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/CourseWork/ExportCourseWorks`
-      );
+    async generateTeacherReport() {
+      const courseWorkStore = useCourseWorkStore();
+      const courseWorks = courseWorkStore.courseWorkList;
+
+      // Group course works by teacher
+      const courseWorksByTeacher = courseWorks.reduce((acc, courseWork) => {
+        const teacherName = courseWork.teacher_name;
+        if (!acc[teacherName]) acc[teacherName] = [];
+        acc[teacherName].push(courseWork);
+        return acc;
+      }, {});
+
+      // Create the DOCX document with the provided header
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Заголовок
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: "«Кубанский государственный университет»",
+                    size: 28,
+                    bold: true,
+                    break: 1,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 }, // No space after this paragraph
+                children: [
+                  new TextRun({
+                    text: "(ФГБОУ ВО «КубГУ»)",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+              }),
+              // Fifth line - Regular alignment and spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "Факультет компьютерных технологий и прикладной математики",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Space before the teacher report
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 300 },
+                children: [
+                  new TextRun({
+                    text: "Отчёт по научным руководителям",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Group by teacher and students
+              ...Object.keys(courseWorksByTeacher)
+                .map((teacherName) => {
+                  // Paragraph for the teacher's name
+                  const teacherHeading = new Paragraph({
+                    alignment: AlignmentType.LEFT,
+                    children: [
+                      new TextRun({
+                        text: `${teacherName}`,
+                        bold: true,
+                        size: 28,
+                      }),
+                    ],
+                  });
+
+                  // List of students under this teacher
+                  const studentParagraphs = courseWorksByTeacher[
+                    teacherName
+                  ].map((courseWork, index) => {
+                    return new Paragraph({
+                      alignment: AlignmentType.LEFT,
+                      children: [
+                        new TextRun({
+                          text: `${index + 1}. ${courseWork.student_name}`,
+                          size: 28,
+                        }),
+                      ],
+                    });
+                  });
+
+                  return [teacherHeading, ...studentParagraphs];
+                })
+                .flat(),
+            ],
+          },
+        ],
+      });
+
+      // Generate the DOCX file and save it
+      const blob = await Packer.toBlob(doc);
+      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
 
     resetCW() {
@@ -355,7 +503,11 @@ export default {
       this.valid = isValid; // Set the valid flag based on the results
       return isValid; // Return the validity of the form
     },
+    async previewDocx() {
+      await this.generateTeacherReport();
 
+      this.docPreview = true;
+    },
     async submit() {
       const isValid = await this.validateForm();
       if (!isValid) {
@@ -504,26 +656,6 @@ export default {
   }
 }
 
-@media (max-width: 769px) {
-  .list {
-    padding-left: 100px;
-    font-size: 10px;
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    font-size: 13px;
-  }
-}
-@media (min-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    padding-right: 5px;
-  }
-}
 .nmbr {
   height: 44px;
 }

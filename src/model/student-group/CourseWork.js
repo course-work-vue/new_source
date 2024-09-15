@@ -28,7 +28,7 @@ export default class CourseWork {
         // Assuming we have access to a TeacherStore similar to the original Student model's group
         const teacherStore = useTeacherStore();
         const teacher = teacherStore.teacherMap[this.course_work_teacher_id];
-        return teacher ? `${teacher.first_name} ${teacher.last_name}` : null;
+        return teacher ? `${teacher.last_name} ${teacher.first_name} ${teacher.patronymic}` : null;
     }
 
     get student_name() {

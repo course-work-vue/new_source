@@ -30,11 +30,6 @@ const model = ref([
         icon: "pi pi-fw pi-users",
         items: [
           {
-            label: "Тест",
-            icon: "pi pi-fw pi-list",
-            to: "/test",
-          },
-          {
             label: "Список студентов",
             icon: "pi pi-fw pi-list",
             to: "/students",

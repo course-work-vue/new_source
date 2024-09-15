@@ -9,17 +9,17 @@
           <h1 v-if="dirc">Список профилей с направлением {{ dir_c_n }}</h1>
         </div>
 
-        <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить профиль
-          </button>
-          <div
-            class="col col-6 float-end d-inline-flex align-items-center mb-2"
-          >
+        <div class="row">
+          <div class="col col-4 d-inline-flex align-items-center mb-2">
+            <button
+              @click="openCreatingForm"
+              class="btn btn-primary"
+              type="button"
+            >
+              <i class="material-icons-outlined">add</i>Добавить профиль
+            </button>
+          </div>
+          <div class="col col-4 d-inline-flex align-items-center mb-2">
             <button
               @click="clearFilters"
               :disabled="!filters"
@@ -28,6 +28,8 @@
             >
               <i class="material-icons-outlined">close</i>Очистить фильтры
             </button>
+          </div>
+          <div class="col col-4">
             <input
               class="form-control"
               type="text"
@@ -39,57 +41,57 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <div style="height: 90vh">
-        <div class="h-100 pt-5">
-          <ag-grid-vue
-            class="ag-theme-alpine"
-            style="width: 100%; height: 100%"
-            :columnDefs="columnDefs.value"
-            :rowData="rowData.value"
-            :defaultColDef="defaultColDef"
-            rowSelection="multiple"
-            animateRows="true"
-            includeHiddenColumnsInQuickFilter="true"
-            @cell-clicked="cellWasClicked"
-            @grid-ready="onGridReady"
-            @firstDataRendered="onFirstDataRendered"
-            @filter-changed="onFilterChanged"
-          >
-          </ag-grid-vue>
-        </div>
+    <div style="height: 90vh">
+      <div class="h-100 pt-5">
+        <ag-grid-vue
+          class="ag-theme-alpine"
+          style="width: 100%; height: 100%"
+          :columnDefs="columnDefs.value"
+          :rowData="rowData.value"
+          :defaultColDef="defaultColDef"
+          rowSelection="multiple"
+          animateRows="true"
+          includeHiddenColumnsInQuickFilter="true"
+          @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onFilterChanged"
+        >
+        </ag-grid-vue>
       </div>
     </div>
-    <Dialog v-model:visible="formVisible" modal header="Форма профиля">
-      <div class="card flex flex-row">
-        <div class="form card__form">
-          <auto-form
-            v-model="profile"
-            v-model:valid="valid"
-            v-model:errors="errors"
-            item-class="form__item"
-            :scheme="scheme"
-          >
-          </auto-form>
-        </div>
-      </div>
-
-      <Button
-        class="btn btn-primary float-start"
-        :disabled="!valid"
-        @click="submit"
-      >
-        Сохранить
-      </Button>
-      <Button
-        class="btn btn-primary float-end"
-        v-if="this.profile.prof_id"
-        @click="deleteProf"
-      >
-        Удалить
-      </Button>
-    </Dialog>
   </div>
+  <Dialog v-model:visible="formVisible" modal header="Форма профиля">
+    <div class="card flex flex-row">
+      <div class="form card__form">
+        <auto-form
+          v-model="profile"
+          v-model:valid="valid"
+          v-model:errors="errors"
+          item-class="form__item"
+          :scheme="scheme"
+        >
+        </auto-form>
+      </div>
+    </div>
+
+    <Button
+      class="btn btn-primary float-start"
+      :disabled="!valid"
+      @click="submit"
+    >
+      Сохранить
+    </Button>
+    <Button
+      class="btn btn-primary float-end"
+      v-if="this.profile.prof_id"
+      @click="deleteProf"
+    >
+      Удалить
+    </Button>
+  </Dialog>
 </template>
 
 <script>

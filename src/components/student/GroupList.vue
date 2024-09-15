@@ -463,26 +463,6 @@ export default {
   }
 }
 
-@media (max-width: 769px) {
-  .list {
-    padding-left: 100px;
-    font-size: 10px;
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    font-size: 13px;
-  }
-}
-@media (min-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    padding-right: 5px;
-  }
-}
 .nmbr {
   height: 44px;
 }

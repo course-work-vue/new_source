@@ -24,6 +24,10 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    documentTitle: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -31,7 +35,7 @@ export default defineComponent({
       config: {
         document: {
           fileType: "docx",
-          title: "Example Document Title.docx",
+          title: this.documentTitle,
           url: this.documentUrl, // Bind the prop here
         },
         documentType: "word",
@@ -44,6 +48,9 @@ export default defineComponent({
   watch: {
     documentUrl(newUrl) {
       this.config.document.url = newUrl; // Update config when prop changes
+    },
+    documentTitle(newTitle) {
+      this.config.document.url = newTitle; // Update config when prop changes
     },
   },
   methods: {
