@@ -6,6 +6,15 @@ ReqExec.baseUrl = 'https://ncatbird.ru/server';
 
 //API methods
 export default {
+
+    uploadFile: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+
+        return ReqExec.postFile(endpoints.directLinks.uploadFile, file)
+
+    },
     //student
     getStudentList: () => ReqExec.get(endpoints.rest.student, null, true),
     postStudent: (student) => ReqExec.post(endpoints.rest.student, student),

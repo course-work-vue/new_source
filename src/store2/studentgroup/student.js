@@ -9,9 +9,14 @@ export const useStudentStore = defineStore('student', {
     getters: {
         studentMap(state) {
             return state.studentList.reduce((map, student) => {
-                map[student.id] = student;
+                map[student.student_id] = student;
                 return map;
             }, {});
+        },
+        activeSortedStudents(state) {
+            return state.studentList
+                .filter((student) => student.deleted_at === null)
+                .sort((a, b) => a.full_name.localeCompare(b.full_name));
         },
     },
     actions: {
@@ -54,5 +59,32 @@ export const useStudentStore = defineStore('student', {
                 }
             }
         },
+        async uploadStudentFile(file) {
+            try {
+                const response = await api.uploadFile(file);
+                if (response.success) {
+                    console.log('File uploaded successfully');
+                } else {
+                    console.error('File upload failed');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        },
+        // In studentStore
+        async uploadGeneratedFile(fileBlob, fileName) {
+            try {
+                const formData = new FormData();
+                formData.append('file', fileBlob, fileName); // Append the file with key 'file'
+
+                const response = await api.uploadFile(formData); // Use the API method to upload the file
+                return response.filePath;
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        }
+
+
+
     },
 });

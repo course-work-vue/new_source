@@ -10,7 +10,7 @@
       <div class="mb-3 col col-12">
         <div class="col col-12">
           <button
-            @click="navigateToAddCW"
+            @click="openCreatingForm"
             class="btn btn-primary float-start"
             type="button"
           >
@@ -70,6 +70,39 @@
       </div>
     </div>
   </div>
+  <Dialog
+    v-model:visible="formVisible"
+    modal
+    header="Форма квалификационных работ"
+  >
+    <div class="card flex flex-row">
+      <div class="form card__form">
+        <auto-form
+          v-model="courseWork"
+          v-model:valid="valid"
+          v-model:errors="errors"
+          item-class="form__item"
+          :scheme="scheme"
+        >
+        </auto-form>
+      </div>
+    </div>
+
+    <Button
+      class="btn btn-primary float-start"
+      :disabled="!valid"
+      @click="submit"
+    >
+      Сохранить
+    </Button>
+    <Button
+      class="btn btn-primary float-end"
+      v-if="this.courseWork.course_work_id"
+      @click="deleteCW"
+    >
+      Удалить
+    </Button>
+  </Dialog>
 </template>
 
 <script>
@@ -121,7 +154,6 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -134,7 +166,6 @@ export default {
           headerName: "Действия",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
-            onClick: navigateToStudent,
             label: "View Details", // Button label
           },
           maxWidth: 120,
@@ -142,8 +173,8 @@ export default {
         },
         { field: "dep_name", headerName: "Кафедра" },
         { field: "course_work_theme", headerName: "Тема" },
-        { field: "full_name", headerName: "ФИО студента" },
-        { field: "full_name_t", headerName: "ФИО препода" },
+        { field: "student_name", headerName: "ФИО студента" },
+        { field: "teacher_name", headerName: "ФИО препода" },
       ],
     });
 
@@ -170,17 +201,13 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-      cellWasClicked: (event) => {
-        // Example of consuming Grid Event
-        console.log("cell was clicked", event);
-      },
+
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
 
       onFilterTextBoxChanged,
       paginationPageSize,
-      navigateToStudent,
     };
   },
   data() {
@@ -189,14 +216,18 @@ export default {
       filters: false,
       pr: false,
       pr_n: null,
-      CourseWork: new CourseWork(),
+      courseWork: new CourseWork(),
+      errors: {},
+      valid: false,
+      scheme: null,
+      formVisible: false,
     };
   },
   computed: {
     ...mapState(useCourseWorkStore, ["courseWorkList"]),
     ...mapState(useTeacherStore, ["teacherList"]),
     ...mapState(useDepartamentStore, ["departamentList"]),
-    ...mapState(useStudentStore, ["studentList"]),
+    ...mapState(useStudentStore, ["activeSortedStudents"]),
   },
   async mounted() {
     await this.getTeacherList();
@@ -228,7 +259,7 @@ export default {
         key: "course_work_student_id",
         label: "Студент",
         options: [
-          ...[...this.studentList].map((student) => ({
+          ...[...this.activeSortedStudents].map((student) => ({
             label: `${student.first_name} ${student.last_name}`,
             value: student.student_id,
           })),
@@ -282,14 +313,74 @@ export default {
     ...mapActions(useTeacherStore, ["getTeacherList"]),
     ...mapActions(useDepartamentStore, ["getDepartamentList"]),
     ...mapActions(useStudentStore, ["getStudentList"]),
+    cellWasClicked(event) {
+      if (event.colDef && event.colDef.headerName === "Действия") {
+        this.edit(event);
+      }
+    },
     previewDocx() {
       window.open(
         `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/CourseWork/ExportCourseWorks`
       );
     },
 
-    navigateToAddCW() {
-      this.$router.push(`/addCw`); // Navigate to the AddStudent route
+    resetCW() {
+      this.courseWork = new CourseWork();
+    },
+    edit(event) {
+      this.resetCW();
+      this.courseWork = event.data;
+
+      this.formVisible = true;
+    },
+    openCreatingForm() {
+      this.resetCW();
+      this.formVisible = true;
+    },
+    async validateForm() {
+      let isValid = true;
+      const errors = {};
+
+      for (const item of this.scheme.items) {
+        const result = item.validate(this.courseWork[item.key]);
+
+        if (result !== true) {
+          // Check for `true`, which means the field is valid
+          errors[item.key] = result; // Store the error message if validation fails
+          isValid = false;
+        }
+      }
+
+      this.errors = errors; // Store errors in the component's state
+      this.valid = isValid; // Set the valid flag based on the results
+      return isValid; // Return the validity of the form
+    },
+
+    async submit() {
+      const isValid = await this.validateForm();
+      if (!isValid) {
+        console.error("Form validation failed", this.errors);
+        return;
+      }
+      let courseWork = { ...this.courseWork };
+
+      if (courseWork.course_work_id) {
+        await this.putCourseWork(courseWork);
+      } else {
+        await this.postCourseWork(courseWork);
+      }
+      this.formVisible = false;
+      this.resetCW();
+      this.loadCourseWorksData();
+    },
+
+    async deleteCW() {
+      let courseWork = { ...this.courseWork };
+
+      await this.deleteCourseWork(courseWork);
+      this.formVisible = false;
+      this.resetCW();
+      this.loadCourseWorksData();
     },
 
     async loadCourseWorksData() {
@@ -299,7 +390,6 @@ export default {
             .filter((courseWorkList) => courseWorkList.deleted_at === null)
             .sort((a, b) => a.student_name.localeCompare(b.student_name));
         } else {
-          // Handle case where studentList is not an array
           if (this.courseWorkList.deleted_at === null) {
             this.rowData.value = [this.courseWorkList];
           } else {
@@ -481,6 +571,23 @@ export default {
     border: none;
     --bs-btn-hover-bg: rgb(6 215 29);
     --bs-btn-hover-border-color: rgb(6 215 29);
+  }
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+
+  &__item {
+    padding: 5px;
+    margin-right: 10px;
+  }
+
+  &__item:nth-child(2n) {
+    margin-right: 0;
+    border-right: none;
   }
 }
 </style>
