@@ -1,28 +1,21 @@
 <template>
+
+
   <div class="col col-xs-9 col-lg-12 mt-4 list">
     <div class="col col-12">
     <div class="mb-3 col col-12">
-      <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
-        <button 
-        @click="navigateToAddListener" 
-        class="btn btn-primary float-start" 
-        type="button"
-        >
-        <i class="material-icons-outlined">add</i>Добавить законного представителя
-        </button>
-      </div>
     
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
+      <button @click="navigateToAddGroup" class="btn btn-primary float-start" type="button"><i class="material-icons-outlined">add</i>Добавить группу</button>
+      <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
       <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2" type="button"><i class="material-icons-outlined">close</i>Очистить фильтры</button>
       <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
     </div>
-  
   </div>
 </div>
 
 
-<br>
-<div style="height: 90vh">
+
+<div style="height: 95vh">
 <div class="h-100 pt-5">
   <ag-grid-vue
     class="ag-theme-alpine"
@@ -49,33 +42,12 @@
 
 import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/PayerButtonCell.vue";
-import GroupHref from "@/components/GroupHrefCellRenderer.vue";
+import ButtonCell from "@/components/LgroupButtonCell.vue";
+import GroupHref from "@/components/LgroupHrefCellRenderer.vue";
+import GroupHref2 from "@/components/LgroupHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import UserService from "../../services/user.service";
-
-import { useRoute } from "vue-router";
-import { mapState, mapActions } from "pinia";
-import { useListenerStore } from "@/store2/listenergroup/listener";
-import AutoForm from "@/components/form/AutoForm.vue";
-import { FormScheme } from "@/model/form/FormScheme";
-
-import {
-  emailRule,
-  minLengthRule,
-  phoneRule,
-  requiredRule,
-} from "@/model/form/validation/rules";
-import { TextInput } from "@/model/form/inputs/TextInput";
-import { MaskInput } from "@/model/form/inputs/MaskInput";
-import { DateInput } from "@/model/form/inputs/DateInput";
-import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
-import { RadioInput } from "@/model/form/inputs/RadioInput";
-import { ToggleInput } from "@/model/form/inputs/ToggleInput";
-import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
-import Listener from "@/model/listener-group/Listener";
-
+import UserService from "../services/user.service";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -83,17 +55,12 @@ export default {
     AgGridVue,
     ButtonCell,
     GroupHref,
-    AutoForm,
+    GroupHref2,
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
-
-    const dataFromApi = ref(null); // This will store the data from the API
-    const dataLoaded = ref(false); // This flag will indicate if data is loaded
-
-    const route = useRoute();
 
     const paginationPageSize = 60;
 
@@ -106,7 +73,11 @@ export default {
     const navigateToStudent = () => {
  
   };
+
+
+
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
+
     // Each Column Definition results in one Column.
     const columnDefs = reactive({
       value: [
@@ -122,19 +93,15 @@ export default {
       maxWidth: 120, resizable: false
 
     },
-           
-           { field: "full_name", headerName: 'ФИО' },
+           { field: "group_number", headerName: 'Номер группы', cellRenderer: "GroupHref" },
+           { field: "program_name", headerName: 'Программа', cellRenderer: "GroupHref2" },
+
+           { field: "dir_code", headerName: 'Код направления', hide: true },
            {
-            field: 'email',
-            headerName: 'email', hide: true
+            field: 'dir_name',
+            filter: 'agDateColumnFilter',
+            headerName: 'Название Направления', hide: true
            },
-           {
-            field: 'phone_number',
-            headerName: 'телефон'
-           }
-       
-
-
            
          
       ],
@@ -188,48 +155,20 @@ export default {
     filters:false
   };
 },
-computed:{
-    ...mapState(useListenerStore, ["listenerList"]),
-  },
-async mounted() {
-    await this.getListenerList();
-  },
   methods: {
-    ...mapActions(useListenerStore, [
-      "getListenerList",
-      "postListener",
-      ,
-      "putListener",
-      "deleteListener",
-    ]),
-    async loadListenersData() {
-  try {
-    if (Array.isArray(this.listenerList)) {
-      this.rowData.value = this.listenerList.filter(listener => listener.deleted_at === null);
-    } else if (this.listenerList && this.listenerList.deleted_at === null) {
-      this.rowData.value = [this.listenerList];
-    } else {
-      this.rowData.value = [];
-    }
-    console.log(this.listenergroupList)
-  } catch (error) {
-    console.error("Ошибка при загрузке данных слушателей:", error);
-    this.rowData.value = [];  // Очистка в случае ошибки
-  }
-  console.log(this.listenerList)
-},
-    async loadPayersData() {
+
+    async loadGroupsData() {
         try {
-          const response = await UserService.getAllPayers(); // Replace with your API endpoint
+          const response = await UserService.getAllLgroups(); // Replace with your API endpoint
           this.rowData.value = Array.isArray(response.data) ? response.data : [response.data];
           this.loading=false;
         } catch (error) {
           console.error('Error loading students data:', error);
         }
       },
-      navigateToAddListener() {
+      navigateToAddGroup() {
     
-    this.$router.push(`/addPayer`); // Navigate to the AddStudent route
+    this.$router.push(`/addLgroup`); // Navigate to the AddStudent route
 },
 
 onFirstDataRendered(params) {
@@ -289,11 +228,12 @@ onFirstDataRendered(params) {
     this.quickFilterValue='';
     this.filters=false;
   },
+
     },
 
     created() {
     
-    this.loadPayersData();
+    this.loadGroupsData();
 
     },
 
