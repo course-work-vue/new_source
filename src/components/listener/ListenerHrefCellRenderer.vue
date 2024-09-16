@@ -1,6 +1,6 @@
 <template>
 
-<a :href="'#/contracts?filterModel=' + JSON.stringify({ listener_full_name: { filterType: 'text', type: 'contains', filter: this.params.data.full_name } })">{{ this.params.data.full_name }}</a>
+<a :href="'#/lgroup/' + + this.params.data.id">{{this.params.data.id}}</a>
 
 
   </template>
@@ -8,6 +8,9 @@
   <script>
   export default {
     props: ['params'],
+    mounted() {
+      console.log(this.params.data)
+    },
     computed: {
 
     },

@@ -59,7 +59,7 @@ const model = ref([
             to: "/payers",
           },
           { label: "Группы", icon: "pi pi-fw pi-users", to: "/lgroups" },
-          { label: "Договора", icon: "pi pi-fw pi-file", to: "/contracts" },
+          { label: "Договоры", icon: "pi pi-fw pi-file", to: "/contracts" },
           { label: "Программы", icon: "pi pi-fw pi-book", to: "/programs" },
           {
             label: "График платежей",

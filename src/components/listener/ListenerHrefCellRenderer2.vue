@@ -1,15 +1,17 @@
 <template>
-
-<a :href="'#/lgroups?filterModel=' + JSON.stringify({ group_number: { filterType: 'text', type: 'contains', filter: this.params.data.group_number } })">{{ this.params.data.group_number }}</a>
-
-
-  </template>
+  <a :href="'#/contracts?filterModel=' + JSON.stringify({ full_name: { filterType: 'text', type: 'contains', filter: fullName } })">{{ fullName }}</a>
+</template>
   
   <script>
   export default {
     props: ['params'],
+    mounted() {
+    },
     computed: {
-
+      fullName() {
+      const data = this.params.data;
+      return `${data.surname} ${data.name} ${data.lastname}`;
+    }
     },
     methods: {
 

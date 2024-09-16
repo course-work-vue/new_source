@@ -4,19 +4,29 @@
   <div class="col col-xs-9 col-lg-12 mt-4 list">
     <div class="col col-12">
     <div class="mb-3 col col-12">
-      <button onclick="location.href='http://195.93.252.168:5050/api/PayGraph/Export'" class="mx-2 btn btn-primary float-start" type="button">Отчёт о платежах</button>
-      <button @click="navigateToAddPayment" class="btn btn-primary float-start" type="button"><i class="material-icons-outlined">add</i>Добавить платёж</button>
-      <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
+      <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
 
+        <button 
+          @click="navigateToAddProgram" 
+          class="btn btn-primary float-start" 
+          type="button"
+          >
+          <i class="material-icons-outlined">add</i>Добавить программу
+        </button>
+
+      </div>
+      
+        <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
       <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2" type="button"><i class="material-icons-outlined">close</i>Очистить фильтры</button>
       <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
+
     </div>
   </div>
 </div>
 
 
 
-<div style="height: 90vh">
+<div style="height: 50vh">
 <div class="h-100 pt-5">
   <ag-grid-vue
     class="ag-theme-alpine"
@@ -43,18 +53,40 @@
 
 import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/PaymentButtonCell.vue";
-import GroupHref from "@/components/GroupHrefCellRenderer.vue";
+import ButtonCell from "@/components/ProgramButtonCell.vue";
+import ProgramHref from "@/components/ProgramHrefCellRenderer.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import UserService from "../services/user.service";
+import UserService from "../../services/user.service";
+
+import { useRoute } from "vue-router";
+import { mapState, mapActions } from "pinia";
+import { useListenerStore } from "@/store2/listenergroup/listener";
+import AutoForm from "@/components/form/AutoForm.vue";
+import { FormScheme } from "@/model/form/FormScheme";
+
+import {
+  emailRule,
+  minLengthRule,
+  phoneRule,
+  requiredRule,
+} from "@/model/form/validation/rules";
+import { TextInput } from "@/model/form/inputs/TextInput";
+import { MaskInput } from "@/model/form/inputs/MaskInput";
+import { DateInput } from "@/model/form/inputs/DateInput";
+import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
+import { RadioInput } from "@/model/form/inputs/RadioInput";
+import { ToggleInput } from "@/model/form/inputs/ToggleInput";
+import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import Listener from "@/model/listener-group/Listener";
+
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
   components: {
     AgGridVue,
     ButtonCell,
-    GroupHref
+    ProgramHref
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
@@ -92,26 +124,18 @@ export default {
       maxWidth: 120, resizable: false
 
     },
-           
-           { field: "contr_number", headerName: 'Номер договора' },
+          
+           { field: "required_amount", headerName: 'Цена за обучение', hide: true },
            {
-            field: 'expiration_date',
-            headerName: 'Дата просрочки',filter: 'agDateColumnFilter',
-            filterParams: filterParams,
+            field: 'program_name',
+            headerName: 'Название программы', cellRenderer:'ProgramHref'
            },
            {
-            field: 'full_name2',
-            headerName: 'ФИО законного представителя', hide: true
+            field: 'hours',
+            headerName: 'Часы'
            },
-           {
-            field: 'deposited_amount',
-            headerName: 'Внёсенная сумма', hide: true
-           },
-           {
-            field: 'expiration_date',
-            headerName: 'Просрочка', hide: true
-           }
-       
+           { field: "start_date", headerName: 'Дата начала', hide: true },
+           { field: "end_date", headerName: 'Дата окончания', hide: true },
 
 
            
@@ -167,20 +191,21 @@ export default {
     filters:false
   };
 },
+
   methods: {
 
-    async loadPayersData() {
+    async loadListenersData() {
         try {
-          const response = await UserService.getAllPayments(); // Replace with your API endpoint
+          const response = await UserService.getAllPrograms(); // Replace with your API endpoint
           this.rowData.value = Array.isArray(response.data) ? response.data : [response.data];
           this.loading=false;
         } catch (error) {
           console.error('Error loading students data:', error);
         }
       },
-      navigateToAddPayment() {
+      navigateToAddProgram() {
     
-    this.$router.push(`/AddPayment`); // Navigate to the AddStudent route
+    this.$router.push(`/addProgram`); // Navigate to the AddStudent route
 },
 
 onFirstDataRendered(params) {
@@ -241,38 +266,15 @@ onFirstDataRendered(params) {
     this.filters=false;
   },
 
-  
     },
 
     created() {
     
-    this.loadPayersData();
+    this.loadListenersData();
 
     },
 
     
-};
-var filterParams = {
-  comparator: (filterLocalDateAtMidnight, cellValue) => {
-    var dateAsString = cellValue;
-    if (dateAsString == null) return -1;
-    var dateParts = dateAsString.split('/');
-    var cellDate = new Date(
-      Number(dateParts[2]),
-      Number(dateParts[1]) - 1,
-      Number(dateParts[0])
-    );
-    if (filterLocalDateAtMidnight.getTime() === cellDate.getTime()) {
-      return 0;
-    }
-    if (cellDate < filterLocalDateAtMidnight) {
-      return -1;
-    }
-    if (cellDate > filterLocalDateAtMidnight) {
-      return 1;
-    }
-    return 0;
-  },
 };
 
 

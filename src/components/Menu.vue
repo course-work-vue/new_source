@@ -77,7 +77,7 @@
               link: "/lgroups",
             },
             {
-              label: "Договора",
+              label: "Договоры",
               link: "/contracts",
             },
             {
