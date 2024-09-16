@@ -1,20 +1,16 @@
-/** Базовая модель элемента ввода автогенерируемой формы, все остальные модели элементов формы должны унаследоваться от BaseInput  */
+
 export class BaseInput {
-    /**
-     * Тип элемента
-     * @public
-     * @type {AutoFormInputType}
-     * */
+
     TYPE;
-    /** Имя элемента ввода, которое будет выведено */
+
     label;
-    /** Уникальный ключ в схеме формы */
+
     key;
-    /** Набор правил валидации значения элемента */
+
     validation;
 
-    /** @param {BaseInputConstructor} a @abstract */
-    constructor({ label, key, validation = [] }) { // Default to empty array
+
+    constructor({ label, key, validation = [] }) {
         if (!key) throw new Error('Key is required');
         this.label = label;
         this.key = key;
@@ -25,11 +21,11 @@ export class BaseInput {
                 throw new Error('Validation should be an array of functions');
             }
         } else {
-            this.validation = []; // Ensure validation is always an array
+            this.validation = [];
         }
     }
 
-    /** Провалидировать элемент ввода по всем переданам правилам */
+
     validate(v) {
         let errorMessage = '';
         for (const check of this.validation) {

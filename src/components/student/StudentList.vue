@@ -11,41 +11,25 @@
         </div>
 
         <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить студента
-          </button>
-          <button
-            @click="previewDocx"
-            class="mx-2 btn btn-primary float-start"
-            type="button"
-          >
-            Отчёт о формах обучения
-          </button>
-          <div class="col col-6 float-end d-inline-flex align-items-center">
+          <div class="float-start">
             <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
+              @click="openCreatingForm"
+              class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
+              <i class="material-icons-outlined">add</i>Добавить студента
             </button>
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
+            <button
+              @click="previewDocx"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
+              Отчёт о формах обучения
+            </button>
           </div>
         </div>
       </div>
-      <div>
+      <div class="col col-12">
         <div class="col col-6 float-start">
           <div class="form-group d-inline-flex align-items-center">
             <label class="bigger form-label" for="group_id"
@@ -69,23 +53,41 @@
             </select>
           </div>
         </div>
-        <div class="col col-6 float-start">
-          <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="subgroup_id"
-              >Фильтр по подгруппе:</label
-            >
+        <div class="col col-6 float-end d-inline-flex align-items-center">
+          <button
+            @click="clearFilters"
+            :disabled="!filters"
+            class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button"
+          >
+            <i class="material-icons-outlined">close</i>Очистить фильтры
+          </button>
+          <input
+            class="form-control"
+            type="text"
+            v-model="quickFilterValue"
+            id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()"
+            placeholder="Поиск..."
+          />
+        </div>
+      </div>
+      <div class="col col-6 float-start">
+        <div class="form-group d-inline-flex align-items-center">
+          <label class="bigger form-label" for="subgroup_id"
+            >Фильтр по подгруппе:</label
+          >
 
-            <select
-              class="form-select"
-              id="subgroup_id"
-              v-model="myValue4"
-              @change="handleSelectChange2(myValue4)"
-            >
-              <option selected="selected" value="">Нет</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </div>
+          <select
+            class="form-select"
+            id="subgroup_id"
+            v-model="myValue4"
+            @change="handleSelectChange2(myValue4)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
         </div>
       </div>
       <div style="height: 90vh">
@@ -159,6 +161,22 @@
       Удалить
     </Button>
   </Dialog>
+
+  <Dialog
+    v-model:visible="docPreview"
+    header="Предпросмотр документа отчёт по студентам"
+    maximizable
+    ref="maxDialog"
+    @show="biggifyDialog"
+    :header="props.name"
+    class="w-full h-full md:w-5/6"
+  >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      documentTitle="Отчёт по студентам"
+    />
+  </Dialog>
 </template>
 
 <script>
@@ -193,6 +211,12 @@ import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
+
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
+
+import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
+
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -205,6 +229,7 @@ export default {
     Field,
     ErrorMessage,
     AutoForm,
+    OnlyDocumentEditor,
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
@@ -223,7 +248,11 @@ export default {
     const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
+    const maxDialog = ref();
 
+    function biggifyDialog() {
+      maxDialog.value.maximized = true;
+    }
     // Each Column Definition results in one Column.
     const columnDefs = reactive({
       value: [
@@ -379,6 +408,8 @@ export default {
       handleSelectChange2,
       dataFromApi,
       dataLoaded,
+      biggifyDialog,
+      maxDialog,
     };
   },
   data() {
@@ -410,6 +441,8 @@ export default {
       errors: {},
       valid: false,
       scheme: null,
+      docPreview: false,
+      filePath: null,
     };
   },
   async mounted() {
@@ -587,6 +620,7 @@ export default {
       ,
       "putStudent",
       "deleteStudent",
+      "uploadGeneratedFile",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
     cellWasClicked(event) {
@@ -600,14 +634,13 @@ export default {
     edit(event) {
       this.resetStd();
       this.student = event.data;
-      console.log(this.student);
 
       this.formVisible = true;
     },
-    previewDocx() {
-      window.open(
-        `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/Students/Export`
-      );
+    async previewDocx() {
+      await this.createDocx();
+
+      this.docPreview = true;
     },
     openCreatingForm() {
       this.resetStd();
@@ -784,9 +817,196 @@ export default {
       this.spisok = false;
       this.filters = false;
     },
+    async createDocx() {
+      // Получаем список студентов
+      const students = this.rowData.value;
+
+      // Группируем студентов по типу обучения
+      const contractStudents = students.filter((student) => !student.is_budget); // Договорная форма обучения
+      const budgetStudents = students.filter((student) => student.is_budget); // Бюджетная форма обучения
+
+      // Функция для группировки студентов по группам
+      const groupByGroupNumber = (students) => {
+        return students.reduce((groups, student) => {
+          const groupNumber = student.group_number || "Неизвестная группа";
+          if (!groups[groupNumber]) {
+            groups[groupNumber] = [];
+          }
+          groups[groupNumber].push(student);
+          return groups;
+        }, {});
+      };
+
+      // Создаем контент для студентов с группировкой по группам
+      const createGroupedStudentListContent = (students) => {
+        const groupedStudents = groupByGroupNumber(students);
+        const content = [];
+
+        Object.keys(groupedStudents).forEach((groupNumber) => {
+          // Добавляем заголовок для каждой группы
+          content.push(
+            new Paragraph({
+              alignment: AlignmentType.LEFT,
+              spacing: { after: 200 },
+              children: [
+                new TextRun({
+                  text: `Группа ${groupNumber}:`,
+                  size: 28,
+                  bold: true,
+                }),
+              ],
+            })
+          );
+
+          // Добавляем студентов из этой группы
+          groupedStudents[groupNumber].forEach((student, index) => {
+            content.push(
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `${index + 1}. ${student.full_name}`,
+                    size: 28,
+                  }),
+                ],
+              })
+            );
+          });
+        });
+
+        return content;
+      };
+
+      // Создаем документ
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Заголовок
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: "«Кубанский государственный университет»",
+                    size: 28,
+                    bold: true,
+                    break: 1,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 }, // No space after this paragraph
+                children: [
+                  new TextRun({
+                    text: "(ФГБОУ ВО «КубГУ»)",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+              }),
+              // Fifth line - Regular alignment and spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "Факультет компьютерных технологий и прикладной математики",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+              // Sixth line - Bold, with spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "ОТЧЕТ ПО ФОРМАМ ОБУЧЕНИЯ СТУДЕНТОВ",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Количество и список студентов на договорной форме обучения
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Количество студентов на договорной форме обучения: ${contractStudents.length}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Список студентов на договорной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              ...createGroupedStudentListContent(contractStudents),
+
+              // Количество и список студентов на бюджетной форме обучения
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Количество студентов на бюджетной форме обучения: ${budgetStudents.length}`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Список студентов на бюджетной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              ...createGroupedStudentListContent(budgetStudents),
+            ],
+          },
+        ],
+      });
+
+      // Генерация и сохранение документа
+      const blob = await Packer.toBlob(doc);
+      //saveAs(blob, "Report.docx");
+
+      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
+    },
   },
   computed: {
-    ...mapState(useStudentStore, ["studentList"]),
+    ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
     ...mapState(useGroupStore, ["groupList"]),
   },
   async created() {},

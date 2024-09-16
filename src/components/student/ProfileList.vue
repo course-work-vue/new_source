@@ -1,31 +1,44 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <button
-          @click="openCreatingForm"
-          class="btn btn-primary float-start"
-          type="button"
-        >
-          <i class="material-icons-outlined">add</i>Добавить направление
-        </button>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+  <div v-if="!loading">
+    <div class="col col-xs-9 col-lg-12 list">
+      <div class="col col-12">
+        <div class="d-inline-flex">
+          <div v-if="!dirc">
+            <h1>Список всех профилей</h1>
+          </div>
+          <h1 v-if="dirc">Список профилей с направлением {{ dir_c_n }}</h1>
+        </div>
+
+        <div class="row">
+          <div class="col col-4 d-inline-flex align-items-center mb-2">
+            <button
+              @click="openCreatingForm"
+              class="btn btn-primary"
+              type="button"
+            >
+              <i class="material-icons-outlined">add</i>Добавить профиль
+            </button>
+          </div>
+          <div class="col col-4 d-inline-flex align-items-center mb-2">
+            <button
+              @click="clearFilters"
+              :disabled="!filters"
+              class="btn btn-sm btn-primary text-nowrap mx-2"
+              type="button"
+            >
+              <i class="material-icons-outlined">close</i>Очистить фильтры
+            </button>
+          </div>
+          <div class="col col-4">
+            <input
+              class="form-control"
+              type="text"
+              v-model="quickFilterValue"
+              id="filter-text-box"
+              v-on:input="onFilterTextBoxChanged()"
+              placeholder="Поиск..."
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -40,39 +53,21 @@
           :defaultColDef="defaultColDef"
           rowSelection="multiple"
           animateRows="true"
+          includeHiddenColumnsInQuickFilter="true"
           @cell-clicked="cellWasClicked"
           @grid-ready="onGridReady"
           @firstDataRendered="onFirstDataRendered"
           @filter-changed="onFilterChanged"
-
         >
         </ag-grid-vue>
       </div>
     </div>
   </div>
-  <div class="test" v-if="test">
-    <label>Количество бюджета:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_budget_count"
-        disabled
-      />
-    </div>
-    <label>Количество договоров:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_not_budget_count"
-        disabled
-      />
-    </div>
-  </div>
-  <Dialog v-model:visible="formVisible" modal header="Форма направления">
+  <Dialog v-model:visible="formVisible" modal header="Форма профиля">
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
-          v-model="direction"
+          v-model="profile"
           v-model:valid="valid"
           v-model:errors="errors"
           item-class="form__item"
@@ -91,8 +86,8 @@
     </Button>
     <Button
       class="btn btn-primary float-end"
-      v-if="this.direction.dir_id"
-      @click="deleteDir"
+      v-if="this.profile.prof_id"
+      @click="deleteProf"
     >
       Удалить
     </Button>
@@ -102,15 +97,15 @@
 <script>
 import { AgGridVue } from "ag-grid-vue3"; // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/student/DirectionButtonCell.vue";
+import ButtonCell from "@/components/student/ProfileButtonCell.vue";
+import ProfileHref from "@/components/student/ProfileHrefCellRenderer.vue";
+import ProfileHref2 from "@/components/student/ProfileHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-
-import DirectionHref from "@/components/student/DirectionHrefCellRenderer.vue";
-import { useDirectionStore } from "@/store2/studentgroup/direction";
 import { mapState, mapActions } from "pinia";
-import Direction from "@/model/student-group/Direction";
-
+import { useDirectionStore } from "@/store2/studentgroup/direction";
+import { useProfileStore } from "@/store2/studentgroup/profile";
+import Profile from "@/model/student-group/Profile";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -126,27 +121,20 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+
 /* eslint-disable vue/no-unused-components */
 export default {
-  name: "App",
+  name: "ProfileManagement",
   components: {
     AgGridVue,
     ButtonCell,
-    DirectionHref,
+    ProfileHref,
+    ProfileHref2,
     AutoForm,
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
-    // Obtain API from grid's onGridReady event
-
-    const paginationPageSize = 60;
-
-    const onGridReady = (params) => {
-      gridApi.value = params.api;
-      gridColumnApi.value = params.columnApi;
-    };
-    const navigateToDirection = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -161,20 +149,25 @@ export default {
           cellRendererParams: {
             label: "View Details", // Button label
           },
-          maxWidth: 120, // Adjust the width as needed
-          cellClass: "grid-cell-centered",
+          maxWidth: 120,
           resizable: false,
         },
 
-        { field: "dir_name", headerName: "Название направления" },
+        {
+          field: "prof_name",
+          headerName: "Название профиля",
+          cellRenderer: "ProfileHref2",
+        },
         {
           field: "dir_code",
           headerName: "Код направления",
-          cellRenderer: "DirectionHref",
+          cellRenderer: "ProfileHref",
         },
         {
-          field: "magister",
-          headerName: "Магистратура",
+          field: "dir_name",
+          filter: "agDateColumnFilter",
+          headerName: "Название Направления",
+          hide: true,
         },
       ],
     });
@@ -188,8 +181,10 @@ export default {
       minWidth: 300,
     };
 
-    // Example load data from server
-    onMounted(() => {});
+    const onGridReady = (params) => {
+      gridApi.value = params.api;
+      gridColumnApi.value = params.columnApi;
+    };
 
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
@@ -202,76 +197,72 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
-      deselectRows: () => {
-        gridApi.value.deselectAll();
-      },
-
       onFilterTextBoxChanged,
-      paginationPageSize,
-      navigateToDirection,
     };
   },
   data() {
     return {
-      test: false,
-      quickFilterValue: "", // Initialize with an empty string
+      quickFilterValue: "",
       filters: false,
-      event: null,
-      direction: new Direction(),
+      dirc: false,
+      dir_c_n: null,
+      dir_list: [],
+      profile: new Profile(),
       errors: {},
       valid: false,
       scheme: null,
       formVisible: false,
     };
   },
-  computed: {
-    ...mapState(useDirectionStore, ["directionList"]),
-  },
   async mounted() {
-    await this.getDirectionList(); // Fetch the list of directions
+    await this.getDirectionList();
+    await this.getProfileList();
 
-    this.loadDirectionsData();
+    this.loadProfilesData(); // Загрузка данных профилей
     this.scheme = new FormScheme([
-      new TextInput({
-        key: "dir_name",
-        label: "Название направления",
-        placeholder: "Введите название направления",
-        icon: "pi pi-book",
-        validation: [requiredRule], // Assuming name is a required field
+      new ComboboxInput({
+        key: "prof_dir_id",
+        label: "Направление",
+        options: [
+          ...[...this.directionList].map((direction) => ({
+            label: direction.dir_name,
+            value: direction.dir_id,
+          })),
+        ],
+        validation: [requiredRule],
       }),
       new TextInput({
-        key: "dir_code",
-        label: "Код направления",
-        placeholder: "Введите код направления",
-        icon: "pi pi-tag",
-        validation: [requiredRule], // Assuming code is a required field
-      }),
-      new CheckboxInput({
-        key: "magister",
-        label: "Магистратура",
-        binary: true,
+        key: "prof_name",
+        label: "Название профиля",
+        placeholder: "Название профиля",
+        icon: "pi pi-user",
+        validation: [requiredRule],
       }),
     ]);
   },
+  computed: {
+    ...mapState(useDirectionStore, ["directionList"]),
+    ...mapState(useProfileStore, ["profileList"]),
+  },
   methods: {
-    ...mapActions(useDirectionStore, [
-      "getDirectionList",
-      "postDirection",
+    ...mapActions(useDirectionStore, ["getDirectionList"]),
+    ...mapActions(useProfileStore, [
+      "getProfileList",
+      "postProfile",
       ,
-      "putDirection",
-      "deleteDirection",
+      "putProfile",
+      "deleteProfile",
     ]),
-    async deleteDir() {
-      let direction = { ...this.direction };
+    async deleteProf() {
+      let profile = { ...this.profile };
 
-      await this.deleteDirection(direction);
+      await this.deleteProfile(profile);
       this.formVisible = false;
       this.resetDir();
       this.loadDirectionsData();
     },
     openCreatingForm() {
-      this.resetDir();
+      this.resetProf();
       this.formVisible = true;
     },
     cellWasClicked(event) {
@@ -284,26 +275,24 @@ export default {
       const errors = {};
 
       for (const item of this.scheme.items) {
-        const result = item.validate(this.direction[item.key]);
+        const result = item.validate(this.profile[item.key]);
 
         if (result !== true) {
-          // Check for `true`, which means the field is valid
-          errors[item.key] = result; // Store the error message if validation fails
+          errors[item.key] = result;
           isValid = false;
         }
       }
 
-      this.errors = errors; // Store errors in the component's state
-      this.valid = isValid; // Set the valid flag based on the results
-      return isValid; // Return the validity of the form
+      this.errors = errors;
+      this.valid = isValid;
+      return isValid;
     },
-    resetDir() {
-      this.direction = new Direction();
+    resetProf() {
+      this.profile = new Profile();
     },
     edit(event) {
-      this.resetDir();
-      this.direction = event.data;
-
+      this.resetProf();
+      this.profile = event.data;
       this.formVisible = true;
     },
     async submit() {
@@ -312,30 +301,48 @@ export default {
         console.error("Form validation failed", this.errors);
         return;
       }
-      let direction = { ...this.direction };
+      let profile = { ...this.profile };
 
-      if (direction.dir_id) {
-        await this.putDirection(direction);
+      if (profile.prof_id) {
+        await this.putProfile(profile);
       } else {
-        await this.postDirection(direction);
+        await this.postProfile(profile);
       }
       this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
+      this.resetProf();
+      this.loadProfilesData();
+    },
+    async loadProfilesData() {
+      try {
+        if (Array.isArray(this.profileList)) {
+          // Фильтруем профили, где deleted_at равен null, и сортируем по prof_name
+          this.rowData.value = this.profileList
+            .filter((profile) => profile.deleted_at === null)
+            .sort((a, b) => a.prof_name.localeCompare(b.prof_name));
+        } else {
+          // Обработка случая, когда profileList не является массивом
+          if (this.profileList.deleted_at === null) {
+            this.rowData.value = [this.profileList];
+          } else {
+            this.rowData.value = [];
+          }
+        }
+        this.loading = false;
+      } catch (error) {
+        console.error("Error loading profiles data:", error);
+      }
     },
     async loadDirectionsData() {
       try {
         if (Array.isArray(this.directionList)) {
-          // Filter out directions where deleted_at is not null and sort by dir_name
-          this.rowData.value = this.directionList
+          this.dir_list = this.directionList
             .filter((direction) => direction.deleted_at === null)
             .sort((a, b) => a.dir_name.localeCompare(b.dir_name));
         } else {
-          // Handle case where directionList is not an array
           if (this.directionList.deleted_at === null) {
-            this.rowData.value = [this.directionList];
+            this.dir_list = [this.directionList];
           } else {
-            this.rowData.value = [];
+            this.dir_list = [];
           }
         }
         this.loading = false;
@@ -343,82 +350,28 @@ export default {
         console.error("Error loading directions data:", error);
       }
     },
-
-    navigateToAddDirection() {
-      this.$router.push(`/addDirection`); // Navigate to the AddDirection route
-    },
-
-    onFirstDataRendered(params) {
-      this.gridApi = params.api;
-      this.columnApi = params.columnApi;
-
-      // Check if filterModel exists in the route query
-      const filterModelQuery = this.$route.query.filterModel;
-      if (filterModelQuery) {
-        const filterModel = JSON.parse(filterModelQuery);
-        this.gridApi.setFilterModel(filterModel);
-        this.filters = true;
-      }
-
-      const quickFilterQuery = this.$route.query.quickFilter;
-      if (quickFilterQuery) {
-        const quickFilter = JSON.parse(quickFilterQuery);
-        this.gridApi.setQuickFilter(quickFilter);
-        this.quickFilterValue = quickFilter;
-        this.filters = true;
-      }
-    },
-    onFilterChanged() {
-      // This function will be called whenever filters change.
-      // You can perform your desired action here.
-      // For example, you can get the current filter model:
-      this.filters = false;
-      const savedQuickFilter = this.gridApi.getQuickFilter();
-      const savedFilterModel = this.gridApi.getFilterModel();
-
-      // Initialize an empty object for queryParams
-      const queryParams = {};
-
-      // Check if savedQuickFilter is not empty, then add it to queryParams
-      if (savedQuickFilter) {
-        queryParams.quickFilter = JSON.stringify(savedQuickFilter);
-        this.filters = true;
-      }
-
-      // Check if savedFilterModel is not empty, then add it to queryParams
-      if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
-        queryParams.filterModel = JSON.stringify(savedFilterModel);
-        this.filters = true;
-      }
-
-      // Push the query parameters to the router
-      this.$router.push({ query: queryParams });
-
-      // Do something with the filterModel or trigger other actions as needed.
-    },
     clearFilters() {
       this.gridApi.setFilterModel();
       this.gridApi.setQuickFilter();
       this.quickFilterValue = "";
       this.filters = false;
+      this.dirc = false;
     },
-  },
-
-  created() {
-    this.loadDirectionsData();
   },
 };
 </script>
 
 <style lang="scss" scoped>
+.bigger {
+  font-size: 30px;
+  white-space: nowrap;
+}
 .ag-row .ag-cell {
   display: flex;
   justify-content: center; /* align horizontal */
   align-items: center;
 }
-.test {
-  padding-left: 100px;
-}
+
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -457,6 +410,7 @@ export default {
     opacity: 1;
   }
 }
+
 .nmbr {
   height: 44px;
 }
@@ -507,9 +461,19 @@ export default {
   }
 }
 
+.card {
+  &__form {
+    margin-right: 30px;
+  }
+
+  &__image {
+    margin-left: auto;
+  }
+}
+
 .form {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 10px;
 

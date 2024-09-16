@@ -12,4 +12,5 @@ export default Object.freeze({
     pay_graph:prefix + 'delete_pay_graph',
     program: prefix + 'delete_programs',
     uploaded_file: prefix + 'delete_uploaded_files',
+    courseWork: prefix + 'delete_course_work'
 });

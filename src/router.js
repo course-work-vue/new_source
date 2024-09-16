@@ -5,6 +5,9 @@ import Register from "./components/Register.vue";
 import jwt_decode from "jwt-decode";
 import AuthService from './services/auth.service';
 import AppLayout from './layout/AppLayout.vue'
+
+
+
 // lazy-loaded
 const Profile = () => import("./components/Profile.vue")
 
@@ -17,13 +20,18 @@ const RightsTable = () => import("./components/RightsTable.vue")
 const DirectionList = () => import("./components/student/DirectionList.vue")
 const AddDirection = () => import("./components/AddDirection.vue")
 const DirectionDetail = () => import("./components/DirectionDetail.vue")
-const ProfileList = () => import("./components/ProfileList.vue")
+const ProfileList = () => import("./components/student/ProfileList.vue")
 const AddProfile = () => import("./components/AddProfile.vue")
 const ProfileDetail = () => import("./components/ProfileDetail.vue")
 
-const GroupList = () => import("./components/GroupList.vue")
+const GroupList = () => import("./components/student/GroupList.vue")
 const AddGroup = () => import("./components/AddGroup.vue")
 const GroupDetail = () => import("./components/GroupDetail.vue")
+const AddCw = () => import("./components/AddCw.vue")
+const CWList = () => import("./components/student/CwList.vue")
+const CWdetail = () => import("./components/CwDetail.vue")
+
+
 
 const ListenerList = () => import("./components/listener/ListenerList.vue")
 const ListenerDetail = () => import("./components/ListenerDetail.vue")
@@ -39,9 +47,7 @@ const AddContract = () => import("./components/AddContract.vue")
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue")
 
-const AddCw = () => import("./components/AddCw.vue")
-const CWList = () => import("./components/CwList.vue")
-const CWdetail = () => import("./components/CwDetail.vue")
+
 
 const ProgramList = () => import("./components/listener/ProgramList.vue")
 const AddProgram = () => import("./components/AddProgram.vue")
@@ -67,13 +73,19 @@ const lGroupDetail = () => import("./components/LgroupDetail.vue")
 
 const xlparse = () => import("./components/xlparse.vue")
 
+const Test = () => import("./components/base/ExampleComponent.vue")
+
 const routes = [
+
   {
     path: "/",
     name: "home",
     component: AppLayout,
     children: [
-
+      {
+        path: "/test",
+        component: Test,
+      },
       {
         path: "/home",
         component: Home,
@@ -235,6 +247,7 @@ const routes = [
       { path: '/AddStudent', component: AddStudent },
       { path: '/AddStudent/:groupName', component: AddStudent },]
   },
+
 ];
 
 const router = createRouter({

@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-   
     <!--
     <nav class="navbar navbar-expand navbar-dark bg-dark">
       <a href="/" class="navbar-brand">bezKoder</a>
@@ -61,9 +60,7 @@ export default {
   created() {
     this.$store.dispatch("auth/checkTokenExpiration");
   },
-  components: {
-  
-  },
+  components: {},
   computed: {
     currentUser() {
       return this.$store.state.auth.user;
@@ -100,9 +97,7 @@ export default {
 * {
   font-family: "Montserrat";
 }
-.mycontainer {
-  margin-left: 130px;
-}
+
 html,
 body {
   height: 100%;

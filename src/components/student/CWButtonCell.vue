@@ -10,7 +10,11 @@
 export default {
   props: ["params"],
   computed: {},
-  methods: {},
+  methods: {
+    onClick() {
+      this.$router.push(`/courseworks/${this.params.data.course_work_id}`);
+    },
+  },
 };
 </script>
 
