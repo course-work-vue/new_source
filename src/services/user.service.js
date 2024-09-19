@@ -268,6 +268,11 @@ deleteDirectionById(direction_id){
 
   return axios.delete(apiUrl, { headers: authHeader() });
 }
+
+getRestDirs(){
+  return axios.get(`${API}/Direction`, { headers: authHeader() });
+}
+
   getAllDirections(){
     const query = {
       query: `SELECT 
@@ -329,6 +334,12 @@ updateDirectionById(dir_id, dir_name, dir_code) {
           console.error("Error updating direction:", error);
           throw error; 
       });
+}
+
+getAllTeachGruz(){
+  let fr = axios.get(API+"/TeachGruz", { headers: authHeader() })
+  // console.log(fr);
+  return fr;
 }
 
 
@@ -663,30 +674,10 @@ deleteGroupById(group_id){
 
   return axios.delete(apiUrl, { headers: authHeader() });
 }
+
   getAllGroups(){
-    const query = {
-      query: `SELECT
-      g.group_id,
-      g.group_number,
-      g.course,
-      g.magister,
-      p.prof_name,
-      d.dir_name,
-      d.dir_code
-  FROM
-      "groups" AS g
-  JOIN
-      "profiles" AS p
-  ON
-      g.group_prof_id = p.prof_id
-  JOIN
-      "directions" AS d
-  ON
-      g.group_dir_id = d.dir_id  ORDER BY 
-      g.group_number ASC;
-  `,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
+    
+    return axios.get(API_URL + 'groups', { headers: authHeader() });
   }
 
   getGroupByDir(dir_id){
