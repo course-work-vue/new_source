@@ -95,7 +95,10 @@ const routes = [
     name: "home",
     component: AppLayout,
     children: [
-      
+      /*{
+        path: "/test",
+        component: Test,
+      },*/
       {
         path: "/home",
         component: Home,
