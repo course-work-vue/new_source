@@ -86,7 +86,7 @@ const ManageExcel11 = () => import("./components/ManageExcel11.vue")
 const ManageExcel12 = () => import("./components/ManageExcel12.vue")
 const ManageExcel13 = () => import("./components/ManageExcel13.vue")
 
-const Test = () => import("./components/base/ExampleComponent.vue")
+//const Test = () => import("./components/base/ExampleComponent.vue")
 
 const routes = [
 
@@ -95,10 +95,7 @@ const routes = [
     name: "home",
     component: AppLayout,
     children: [
-      {
-        path: "/test",
-        component: Test,
-      },
+      
       {
         path: "/home",
         component: Home,
