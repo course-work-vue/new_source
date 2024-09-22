@@ -5,5 +5,8 @@ export default Object.freeze({
     group: prefix + 'delete_groups',
     direction: prefix + 'delete_directions',
     profile: prefix + 'delete_profiles',
-    courseWork: prefix + 'delete_course_work'
+    courseWork: prefix + 'delete_course_work',
+    role: prefix + 'delete_roles',
+    deleteFunctionUser: prefix + 'delete_function_user',
+    deleteProcedureUser: prefix + 'delete_procedure_user'
 });

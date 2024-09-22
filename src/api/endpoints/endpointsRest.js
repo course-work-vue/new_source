@@ -8,5 +8,9 @@ export default Object.freeze({
     courseWork: prefix + 'course_work',
     teacher: prefix + 'teachers',
     departament: prefix + 'departaments',
-
+    role: prefix + 'roles',
+    globalPermission: prefix + 'globalpermissions',
+    functionUser: prefix + 'function_user',
+    procedureUser: prefix + 'procedure_user',
+    user: prefix + 'users',
 });

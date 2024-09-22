@@ -14,22 +14,17 @@ const Profile = () => import("./components/Profile.vue")
 const BoardUser = () => import("./components/BoardUser.vue")
 
 const StudentList = () => import("./components/student/StudentList.vue")
-const StudentDetail = () => import("./components/StudentDetail.vue")
-const AddStudent = () => import("./components/AddStudent.vue")
+
 const RightsTable = () => import("./components/RightsTable.vue")
 const DirectionList = () => import("./components/student/DirectionList.vue")
-const AddDirection = () => import("./components/AddDirection.vue")
-const DirectionDetail = () => import("./components/DirectionDetail.vue")
+
 const ProfileList = () => import("./components/student/ProfileList.vue")
-const AddProfile = () => import("./components/AddProfile.vue")
-const ProfileDetail = () => import("./components/ProfileDetail.vue")
+
 
 const GroupList = () => import("./components/student/GroupList.vue")
-const AddGroup = () => import("./components/AddGroup.vue")
-const GroupDetail = () => import("./components/GroupDetail.vue")
-const AddCw = () => import("./components/AddCw.vue")
+
 const CWList = () => import("./components/student/CwList.vue")
-const CWdetail = () => import("./components/CwDetail.vue")
+
 
 
 
@@ -86,8 +81,10 @@ const ManageExcel11 = () => import("./components/ManageExcel11.vue")
 const ManageExcel12 = () => import("./components/ManageExcel12.vue")
 const ManageExcel13 = () => import("./components/ManageExcel13.vue")
 
-const Test = () => import("./components/base/ExampleComponent.vue")
-
+const RoleList = () => import("./components/admin/RoleList.vue")
+const ProcedureList = () => import("./components/admin/ProcedureList.vue")
+const FunctionList = () => import("./components/admin/FunctionList.vue")
+const UserList = () => import("./components/admin/UserList.vue")
 const routes = [
 
   {
@@ -95,10 +92,7 @@ const routes = [
     name: "home",
     component: AppLayout,
     children: [
-      {
-        path: "/test",
-        component: Test,
-      },
+
       {
         path: "/home",
         component: Home,
@@ -203,18 +197,18 @@ const routes = [
       },
       { path: '/students', component: StudentList },
 
-      { path: '/students/:studentId', component: StudentDetail },
+      //{ path: '/students/:studentId', component: StudentDetail },
       { path: '/rights/:table', component: RightsTable },
       { path: '/directions', component: DirectionList },
-      { path: '/directions/:directionId', component: DirectionDetail },
-      { path: '/AddDirection', component: AddDirection },
+      //{ path: '/directions/:directionId', component: DirectionDetail },
+
       { path: '/profiles', component: ProfileList },
-      { path: '/profiles/:profileId', component: ProfileDetail },
-      { path: '/AddProfile', component: AddProfile },
+      // { path: '/profiles/:profileId', component: ProfileDetail },
+
 
       { path: '/groups', component: GroupList },
-      { path: '/groups/:groupId', component: GroupDetail },
-      { path: '/AddGroup', component: AddGroup },
+      // { path: '/groups/:groupId', component: GroupDetail },
+
 
       { path: '/courses', component: CourseList },
       { path: '/courses/:courseID', component: CourseDetail },
@@ -234,9 +228,9 @@ const routes = [
 
       { path: '/ScheduleLoads', component: ScheduleLoads },
 
-      { path: '/addcw', component: AddCw },
+      //{ path: '/addcw', component: AddCw },
       { path: '/courseworks', component: CWList },
-      { path: '/courseworks/:CwId', component: CWdetail },
+      //  { path: '/courseworks/:CwId', component: CWdetail },
 
       { path: '/programs', component: ProgramList },
       { path: '/programs/:programId', component: ProgramDetail },
@@ -262,8 +256,13 @@ const routes = [
         // lazy-loaded
         component: BoardUser,
       },
-      { path: '/AddStudent', component: AddStudent },
-      { path: '/AddStudent/:groupName', component: AddStudent },]
+
+      { path: '/procedures', component: ProcedureList },
+      { path: '/functions', component: FunctionList },
+      { path: '/roles', component: RoleList },
+      { path: '/users', component: UserList },
+    ]
+    // { path: '/AddStudent/:groupName', component: AddStudent },
   },
 
 ];

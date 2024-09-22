@@ -1,5 +1,6 @@
 import rest from '@/api/endpoints/endpointsRest';
 import procedure from '@/api/endpoints/endpointsProcedure'
+import function_end from '@/api/endpoints/endpointsFunction'
 import directLinks from '@/api/endpoints/endpointsDirectLinks'
 //import rpc from '@/api/endpoints/endpointsRpc';
 //import cursor from '@/api/endpoints/endpointsCursor';
@@ -7,7 +8,8 @@ import directLinks from '@/api/endpoints/endpointsDirectLinks'
 export default {
   rest,
   procedure,
-  directLinks
+  directLinks,
+  function_end,
   //  rpc,
   //  cursor,
 };
