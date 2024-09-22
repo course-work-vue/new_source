@@ -4,7 +4,7 @@
       <div class="col col-12">
         <div class="d-inline-flex">
           <div v-if="!spisok">
-            <h1>Список всех процедур</h1>
+            <h1>Список всех таблиц</h1>
           </div>
         </div>
 
@@ -67,7 +67,7 @@
     v-model:visible="formVisible"
     class="dialog"
     modal
-    header="Форма процедур"
+    header="Форма таблиц"
     :style="{ flex: 1 }"
   >
     <div class="card flex flex-row">

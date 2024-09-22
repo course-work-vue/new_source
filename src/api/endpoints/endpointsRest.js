@@ -14,5 +14,6 @@ export default Object.freeze({
     procedureUser: prefix + 'procedure_user',
     triggerUser: prefix + 'trigger_user',
     tableUser: prefix + 'table_user',
+    userRole: prefix + 'userrole',
     user: prefix + 'users',
 });

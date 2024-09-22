@@ -80,14 +80,23 @@
           :scheme="scheme"
         >
         </auto-form>
+        <div class="form__item">
+          <h3>Роли</h3>
+          <div v-for="role in roleList" :key="role.roleid">
+            <label>
+              <input
+                type="checkbox"
+                :value="role.roleid"
+                v-model="selectedRoles"
+              />
+              {{ role.rolename }}
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
-    <Button
-      class="btn btn-primary float-start"
-      :disabled="!valid"
-      @click="submit"
-    >
+    <Button class="btn btn-primary float-start" @click="submit">
       Сохранить
     </Button>
     <Button
@@ -115,6 +124,7 @@ import { mapState, mapActions } from "pinia";
 import { useRoleStore } from "@/store2/admingroup/role";
 
 import { useUserStore } from "@/store2/admingroup/user";
+import { useUserRoleStore } from "@/store2/admingroup/userRole";
 import { useStudentStore } from "@/store2/studentgroup/student";
 import { useGroupStore } from "@/store2/studentgroup/group";
 
@@ -137,7 +147,7 @@ import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
 import Role from "@/model/admin-group/Role";
 import User from "@/model/admin-group/User";
-
+import UserRole from "@/model/admin-group/UserRole";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 
@@ -333,10 +343,12 @@ export default {
       scheme2: null,
       docPreview: false,
       filePath: null,
+      selectedRoles: [],
     };
   },
   async mounted() {
     await this.getRoleList();
+    await this.getUserRoleList();
     await this.getUserList();
 
     this.loadUserssData();
@@ -373,7 +385,15 @@ export default {
       "deleteUser",
       "uploadGeneratedFile",
     ]),
-
+    ...mapActions(useUserRoleStore, [
+      "getUserRoleList",
+      "postUserRole",
+      ,
+      "putUserRole",
+      "deleteUserRole",
+      "uploadGeneratedFile",
+      "deleteUserRoleByUserId",
+    ]),
     ...mapActions(useStudentStore, [
       "getStudentList",
       "postStudent",
@@ -395,6 +415,10 @@ export default {
       this.resetUser();
       this.user = event.data;
 
+      this.selectedRoles = this.userRoleList
+        .filter((ur) => ur.userid === this.user.id)
+        .map((ur) => ur.roleid);
+      console.log(this.selectedRoles);
       this.formVisible = true;
     },
     async previewDocx() {
@@ -432,6 +456,18 @@ export default {
       } else {
         await this.postUser(user);
       }
+
+      const userRolesToSave = this.selectedRoles.map((roleId) => {
+        return new UserRole({ userid: user.id, roleid: roleId });
+      });
+
+      await this.deleteUserRoleByUserId(user);
+
+      // Добавляем новые роли
+      for (const userRole of userRolesToSave) {
+        await this.postUserRole(userRole);
+      }
+
       this.formVisible = false;
       this.resetUser();
       this.loadUserssData();
@@ -571,6 +607,7 @@ export default {
     ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
     ...mapState(useRoleStore, ["roleList"]),
     ...mapState(useUserStore, ["userList", "userMap"]),
+    ...mapState(useUserRoleStore, ["userRoleList", "userRoleMap"]),
     ...mapState(useUserStore, ["userList"]),
     ...mapState(useGroupStore, ["groupList"]),
   },

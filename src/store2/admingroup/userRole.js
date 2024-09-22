@@ -9,7 +9,7 @@ export const useUserRoleStore = defineStore('userRole', {
     getters: {
         userRoleMap(state) {
             return state.userRoleList.reduce((map, userRole) => {
-                map[userRole.userRoleId] = userRole;
+                map[userRole.userroleid] = userRole;
                 return map;
             }, {});
         },
@@ -23,8 +23,8 @@ export const useUserRoleStore = defineStore('userRole', {
             });
         },
 
-        async getUserRole(userRoleId) {
-            const response = await api.getUserRole(userRoleId);
+        async getUserRole(userroleid) {
+            const response = await api.getUserRole(userroleid);
             return new UserRole(response);
         },
 
@@ -37,22 +37,20 @@ export const useUserRoleStore = defineStore('userRole', {
         },
 
         async putUserRole(userRole) {
-            const response = await api.putUserRole(userRole.userRoleId, userRole);
+            const response = await api.putUserRole(userRole.userroleid, userRole);
             if (response.success === true) {
-                const index = this.userRoleList.findIndex(ur => ur.userRoleId === userRole.userRoleId);
+                const index = this.userRoleList.findIndex(ur => ur.userroleid === userRole.userroleid);
                 if (index !== -1) {
                     this.userRoleList.splice(index, 1, new UserRole(userRole));
                 }
             }
         },
 
-        async deleteUserRole(userRole) {
+
+        async deleteUserRoleByUserId(userRole) {
             const response = await api.deleteUserRole(userRole);
-            if (response.success === true) {
-                const index = this.userRoleList.findIndex(ur => ur.userRoleId === userRole.userRoleId);
-                if (index !== -1) {
-                    this.userRoleList.splice(index, 1); // Удаляем элемент из списка
-                }
+            if (response === true) {
+                await this.getUserRoleList();
             }
         },
     },
