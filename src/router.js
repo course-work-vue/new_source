@@ -84,6 +84,8 @@ const ManageExcel13 = () => import("./components/ManageExcel13.vue")
 const RoleList = () => import("./components/admin/RoleList.vue")
 const ProcedureList = () => import("./components/admin/ProcedureList.vue")
 const FunctionList = () => import("./components/admin/FunctionList.vue")
+const TriggerList = () => import("./components/admin/TriggerList.vue")
+const TableList = () => import("./components/admin/TableList.vue")
 const UserList = () => import("./components/admin/UserList.vue")
 const routes = [
 
@@ -259,6 +261,8 @@ const routes = [
 
       { path: '/procedures', component: ProcedureList },
       { path: '/functions', component: FunctionList },
+      { path: '/triggers', component: TriggerList },
+      { path: '/tables', component: TableList },
       { path: '/roles', component: RoleList },
       { path: '/users', component: UserList },
     ]

@@ -69,6 +69,16 @@ export default {
     postProcedureUser: (procedureUser) => ReqExec.post(endpoints.directLinks.createProcedure, procedureUser),
     putProcedureUser: (id, procedureUser) => ReqExec.put(endpoints.directLinks.updateProcedureFromSql, id, procedureUser),
     deleteProcedureUser: (procedureUser) => ReqExec.put(endpoints.procedure.deleteProcedureUser, procedureUser, procedureUser),
+    //tableUser
+    getTableUserList: () => ReqExec.get(endpoints.rest.tableUser, null, true),
+    postTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.createTable, tableUser),
+    putTableUser: (id, tableUser) => ReqExec.put(endpoints.directLinks.updateTableFromSql, id, tableUser),
+    deleteTableUser: (tableUser) => ReqExec.put(endpoints.table.deleteTableUser, tableUser, tableUser),
+    //triggerUser
+    getTriggerUserList: () => ReqExec.get(endpoints.rest.triggerUser, null, true),
+    postTriggerUser: (triggerUser) => ReqExec.post(endpoints.directLinks.createTrigger, triggerUser),
+    putTriggerUser: (id, triggerUser) => ReqExec.put(endpoints.directLinks.updateTriggerFromSql, id, triggerUser),
+    deleteTriggerUser: (triggerUser) => ReqExec.put(endpoints.trigger.deleteTriggerUser, triggerUser, triggerUser),
     //user
     getUserList: () => ReqExec.get(endpoints.rest.user, null, true),
     postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),

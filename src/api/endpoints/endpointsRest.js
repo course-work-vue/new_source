@@ -12,5 +12,7 @@ export default Object.freeze({
     globalPermission: prefix + 'globalpermissions',
     functionUser: prefix + 'function_user',
     procedureUser: prefix + 'procedure_user',
+    triggerUser: prefix + 'trigger_user',
+    tableUser: prefix + 'table_user',
     user: prefix + 'users',
 });

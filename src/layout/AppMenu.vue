@@ -109,6 +109,16 @@ const model = ref([
             icon: "pi pi-fw pi-list",
             to: "/users",
           },
+          {
+            label: "Триггеры",
+            icon: "pi pi-fw pi-list",
+            to: "/triggers",
+          },
+          {
+            label: "Таблицы",
+            icon: "pi pi-fw pi-list",
+            to: "/tables",
+          },
         ],
       },
       {
