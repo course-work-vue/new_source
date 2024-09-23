@@ -15,7 +15,7 @@
               class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">add</i>Добавить роль
+              <i class="material-icons-outlined">add</i>Добавить таблицу
             </button>
           </div>
         </div>
@@ -79,7 +79,51 @@
         ></Textarea>
       </div>
     </div>
+    <div class="form__item">
+      <h3>Выберите роль</h3>
+      <select v-model="selectedRoleId" @change="loadPermissions">
+        <option
+          v-for="role in roleList"
+          :key="role.roleid"
+          :value="role.roleid"
+        >
+          {{ role.rolename }}
+        </option>
+      </select>
+    </div>
 
+    <!-- Таблица с разрешениями -->
+    <div class="form__item">
+      <h3>Разрешения для {{ getSelectedRoleName }}</h3>
+      <div v-if="permissionList.length">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Операция</th>
+              <th>Разрешено</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(perm, index) in operations" :key="index">
+              <td>{{ perm.label }}</td>
+              <td>
+                <input
+                  type="checkbox"
+                  :value="perm.value"
+                  v-model="selectedPermissions"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else>
+        <p>Выберите роль для настройки разрешений.</p>
+      </div>
+    </div>
+    <Button class="btn btn-primary float-start" @click="submitPermissions">
+      Сохранить роли
+    </Button>
     <Button class="btn btn-primary float-start" @click="submit">
       Сохранить
     </Button>
@@ -107,6 +151,7 @@ import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useRoleStore } from "@/store2/admingroup/role";
 import { useTableUserStore } from "@/store2/admingroup/tableUser";
+import { usePermissionStore } from "@/store2/admingroup/permission";
 import { useUserStore } from "@/store2/admingroup/user";
 import { useStudentStore } from "@/store2/studentgroup/student";
 import { useGroupStore } from "@/store2/studentgroup/group";
@@ -130,7 +175,7 @@ import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
 import Role from "@/model/admin-group/Role";
 import TableUser from "@/model/admin-group/TableUser";
-
+import Permission from "@/model/admin-group/Permission";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 
@@ -191,7 +236,7 @@ export default {
 
         {
           field: "table_name",
-          headerName: "Название процедуры",
+          headerName: "Название таблицы",
           minWidth: 250,
         },
         {
@@ -331,11 +376,27 @@ export default {
       scheme2: null,
       docPreview: false,
       filePath: null,
+      permissions: {},
+      operations: [
+        { label: "INSERT", value: 0 },
+        { label: "SELECT", value: 1 },
+        { label: "UPDATE", value: 2 },
+        { label: "DELETE", value: 3 },
+        { label: "ALTER", value: 4 },
+        { label: "DROP", value: 5 },
+        { label: "TRIGGER", value: 6 },
+        { label: "INDEX", value: 7 },
+        { label: "VACUUM", value: 8 },
+        { label: "ANALYZE", value: 9 },
+        { label: "ALL PRIVILEGES", value: 10 },
+      ],
+      selectedPermissions: [],
     };
   },
   async mounted() {
     await this.getRoleList();
     await this.getTableUserList();
+    await this.getPermissionList();
     await this.getUserList();
     this.loadTablesData();
     this.scheme = new FormScheme([
@@ -349,6 +410,52 @@ export default {
     ]);
   },
   methods: {
+    async loadPermissions() {
+      // Загружаем разрешения для выбранной роли
+      const rolePermissions = this.permissionList.filter(
+        (perm) =>
+          perm.roleid === this.selectedRoleId &&
+          perm.tablename === this.tableUser.table_name
+      );
+
+      this.selectedPermissions = rolePermissions.map((perm) => perm.operation);
+    },
+
+    async submitPermissions() {
+      // Удаляем старые разрешения для выбранной роли
+      const existingPermissions = this.permissionList.filter(
+        (perm) =>
+          perm.roleid === this.selectedRoleId &&
+          perm.tablename === this.tableUser.table_name
+      );
+
+      for (const perm of existingPermissions) {
+        await this.deletePermission(perm);
+       
+      }
+
+      // Добавляем новые разрешения для выбранной роли
+      for (const operation of this.selectedPermissions) {
+        const newPermission = new Permission({
+          roleid: this.selectedRoleId,
+          tablename: this.tableUser.table_name,
+          operation,
+        });
+        await this.postPermission(newPermission);
+      
+      }
+
+      this.formVisible = false;
+      this.resetTableUser();
+      this.loadTablesData();
+    },
+
+    getPermissionsForTable(tableName) {
+      const permissions = this.permissionList
+        .filter((perm) => perm.tablename === tableName)
+        .map((perm) => perm.operation);
+      return permissions;
+    },
     ...mapActions(useRoleStore, [
       "getRoleList",
       "postRole",
@@ -366,12 +473,12 @@ export default {
       "uploadGeneratedFile",
     ]),
     ...mapActions(useUserStore, ["getUserList"]),
-    ...mapActions(useStudentStore, [
-      "getStudentList",
-      "postStudent",
+    ...mapActions(usePermissionStore, [
+      "getPermissionList",
+      "postPermission",
       ,
-      "putStudent",
-      "deleteStudent",
+      "putPermission",
+      "deletePermission",
       "uploadGeneratedFile",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
@@ -563,9 +670,14 @@ export default {
   computed: {
     ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
     ...mapState(useRoleStore, ["roleList"]),
+    ...mapState(usePermissionStore, ["permissionList"]),
     ...mapState(useTableUserStore, ["tableUserList", "tableUserMap"]),
     ...mapState(useUserStore, ["userList"]),
     ...mapState(useGroupStore, ["groupList"]),
+    getSelectedRoleName() {
+      const role = this.roleList.find((r) => r.roleid === this.selectedRoleId);
+      return role ? role.rolename : "";
+    },
   },
   async created() {},
 };

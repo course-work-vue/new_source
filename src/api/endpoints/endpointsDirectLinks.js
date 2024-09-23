@@ -7,6 +7,10 @@ export default Object.freeze({
     updateFunctionFromSql: prefix + 'UpdateFunctionFromSql',
     createProcedure: prefix + 'CreateProcedureFromSql',
     updateProcedureFromSql: prefix + 'UpdateProcedureFromSql',
+    createTable: prefix + 'CreateTableFromSql',
+    updateTableFromSql: prefix + 'UpdateTableFromSql',
+    createTrigger: prefix + 'CreateTriggerFromSql',
+    updateTriggerFromSql: prefix + 'UpdateTriggerFromSql',
     registerUser: directPrefix + 'Auth/register',
     updateUser: directPrefix + 'Auth/update'
 });

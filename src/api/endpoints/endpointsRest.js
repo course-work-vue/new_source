@@ -16,4 +16,5 @@ export default Object.freeze({
     tableUser: prefix + 'table_user',
     userRole: prefix + 'userrole',
     user: prefix + 'users',
+    permission: prefix + 'permissions',
 });

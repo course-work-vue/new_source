@@ -88,5 +88,9 @@ export default {
     getUserRoleList: () => ReqExec.get(endpoints.rest.userRole, null, true),
     postUserRole: (userRole) => ReqExec.post(endpoints.rest.userRole, userRole),
     deleteUserRole: (userRole) => ReqExec.put(endpoints.procedure.deleteUserRoleByUserId, userRole.id, userRole),
+    //permission
+    getPermissionList: () => ReqExec.get(endpoints.rest.permission, null, true),
+    postPermission: (permission) => ReqExec.post(endpoints.rest.permission, permission),
+    deletePermission: (permission) => ReqExec.put(endpoints.rest.permission, permission, permission),
 
 };
