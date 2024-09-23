@@ -352,6 +352,8 @@ getAllTeachGruz(){
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
+  
+
   getSubjectById(id){
     const query = {
       query: `SELECT * from subjects where 

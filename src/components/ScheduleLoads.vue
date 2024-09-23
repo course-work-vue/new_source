@@ -1,5 +1,5 @@
 <template>
-    <div class="col align-self-end">
+    <div class="sched col align-self-end">
         <div class="col align-self-end">
             <div class="d-flex mb-2">
                 <select 
@@ -33,7 +33,7 @@
                 </select>
             </div>
 
-            <div class="d-flex col-6" @click="this.loadDirsData()">
+            <div class="d-flex col-6">
                 <div class="">
                     <input class="form-check-input m-1" type="radio" name="magistracy" id="magistracyYes" value='1' v-model="isMag">
                     <label class="form-check-label" for="magistracyYes">
@@ -48,111 +48,216 @@
                     </label>
                 </div>
             </div>
+
+            <button class="btn btn-primary btn-block" @click="this.reloadData()">
+                Обновить
+            </button>
+
+
         </div>
         <div class="d-flex">
             <!-- Выбор направления -->
-            <table class="table col-2" v-if="this.dir_loaded" id="table_dirs">
-                <thead>
-                    <tr><th>Направление</th></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="dir in dirs" :key="dir.dir_id">
-                        <th
-                            @click="
-                                this.selected_dir = dir; 
-                                this.loadSubjectsData(dir.dirCode);
-                                this.loadGroupsData(dir.dirId);
-                            "
-                            v-bind:class="{ 'table-active': this.selected_dir.dirId == dir.dirId }"
-                        >
-                            {{ dir.dirCode }}
-                        </th>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="col-2">
+                <table class="table w-100" id="table_dirs">
+                    <thead>
+                        <tr><th>Направление</th></tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr v-for="(dir, index) in this.dirs" :key="index">
+                            <th
+                                @click="
+                                    this.selected_dir = dir;
+                                    this.selected_subject_obj = {};
+                                    this.selected_subject = 0;
+                                    this.loadSubjectsData(dir.dir_code);
+                                    this.loadGroupsData(dir.dir_id);
+                                "
+                                v-bind:class="{ 'table-active': this.selected_dir.dir_id == dir.dir_id }"
+                            >
+                                {{ dir.dir_code }}
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             
             <!-- Выбор предмета -->
-            <table class="table col-4" v-if="this.sub_loaded" id="table_subject">
-                <thead>
-                    <tr><th>Предмет</th></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="subject in this.subjects" :key="subject.subject_id">
-                        <th
-                            @click="
-                                this.selected_subject = subject;
-                                this.findSubject(subject);
-                                this.groups_and_teachers = 0;
-                                // console.log(this.selected_subject_obj);
-                                
-                            "
-                            v-bind:class="{ 'table-active': this.selected_subject == subject }"
-                        >
-                        {{ subject }}
-                        </th>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="col-4">
+                <table class="table w-100" v-if="this.sub_loaded" id="table_subject">
+                    <thead>
+                        <tr><th>Предмет</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="subject in this.subjects" :key="subject.subject_id">
+                            <th
+                                @click="
+                                    this.selected_subject = subject;
+                                    this.findSubject(subject);
+                                    this.groups_and_teachers = 0;
+                                    // console.log(this.selected_subject_obj);
+                
+                                "
+                                v-bind:class="{ 'table-active': this.selected_subject == subject }"
+                            >
+                            {{ subject }}
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <!-- Выбор группы -->
-            <table class="table col-1" v-if="this.group_loaded" id="table_group">
-                <thead>
-                    <tr><th>Группа</th></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(group) in this.groups" :key="group.group_id">
-                        <th
-                            @click="
-                                this.selected_group = group.group_id; 
-                                this.selected_group_obj = group;
-                                // console.log(selected_group_obj);
-                                this.loadTeachersData(group);
-                            "
+            <!--
+            <div class="col-2">
+                <table class="table w-100" v-if="this.group_loaded" id="table_group">
+                    <thead>
+                        <tr><th>Группа</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(group) in this.groups" :key="group.group_id">
+                            <th
+                                @click="
+                                    this.selected_group = group.group_id;
+                                    this.selected_group_obj = group;
+                                    // console.log(selected_group_obj);
+                                    this.loadTeachersData(group);
+                                "
+                                v-bind:class="{
+                                    'table-active': this.selected_group == group.group_id,
+                                    // 'text-success bold': this.selected_subject_id != -1
+                                }"
+                            >
+                            <div class="d-flex">
+                                {{ group.group_number }}
+                                <div class="m-1 mt-0 mb-0 text-black text-opacity-25" v-if="true">
+                                </div>
+                            </div>
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            -->
 
+            <div class="col-6">
 
-                            v-bind:class="{ 
-                                'table-active': this.selected_group == group.group_id, 
-                                // 'text-success bold': this.selected_subject_id != -1 
-                            }"
-                        >
-                        <div class="d-flex">
-                            {{ group.group_number }}
-                            <div class="m-1 mt-0 mb-0 text-black text-opacity-25" v-if="true">
-                                <!-- {{ this.groups_and_teachers }} -->
+                <div class="border border-success rounded-1 bg-white p-3">
+                    <div class=""><h3>Дисциплина: <b>{{ this.selected_subject_obj.subject_name }}</b></h3></div>
+                    <div>
+                        <div class="">Направление: <b>{{ this.selected_dir.dir_name }}</b></div>
+                        <div class="">
+                        Группа:
+                        <span v-if="this.selected_subject_obj.subject_id" @click="change('Выбрать группу', groups, 'group');">
+                            <button class="btn btn1 border-success p-1">
+                                <div v-if="this.selected_group != -1">
+                                    {{ this.selected_group }}
+                                    группа
+                                </div>
+                                <div v-else>
+                                    Выбрать
+                                </div>
+                            </button>
+                        </span>
+                        </div>
+                        <div class="">
+                        Тип занятия: <b>{{ this.selected_subject_obj.sub_type }}</b>
+                        </div>
+                        <div class="">
+                        Тип аудитории:
+                        <span v-if="this.selected_subject_obj.subject_id" @click="
+                            change('Выбрать тип аудитории', this.audtypes, 'audit')
+                        ">
+                            <button class="btn btn1 border-success p-1">
+                                <div v-if="this.selected_aud != -1">
+                                    {{ this.selected_aud }}
+                                    тип
+                                </div>
+                                <div v-else>
+                                    Выбрать
+                                </div>
+                            </button>
+                        </span>
+                        </div>
+                        <div class="">
+                        Преподаватель:
+                        <span v-if="this.selected_subject_obj.subject_id" @click="
+                            change('Выбрать преподавателя', this.teachers, 'teacher')
+                            
+                        ">
+                            <button class="btn btn1 border-success p-1">
+                            Выбрать
+                            </button>
+                        </span>
+                        </div>
+                    </div>
+
+                    <div class="selectorcard">
+                        <div class="card border border-success bg-white">
+                            <div>
+                            <b>{{ modalTitle }}</b>
+                            </div>
+                            <div>
+                                <div class="" v-for="row in this.info" :key="row">
+                                    <button class="btn btn1 border-success m-1 bg-light" @click="select(row.id)">
+                                        {{ row.text }}
+                                        {{ row.value }}
+                                        <!-- <br>
+                                        ----
+                                        <br>
+                                        {{ row }} -->
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        </th>
-                    </tr>
-                </tbody>
-            </table>
+                    </div>
+
+                    <!-- <ScheduleSelectorCard
+                        :title="modalTitle"
+                        :rows="modalRows"
+                        :type="modalType"
+                        v-if="modalTitle!='1'"
+                    >
+                    </ScheduleSelectorCard> -->
+                </div>
+
+
+
+                <!-- <ScheduleCard
+                    :subject="this.selected_subject_obj"
+                    :dir="this.selected_dir"
+                    :groups="this.groups"
+                > 
+                </ScheduleCard>-->
+            </div>
 
             <!-- Выбор преподавателя -->
-            <table class="table table-sm col-4" v-if="this.teacher_loaded" id="table_teacher">
-                <thead>
-                    <tr><th>Преподаватель</th></tr>
-                </thead>
-                <tbody>
-                    <tr v-for="teacher in this.teachers" :key="teacher.teacher_id">
-                        <th
-                            @click="
-                                this.selected_teacher = teacher.teacher_id;
-                                this.selected_teacher_obj = teacher;    
-                            "
-                            v-bind:class="{ 
-                                'table-active': this.selected_teacher == teacher.teacher_id, 
-                                'table-success': teacher.teacher_id == this.marked_teacher.teacher_id
-                            }"
-                        >
-                        <!-- {{ teacher.teacherId }}
-                        {{ this.marked_teacher.teacherId }} -->
-                        {{ teacher.last_name }}
-                        <!-- {{ this.teacher_load[index].length }}/5 час -->
-                        <!-- при length жалуется на undefined -->
-                        </th>
-                    </tr>
-                </tbody>
-            </table>
+            <!--  
+            <div class="col-3">
+                <table class="table table-sm w-100" v-if="this.teacher_loaded" id="table_teacher">
+                    <thead>
+                        <tr><th>Преподаватель</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="teacher in this.teachers" :key="teacher.teacher_id">
+                            <th
+                                @click="
+                                    this.selected_teacher = teacher.teacher_id;
+                                    this.selected_teacher_obj = teacher;
+                                "
+                                v-bind:class="{
+                                    'table-active': this.selected_teacher == teacher.teacher_id,
+                                    'table-success': teacher.teacher_id == this.marked_teacher.teacher_id
+                                }"
+                            >
+                            {{ teacher.last_name }}
+                            </th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             
+            -->
             
         </div> 
         <div>
@@ -176,18 +281,43 @@
                 </div>
             </transition>
         </div>
+
+        
     </div>
 </template>
     
 <script>
 import UserService from "../services/user.service";
+import ScheduleCard from "./ScheduleCard.vue";
+import { mapState, mapActions } from "pinia";
+import { useDirectionStore } from "@/store2/studentgroup/direction";
+import { reactive, onMounted, ref } from "vue";
+
 
 export default {
+    components: {
+        ScheduleCard
+    },
+
+    setup() {
+
+        const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
+
+        return {
+            dirsData: rowData
+        }
+    },
+
     data() {
         return {
             selected_course: 1,
             selected_sem: 1,
             isMag: false,
+            audtypes: [
+                                {id:0, value:'Лекционная', text:''},
+                                {id:1, value:'Обычная', text:''},
+                                {id:2, value:'Компьютерный зал', text:''}
+                            ],
             dirs: [],
             groups: [], // массив всех групп
             subjects: [], // массив предметов
@@ -195,15 +325,17 @@ export default {
             groups_and_teachers: 0,
             tgz: [],
             wl: [],
+            info: [],
             teacher_load: [], // нагрузка на препода
             selected_dir: {},
             selected_group: -1,
             selected_group_obj: null,
             selected_subject: {},
-            selected_subject_obj: null,
+            selected_subject_obj: {},
             selected_subject_id : 0,
             selected_teacher: -1,
             selected_teacher_obj: null,
+            selected_aud: -1,
             marked_teacher: 0,
             dir_loaded: false,
             sub_loaded: false,
@@ -223,10 +355,62 @@ export default {
             searchQuery: '',
             not_suc: false,
             not_upd: false,
-            not_ex: false
+            not_ex: false,
+
+            modalTitle: '',
+            modalRows: {},
+            modalType: ''
         };
     },
+
+    computed: {
+        ...mapState(useDirectionStore, ["directionList"]),
+    },
+
+    async mounted() {
+        await this.getDirectionList(); // Fetch the list of directions
+
+        await this.loadDirectionsData();
+    },
+
     methods: {
+
+            ...mapActions(useDirectionStore, [
+        "getDirectionList",
+        "postDirection",
+        ,
+        "putDirection",
+        "deleteDirection",
+        ]),
+
+        async loadDirectionsData() {
+            try {
+                if (Array.isArray(this.directionList)) {
+                // Filter out directions where deleted_at is not null and sort by dir_name
+                // console.log(this.isMag);
+                
+                this.dirsData.value = this.directionList
+                    .filter((direction) => (direction.deleted_at === null) && (direction.magister == this.isMag))
+                    .sort((a, b) => a.dir_name.localeCompare(b.dir_name));
+                } else {
+                // Handle case where directionList is not an array
+                if (this.directionList.deleted_at === null) {
+                    this.dirsData.value = [this.directionList];
+                } else {
+                    this.dirsData.value = [];
+                }
+                }
+                this.loading = false;
+                // console.log(this.dirsData.value);
+                this.dirs = this.dirsData.value
+                // console.log(this.dirs);
+                
+                
+            } catch (error) {
+                console.error("Error loading directions data:", error);
+            }
+        },
+        
         // грузим данные
         async loadDirsData() {
             try {
@@ -248,8 +432,8 @@ export default {
         async loadTeacherGruz(){
             try {
                 const response = await UserService.getAllTeachGruz(); // Replace with your API endpoint
-                // console.log(response);
                 this.tgz = Array.isArray(response.data) ? response.data : [response.data];
+                // console.log(this.tgz);
             } catch (error) {
                 console.error('Error loading tgz data:', error);
             }
@@ -286,14 +470,18 @@ export default {
                 const response = await UserService.getAllSubjects();
                 const subjects = Array.isArray(response.data) ? response.data : [response.data];
 
+                // console.log(subName);
+                // console.log(subjects);
+                
+                
                 // Находим объект, у которого поле "subjectName" равно параметру "subName"
                 const subject = subjects.find(subject => subject.subject_name === subName);
 
                 // console.log(subject);
                 
                 
-                this.selected_subject_obj = subject
-                this.selected_subject_id = subject ? subject.subject_id : null;
+                this.selected_subject_obj = subject;
+                this.selected_subject_id = subject ? subject.subject_id : -1;
                 // console.log(subject);
                 // console.log(this.selected_subject_obj);
                 
@@ -325,12 +513,8 @@ export default {
             }
         },
         async loadTeachersData(group) {
-            
-            // console.log(this.selected_subject_id);
-            // console.log(this.selected_group_obj);
-            
 
-            if(this.selected_subject_id && this.selected_group_obj)
+            if(this.selected_subject_id)
                 try {                    
             
                     const response = await UserService.getAllTeachers(); // Replace with your API endpoint
@@ -358,6 +542,8 @@ export default {
                     console.error('Error loading teachers data:', error);
                 }
         },
+
+
         async loadWorkloads(group){
             try {
                 const response = await UserService.getAllWorkloads(); // Replace with your API endpoint
@@ -535,13 +721,57 @@ export default {
             });
             return ts;
         },
+
+        select(id){
+            if (this.modalType == 'group'){
+                this.selected_group = id;
+                console.log('Выбрана группа ', id);
+            }
+
+            if (this.modalType == 'audit'){
+                this.selected_aud = id;
+                console.log('Выбран тип ', id);
+            }
+
+            if (this.modalType == 'teacher'){
+                this.selected_teacher = id;
+                console.log('Выбран преподаватель ', id);
+            }
+        },
         
-        
+        change(title, rows, type) {
+            this.modalTitle = title;
+            this.modalRows = rows;
+            this.modalType = type;
+            if (this.modalType == 'group'){
+                this.info = rows.map(item => ({
+                    id: item.group_id,
+                    value: item.group_number,
+                    text: "Номер группы:"
+                }));
+            }
+
+            if (this.modalType == 'audit'){
+                this.info = rows;
+                console.log(rows);
+            }
+
+            if (this.modalType == 'teacher'){
+                
+                this.info = rows;
+                console.log(rows);
+                this.info = rows.map(item => ({
+                    id: item.teacher_id,
+                    value: item.last_name,
+                    text: ""
+                }));
+            }
+        },
 
         
 
         loadData(){
-            this.loadDirsData();
+            // this.loadDirsData();
             this.loadTeacherGruz();
             // this.loadGroupsData();
             // this.loadSubjectsData();
@@ -549,17 +779,12 @@ export default {
             // this.loadWorkloads();
         },
 
-        reloadData(){
-            if (this.teacher_loaded) {
-                console.log(this.teacher_loaded);
-            } else if (this.group_loaded){
-                console.log(this.group_loaded);
-            } else if (this.sub_loaded){
-                console.log(this.sub_loaded);
-            } else {
-                console.log(this.dir_loaded);
-            }
-            this.loadWorkloads();
+        async reloadData(){
+            this.subjects = [];
+            this.selected_dir = 0;
+            this.selected_subject_obj = {};
+            
+            await this.loadDirectionsData();
         }
     },
     created() {
@@ -624,6 +849,10 @@ export default {
     padding-left: 100px;
     padding-right: 5px;
 
+    }
+
+    .sched{
+        margin-left: -120px;
     }
 }
 
@@ -745,6 +974,10 @@ table{
   opacity: 0;
 }
 
+.btn1:hover{
+        background-color: rgba(0, 0, 0, 0.07);
+        opacity: 0.8;
+    }
 
 
 </style>
