@@ -72,6 +72,7 @@
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
+          :localeText="localeText"
         >
         </auto-form>
       </div>
@@ -121,7 +122,7 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "ProfileManagement",
@@ -133,6 +134,7 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
 
@@ -198,6 +200,7 @@ export default {
       rowData,
       defaultColDef,
       onFilterTextBoxChanged,
+      localeText,
     };
   },
   data() {
@@ -245,6 +248,27 @@ export default {
     ...mapState(useProfileStore, ["profileList"]),
   },
   methods: {
+    onFirstDataRendered(params) {
+      this.gridApi = params.api;
+      this.columnApi = params.columnApi;
+
+      // Check if filterModel exists in the route query
+      const filterModelQuery = this.$route.query.filterModel;
+
+      if (filterModelQuery) {
+        const filterModel = JSON.parse(filterModelQuery);
+        this.gridApi.setFilterModel(filterModel);
+        this.filters = true;
+      }
+
+      const quickFilterQuery = this.$route.query.quickFilter;
+      if (quickFilterQuery) {
+        const quickFilter = JSON.parse(quickFilterQuery);
+        this.gridApi.setQuickFilter(quickFilter);
+        this.quickFilterValue = quickFilter;
+        this.filters = true;
+      }
+    },
     ...mapActions(useDirectionStore, ["getDirectionList"]),
     ...mapActions(useProfileStore, [
       "getProfileList",
