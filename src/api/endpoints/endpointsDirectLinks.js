@@ -12,5 +12,6 @@ export default Object.freeze({
     createTrigger: prefix + 'CreateTriggerFromSql',
     updateTriggerFromSql: prefix + 'UpdateTriggerFromSql',
     registerUser: directPrefix + 'Auth/register',
-    updateUser: directPrefix + 'Auth/update'
+    updateUser: directPrefix + 'Auth/update',
+
 });

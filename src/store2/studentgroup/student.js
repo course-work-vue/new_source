@@ -26,7 +26,9 @@ export const useStudentStore = defineStore('student', {
                 return new Student(student);
             });
         },
-
+        async getCont() {
+            return await api.getStudentCont();
+        },
         async getStudent(code) {
             await api.getStudent(code);
         },

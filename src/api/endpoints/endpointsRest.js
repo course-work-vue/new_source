@@ -17,4 +17,5 @@ export default Object.freeze({
     userRole: prefix + 'userrole',
     user: prefix + 'users',
     permission: prefix + 'permissions',
+    cont: prefix + 'contingent',
 });

@@ -26,6 +26,13 @@
             >
               Отчёт о формах обучения
             </button>
+            <button
+              @click="contingent"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
+              Контингент
+            </button>
           </div>
         </div>
       </div>
@@ -44,7 +51,9 @@
             >
               <option selected="selected" value="">Нет</option>
               <option
-                v-for="group in this.groupList"
+                v-for="group in this.groupList.sort(
+                  (a, b) => a.group_number - b.group_number
+                )"
                 :key="group.group_number"
                 :value="group.group_number"
               >
@@ -623,6 +632,7 @@ export default {
       "putStudent",
       "deleteStudent",
       "uploadGeneratedFile",
+      "getCont",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
     cellWasClicked(event) {
@@ -643,6 +653,10 @@ export default {
       await this.createDocx();
 
       this.docPreview = true;
+    },
+    async contingent() {
+      const temp = await this.getCont();
+      console.log(temp);
     },
     openCreatingForm() {
       this.resetStd();

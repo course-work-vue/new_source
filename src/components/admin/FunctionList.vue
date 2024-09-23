@@ -15,7 +15,7 @@
               class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">add</i>Добавить роль
+              <i class="material-icons-outlined">add</i>Добавить функцию
             </button>
           </div>
         </div>
@@ -50,6 +50,7 @@
             :columnDefs="columnDefs.value"
             :rowData="rowData.value"
             :defaultColDef="defaultColDef"
+            :localeText="localeText"
             rowSelection="multiple"
             animateRows="true"
             includeHiddenColumnsInQuickFilter="true"
@@ -133,7 +134,7 @@ import FunctionUser from "@/model/admin-group/FunctionUser";
 
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 
 /* eslint-disable vue/no-unused-components */
@@ -151,6 +152,7 @@ export default {
     OnlyDocumentEditor,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
 
@@ -292,7 +294,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
