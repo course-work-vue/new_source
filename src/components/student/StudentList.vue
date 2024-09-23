@@ -224,7 +224,7 @@ import Student from "@/model/student-group/Student";
 
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-
+import * as XLSX from "xlsx";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
@@ -655,8 +655,64 @@ export default {
       this.docPreview = true;
     },
     async contingent() {
-      const temp = await this.getCont();
-      console.log(temp);
+      // Ваши данные из JSON
+      const jsonData = await this.getCont();
+
+      // Преобразуем данные в формат для Excel
+      const formattedData = this.formatDataForExcel(jsonData);
+
+      // Создаем новый рабочий лист
+      const ws = XLSX.utils.json_to_sheet(formattedData);
+
+      // Создаем новую книгу
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Контингент");
+
+      // Генерируем файл
+      XLSX.writeFile(wb, "контингент.xlsx");
+    },
+    formatDataForExcel(data) {
+      const result = [];
+
+      // Группировка и форматирование данных
+      const groupedData = {};
+
+      data.forEach((item) => {
+        const key = `${item.dir_code} ${item.direction_name} (бакалавриат)`;
+        if (!groupedData[key]) {
+          groupedData[key] = {
+            code: item.dir_code,
+            direction: item.direction_name,
+            course: item.course,
+            total_budget: 0,
+            total_contract: 0,
+            lecture_streams: item.lecture_streams,
+            total_groups: item.total_groups,
+            total_subgroups: item.total_subgroups,
+            total_profiles: item.total_profiles,
+            practical_groups: item.practical_groups,
+          };
+        }
+        groupedData[key].total_budget += item.total_students_budget;
+        groupedData[key].total_contract += item.total_students_contract;
+      });
+
+      // Преобразование в массив
+      for (const key in groupedData) {
+        result.push({
+          "Специальность/направление": key,
+          Курс: groupedData[key].course,
+          "Контингент студентов б": groupedData[key].total_budget,
+          "Контингент студентов д": groupedData[key].total_contract,
+          "Количество лекционных потоков": groupedData[key].lecture_streams,
+          "Количество групп": groupedData[key].total_groups,
+          "Количество подгрупп": groupedData[key].total_subgroups,
+          "Количество профилей": groupedData[key].total_profiles,
+          "Количество групп для практики": groupedData[key].practical_groups,
+        });
+      }
+
+      return result;
     },
     openCreatingForm() {
       this.resetStd();
