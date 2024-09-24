@@ -1,6 +1,6 @@
 <template>
 
-<a :href="'#/courseworks?filterModel=' + JSON.stringify({ full_name: { filterType: 'text', type: 'equals', filter: this.params.data.full_name } })">{{ this.params.data.full_name }}</a>
+<a :href="'#/courseworks?filterModel=' + JSON.stringify({ student_name: { filterType: 'text', type: 'equals', filter: this.params.data.full_name } })">{{ this.params.data.full_name }}</a>
 
 
   </template>

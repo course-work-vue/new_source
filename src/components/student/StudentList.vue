@@ -1,5 +1,4 @@
 <template>
-  <button @click="createDocx">123</button>
   <div v-if="!loading">
     <div class="col col-xs-9 col-lg-12 list">
       <div class="col col-12">
@@ -12,41 +11,32 @@
         </div>
 
         <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить студента
-          </button>
-          <button
-            @click="previewDocx"
-            class="mx-2 btn btn-primary float-start"
-            type="button"
-          >
-            Отчёт о формах обучения
-          </button>
-          <div class="col col-6 float-end d-inline-flex align-items-center">
+          <div class="float-start">
             <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
+              @click="openCreatingForm"
+              class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
+              <i class="material-icons-outlined">add</i>Добавить студента
             </button>
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
+            <button
+              @click="previewDocx"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
+              Отчёт о формах обучения
+            </button>
+            <button
+              @click="contingent"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
+              Контингент
+            </button>
           </div>
         </div>
       </div>
-      <div>
+      <div class="col col-12">
         <div class="col col-6 float-start">
           <div class="form-group d-inline-flex align-items-center">
             <label class="bigger form-label" for="group_id"
@@ -61,7 +51,9 @@
             >
               <option selected="selected" value="">Нет</option>
               <option
-                v-for="group in this.groupList"
+                v-for="group in this.groupList.sort(
+                  (a, b) => a.group_number - b.group_number
+                )"
                 :key="group.group_number"
                 :value="group.group_number"
               >
@@ -70,23 +62,41 @@
             </select>
           </div>
         </div>
-        <div class="col col-6 float-start">
-          <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="subgroup_id"
-              >Фильтр по подгруппе:</label
-            >
+        <div class="col col-6 float-end d-inline-flex align-items-center">
+          <button
+            @click="clearFilters"
+            :disabled="!filters"
+            class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button"
+          >
+            <i class="material-icons-outlined">close</i>Очистить фильтры
+          </button>
+          <input
+            class="form-control"
+            type="text"
+            v-model="quickFilterValue"
+            id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()"
+            placeholder="Поиск..."
+          />
+        </div>
+      </div>
+      <div class="col col-6 float-start">
+        <div class="form-group d-inline-flex align-items-center">
+          <label class="bigger form-label" for="subgroup_id"
+            >Фильтр по подгруппе:</label
+          >
 
-            <select
-              class="form-select"
-              id="subgroup_id"
-              v-model="myValue4"
-              @change="handleSelectChange2(myValue4)"
-            >
-              <option selected="selected" value="">Нет</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </div>
+          <select
+            class="form-select"
+            id="subgroup_id"
+            v-model="myValue4"
+            @change="handleSelectChange2(myValue4)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
         </div>
       </div>
       <div style="height: 90vh">
@@ -97,6 +107,7 @@
             :columnDefs="columnDefs.value"
             :rowData="rowData.value"
             :defaultColDef="defaultColDef"
+            :localeText="localeText"
             rowSelection="multiple"
             animateRows="true"
             includeHiddenColumnsInQuickFilter="true"
@@ -163,13 +174,18 @@
 
   <Dialog
     v-model:visible="docPreview"
-    header="Форма asd"
+    header="Предпросмотр документа отчёт по студентам"
     maximizable
     ref="maxDialog"
     @show="biggifyDialog"
     :header="props.name"
-    class="w-full md:w-5/6"
+    class="w-full h-full md:w-5/6"
   >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      documentTitle="Отчёт по студентам"
+    />
   </Dialog>
 </template>
 
@@ -208,7 +224,9 @@ import Student from "@/model/student-group/Student";
 
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-
+import * as XLSX from "xlsx";
+import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -221,9 +239,10 @@ export default {
     Field,
     ErrorMessage,
     AutoForm,
-
+    OnlyDocumentEditor,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
 
@@ -386,7 +405,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
@@ -434,14 +453,7 @@ export default {
       valid: false,
       scheme: null,
       docPreview: false,
-      content: [
-        // Every item below produce a page break
-        '<h1>Hello world!</h1><p>This is a rich-text editor built on top of Vue.js using the native <span contenteditable="false"><a href="https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Editable_content" target="_blank"><i>contenteditable</i></a></span> browser implementation and some JavaScript trickery to spread content over paper-sized pages.</p><p>Built-in functionality includes:</p><ul><li>Using Vue.js components as interactive page templates (see next page)</li><li>Word-by-word page splitting (<u>still experimental - only for plain HTML content</u>)</li><li>Native Print compatible</li><li>Dynamic document format and margins in millimeters</li><li>Custom page overlays (headers, footers, page numbers)</li><li>Page breaks</li><li>Smart zoom and page display modes</li><li>Computes text style at caret position</li></ul><p>This library may be useful if you design an application that generate documents and you would let the user to modify them slightly before printing / saving, but with limited / interactive possibilities. It does not intend to replace a proper document editor with full functionality.<br>Make sure this project is suitable to your needs before using it.</p><p>This demo adds:</p><ul><li>The top bar (<span contenteditable="false"><a href="https://github.com/motla/vue-file-toolbar-menu" target="_blank">vue-file-toolbar-menu</a></span> component) and the functions associated with it</li><li>Rewritten history stack (undo/redo) compatible with native commands</li><li>Pinch and trackpad zooming</li></ul><p>Check out the <span contenteditable="false"><a href="https://github.com/motla/vue-document-editor/blob/master/src/Demo/Demo.vue" target="_blank">Demo.vue</a></span> file if you need to add these functionalities to your application.</p><p>The link below is an example of non-editable block set with <code>contenteditable="false"</code>:</p><p style="text-align:center" contenteditable="false"><a href="https://github.com/motla/vue-document-editor">View docs on Github</a>, you can\'t edit me.</p><p>But you can still edit this.</p>',
-
-        '<br><br><h1>Headers / footers example</h1><br>Page numbers have been added on every page of this document.<br>Header and footer overlays will be added from page 3 to all subsequent ones.<br><br>Check out the <code>overlay</code> method of the <span contenteditable="false"><a href="https://github.com/motla/vue-document-editor/blob/master/src/Demo/Demo.vue" target="_blank">Demo.vue</a></span> file to customize this.',
-        '<h1>«</h1><div style="width:80%; text-align:justify; margin:auto"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit.</p><p>Ut velit mauris, egestas sed, gravida nec, ornare ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin. Fusce varius, ligula non tempus aliquam, nunc turpis ullamcorper nibh, in tempus sapien eros vitae ligula. Pellentesque rhoncus nunc et augue. Integer id felis. Curabitur aliquet pellentesque diam. Integer quis metus vitae elit lobortis egestas. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Morbi vel erat non mauris convallis vehicula. Nulla et sapien. Integer tortor tellus, aliquam faucibus, convallis id, congue eu, quam. Mauris ullamcorper felis vitae erat. Proin feugiat, augue non elementum posuere, metus purus iaculis lectus, et tristique ligula justo vitae magna.</p><p>Aliquam convallis sollicitudin purus. Praesent aliquam, enim at fermentum mollis, ligula massa adipiscing nisl, ac euismod nibh nisl eu lectus. Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod libero eu enim. Nulla nec felis sed leo placerat imperdiet. Aenean suscipit nulla in justo. Suspendisse cursus rutrum augue. Nulla tincidunt tincidunt mi. Curabitur iaculis, lorem vel rhoncus faucibus, felis magna fermentum augue, et ultricies lacus lorem varius purus. Curabitur eu amet.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit.</p><p>Ut velit mauris, egestas sed, gravida nec, ornare ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin. Fusce varius, ligula non tempus aliquam, nunc turpis ullamcorper nibh, in tempus sapien eros vitae ligula. Pellentesque rhoncus nunc et augue. Integer id felis. Curabitur aliquet pellentesque diam. Integer quis metus vitae elit lobortis egestas. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Morbi vel erat non mauris convallis vehicula. Nulla et sapien. Integer tortor tellus, aliquam faucibus, convallis id, congue eu, quam. Mauris ullamcorper felis vitae erat. Proin feugiat, augue non elementum posuere, metus purus iaculis lectus, et tristique ligula justo vitae magna.</p><p>Aliquam convallis sollicitudin purus. Praesent aliquam, enim at fermentum mollis, ligula massa adipiscing nisl, ac euismod nibh nisl eu lectus. Fusce vulputate sem at sapien. Vivamus leo. Aliquam euismod libero eu enim. Nulla nec felis sed leo placerat imperdiet. Aenean suscipit nulla in justo. Suspendisse cursus rutrum augue. Nulla tincidunt tincidunt mi. Curabitur iaculis, lorem vel rhoncus faucibus, felis magna fermentum augue, et ultricies lacus lorem varius purus. Curabitur eu amet.</p></div><h1 style="text-align:right">»</h1>',
-        '<h3 style="text-align:center">--- This is a page break. ---</h3>',
-      ],
+      filePath: null,
     };
   },
   async mounted() {
@@ -619,6 +631,8 @@ export default {
       ,
       "putStudent",
       "deleteStudent",
+      "uploadGeneratedFile",
+      "getCont",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
     cellWasClicked(event) {
@@ -632,12 +646,73 @@ export default {
     edit(event) {
       this.resetStd();
       this.student = event.data;
-      console.log(this.student);
 
       this.formVisible = true;
     },
-    previewDocx() {
+    async previewDocx() {
+      await this.createDocx();
+
       this.docPreview = true;
+    },
+    async contingent() {
+      // Ваши данные из JSON
+      const jsonData = await this.getCont();
+
+      // Преобразуем данные в формат для Excel
+      const formattedData = this.formatDataForExcel(jsonData);
+
+      // Создаем новый рабочий лист
+      const ws = XLSX.utils.json_to_sheet(formattedData);
+
+      // Создаем новую книгу
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Контингент");
+
+      // Генерируем файл
+      XLSX.writeFile(wb, "контингент.xlsx");
+    },
+    formatDataForExcel(data) {
+      const result = [];
+
+      // Группировка и форматирование данных
+      const groupedData = {};
+
+      data.forEach((item) => {
+        const key = `${item.dir_code} ${item.direction_name} (бакалавриат)`;
+        if (!groupedData[key]) {
+          groupedData[key] = {
+            code: item.dir_code,
+            direction: item.direction_name,
+            course: item.course,
+            total_budget: 0,
+            total_contract: 0,
+            lecture_streams: item.lecture_streams,
+            total_groups: item.total_groups,
+            total_subgroups: item.total_subgroups,
+            total_profiles: item.total_profiles,
+            practical_groups: item.practical_groups,
+          };
+        }
+        groupedData[key].total_budget += item.total_students_budget;
+        groupedData[key].total_contract += item.total_students_contract;
+      });
+
+      // Преобразование в массив
+      for (const key in groupedData) {
+        result.push({
+          "Специальность/направление": key,
+          Курс: groupedData[key].course,
+          "Контингент студентов б": groupedData[key].total_budget,
+          "Контингент студентов д": groupedData[key].total_contract,
+          "Количество лекционных потоков": groupedData[key].lecture_streams,
+          "Количество групп": groupedData[key].total_groups,
+          "Количество подгрупп": groupedData[key].total_subgroups,
+          "Количество профилей": groupedData[key].total_profiles,
+          "Количество групп для практики": groupedData[key].practical_groups,
+        });
+      }
+
+      return result;
     },
     openCreatingForm() {
       this.resetStd();
@@ -815,53 +890,100 @@ export default {
       this.filters = false;
     },
     async createDocx() {
+      // Получаем список студентов
+      const students = this.rowData.value;
+
+      // Группируем студентов по типу обучения
+      const contractStudents = students.filter((student) => !student.is_budget); // Договорная форма обучения
+      const budgetStudents = students.filter((student) => student.is_budget); // Бюджетная форма обучения
+
+      // Функция для группировки студентов по группам
+      const groupByGroupNumber = (students) => {
+        return students.reduce((groups, student) => {
+          const groupNumber = student.group_number || "Неизвестная группа";
+          if (!groups[groupNumber]) {
+            groups[groupNumber] = [];
+          }
+          groups[groupNumber].push(student);
+          return groups;
+        }, {});
+      };
+
+      // Создаем контент для студентов с группировкой по группам
+      const createGroupedStudentListContent = (students) => {
+        const groupedStudents = groupByGroupNumber(students);
+        const content = [];
+
+        Object.keys(groupedStudents).forEach((groupNumber) => {
+          // Добавляем заголовок для каждой группы
+          content.push(
+            new Paragraph({
+              alignment: AlignmentType.LEFT,
+              spacing: { after: 200 },
+              children: [
+                new TextRun({
+                  text: `Группа ${groupNumber}:`,
+                  size: 28,
+                  bold: true,
+                }),
+              ],
+            })
+          );
+
+          // Добавляем студентов из этой группы
+          groupedStudents[groupNumber].forEach((student, index) => {
+            content.push(
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `${index + 1}. ${student.full_name}`,
+                    size: 28,
+                  }),
+                ],
+              })
+            );
+          });
+        });
+
+        return content;
+      };
+
+      // Создаем документ
       const doc = new Document({
         sections: [
           {
             properties: {},
             children: [
-              // First line - Not bold
+              // Заголовок
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 0 }, // No spacing after this paragraph
+                spacing: { after: 0 },
                 children: [
                   new TextRun({
                     text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
-                    size: 22, // 11pt font size
-                    bold: false, // Not bold
+                    size: 22,
+                    bold: false,
                   }),
                 ],
               }),
-              // Second line - smaller, no spacing between first and second
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { after: 0 }, // No space after this paragraph
+                spacing: { after: 0 },
                 children: [
                   new TextRun({
-                    text: "Федеральное государственное бюджетное образовательное учреждение",
-                    size: 24, // 12pt font size
+                    text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
+                    size: 24,
                   }),
-                  new TextRun({
-                    text: "высшего образования",
-                    size: 24, // 12pt font size
-                    break: 1,
-                  }),
-                ],
-              }),
-              // Third line - Bold, no space between second and third
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 0 }, // No space after this paragraph
-                children: [
                   new TextRun({
                     text: "«Кубанский государственный университет»",
-                    bold: true,
                     size: 28,
+                    bold: true,
                     break: 1,
                   }),
                 ],
               }),
-              // Fourth line - Bold, no space between third and fourth
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 0 }, // No space after this paragraph
@@ -897,13 +1019,14 @@ export default {
                   }),
                 ],
               }),
-              // Regular content - with standard spacing
+
+              // Количество и список студентов на договорной форме обучения
               new Paragraph({
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 200 },
                 children: [
                   new TextRun({
-                    text: "Количество студентов на договорной форме обучения: ",
+                    text: `Количество студентов на договорной форме обучения: ${contractStudents.length}`,
                     size: 28,
                   }),
                 ],
@@ -913,7 +1036,20 @@ export default {
                 spacing: { after: 200 },
                 children: [
                   new TextRun({
-                    text: "Список студентов на договорной форме обучения: ",
+                    text: `Список студентов на договорной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              ...createGroupedStudentListContent(contractStudents),
+
+              // Количество и список студентов на бюджетной форме обучения
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Количество студентов на бюджетной форме обучения: ${budgetStudents.length}`,
                     size: 28,
                   }),
                 ],
@@ -923,32 +1059,26 @@ export default {
                 spacing: { after: 200 },
                 children: [
                   new TextRun({
-                    text: "Количество студентов на бюджетной форме обучения: ",
+                    text: `Список студентов на бюджетной форме обучения:`,
                     size: 28,
                   }),
                 ],
               }),
-              new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 200 },
-                children: [
-                  new TextRun({
-                    text: "Список студентов на бюджетной форме обучения: ",
-                    size: 28,
-                  }),
-                ],
-              }),
+              ...createGroupedStudentListContent(budgetStudents),
             ],
           },
         ],
       });
 
+      // Генерация и сохранение документа
       const blob = await Packer.toBlob(doc);
-      saveAs(blob, "Report.docx");
+      //saveAs(blob, "Report.docx");
+
+      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
   },
   computed: {
-    ...mapState(useStudentStore, ["studentList"]),
+    ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
     ...mapState(useGroupStore, ["groupList"]),
   },
   async created() {},

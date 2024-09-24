@@ -1,372 +1,332 @@
 <template>
-
-
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12 ">
-    <div class="col col-12">
-    
-      <button @click="navigateToAddAudit" class="btn btn-primary float-start" type="button"><i class="material-icons-outlined">add</i>Добавить аудиторию</button>
-      <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
-      <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2" type="button"><i class="material-icons-outlined">close</i>Очистить фильтры</button>
-      <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
+  <div class="container mt-4">
+  <div class="d-flex">
+    <!-- Список аудиторий -->
+    <div class="col-md-4">
+      <div class="list-group">
+        <a v-for="auditorium in auditoriums" 
+           :key="auditorium.id" 
+           @click="selectAuditorium(auditorium)" 
+           class="list-group-item list-group-item-action">
+          Ауд. {{ auditorium.text }}
+        </a>
+      </div>
     </div>
+
+    <!-- Информация об аудитории -->
+    <div v-if="selectedAuditorium" class="col-md-4 ml-4">
+      <h5>Информация об аудитории</h5>
+      <p>Номер: {{ selectedAuditorium.text }}</p>
+      <p>Тип: {{ selectedAuditorium.type }}</p>
+      <p>Мест: {{ selectedAuditorium.count }}</p>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="viewModeSelect">Выберите режим:</label>
+    <div class="radio-group">
+      <label>
+        <input type="radio" v-model="viewMode" value="group" class="radio-input">
+        По группам
+      </label>
+      <label>
+        <input type="radio" v-model="viewMode" value="teacher" class="radio-input">
+        По преподавателям
+      </label>
+    </div>
+  </div>
+
+<div class="form-group">
+  <div v-if="viewMode === 'group'">
+    <label for="groupSelect">Выберите группу:</label>
+    <select v-model="selectedGroup" @change="onGroupChange" class="form-control small-select" id="groupSelect">
+      <option value="" disabled>Выберите группу</option>
+      <option v-for="group in groups" :key="group.id" :value="group.id">
+        {{ group.text }}
+      </option>
+    </select>
+  </div>
+
+  <div v-if="viewMode === 'teacher'">
+    <label for="teacherSelect">Выберите преподавателя:</label>
+    <select v-model="selectedTeacher" @change="onTeacherChange" class="form-control small-select" id="teacherSelect">
+      <option value="" disabled>Выберите преподавателя</option>
+      <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
+        {{ teacher.text }}
+      </option>
+    </select>
   </div>
 </div>
 
+    
+    <h3>
+      Расписание {{ viewMode === 'group' ? 'группы' : 'преподавателя' }} 
+      {{ viewMode === 'group' ? (groups.find(group => group.id === selectedGroup)?.text ) : 
+                                (teachers.find(teacher => teacher.id === selectedTeacher)?.full_name ) }}
+    </h3>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Пара</th>
+            <th v-for="day in daysOfWeek" :key="day.day_id">{{ day.dayofweek }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="pair in pairs" :key="pair">
+            <td>{{ pair }} Пара</td>
+            <td v-for="day in daysOfWeek" :key="day.day_id">
+              <div v-if="getSchedule(day.day_id, pair)">
+                <!-- Преподаватель, дисциплина и группа -->
+                <div @click="openModal(day.day_id, pair)" class="schedule-cell">
+                  <strong>{{ getSchedule(day.day_id, pair).full_name }}</strong> <br>
+                  {{ getSchedule(day.day_id, pair).subject_name }} <br>
+                  {{ getSchedule(day.day_id, pair).group_number }} гр. <br>
+                </div>
+              </div>
+              
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-
-<div style="height: 95vh">
-<div class="h-100 pt-5">
-  <ag-grid-vue
-    class="ag-theme-alpine"
-    style="width: 100%; height: 100%;"
-    :columnDefs="columnDefs.value"
-    :rowData="rowData.value"
-    :defaultColDef="defaultColDef"
-    rowSelection="multiple"
-    animateRows="true"
-    includeHiddenColumnsInQuickFilter = true
-    @cell-clicked="cellWasClicked"
-    @grid-ready="onGridReady"
-    @firstDataRendered="onFirstDataRendered"
-    @filter-changed="onFilterChanged"
-    :pagination="true"            
-    :paginationPageSize="paginationPageSize"  
-  >
-  </ag-grid-vue>
-</div>
-</div></div>
-
+    <!-- Модальное окно -->
+    <div v-if="showModal" class="modal" tabindex="-1" role="dialog" style="display: block;">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Назначить аудиторию</h5>
+            <button type="button" class="close" @click="closeModal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Назначить аудиторию для:</p>
+            <p>День: {{ getDayName(currentDay) }}</p>
+            <p>Пара: {{ currentPair }} Пара</p>
+            <select v-model="selectedAuditorium" class="form-control">
+              <option v-for="auditorium in auditoriums" :key="auditorium.aud_id" :value="auditorium.aud_id">
+                {{ auditorium.text }} 
+              </option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" @click="assignAuditorium">Сохранить</button>
+            <button type="button" class="btn btn-secondary" @click="closeModal">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
+import UserService from "../services/user.service"; // Подключаем user.service для запросов
 
-import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
-import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/AuditButtonCell.vue";
-import AuditHref from "@/components/AuditHrefCellRenderer.vue";
-import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
-import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import UserService from "../services/user.service";
-
-/* eslint-disable vue/no-unused-components */
 export default {
-  name: "App",
-  components: {
-    AgGridVue,
-    ButtonCell,
-    AuditHref
-  },
-  setup() {
-    const gridApi = ref(null); // Optional - for accessing Grid's API
-    const gridColumnApi = ref();
-    // Obtain API from grid's onGridReady event
-
-    const paginationPageSize = 60;
-
-
-    const onGridReady = (params) => {
-      gridApi.value = params.api;
-      gridColumnApi.value = params.columnApi;
-     
-    };
-    const navigate = () => {
- 
-  };
-
-
-
-    const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
-
-    // Each Column Definition results in one Column.
-    const columnDefs = reactive({
-      value: [
-      {
-      sortable: false,
-      filter: false,
-      headerName: 'Действия',
-      headerClass: 'text-center',
-      cellRenderer: 'ButtonCell',
-      cellRendererParams: {
-        onClick: navigate,
-        label: 'View Details', // Button label
-      },
-      maxWidth: 120, resizable: false
-     
-    },
-        
-           { field: "number", headerName: 'Аудитория', minWidth: 50 },
-           { field: "full_name", headerName: 'Преподаватель', minWidth: 250 },
-           { field: "type", headerName: 'Тип', maxWidth:129 },
-           { field: "count", headerName: 'Вместимость', minWidth:129 },
-           { field: "subject_name", headerName: 'Дисциплина', minWidth: 200 },
-           { field: "dayofweek", headerName: 'День недели', minWidth: 50}
-      ],
-    });
-
-    // DefaultColDef sets props common to all Columns
-    const defaultColDef = {
-      sortable: true,
-      filter: true,
-      flex: 1,
-      resizable: true,
-      minWidth: 50
-    };
-
-    // Example load data from server
-    onMounted(() => {
-    
-    });
-
-    const onFilterTextBoxChanged = () => {
-      gridApi.value.setQuickFilter(
-        document.getElementById('filter-text-box').value
-      );
-    };
-
-
-    return {
-      onGridReady,
-      columnDefs,
-      rowData,
-      defaultColDef,
-      cellWasClicked: (event) => { // Example of consuming Grid Event
-        console.log("cell was clicked", event);
-      },
-      deselectRows: () =>{
-        gridApi.value.deselectAll()
-      },
-
-      onFilterTextBoxChanged,
-      paginationPageSize,
-      navigate,
-     
-
-      
-
-    };
-  },
   data() {
-  return {
-    quickFilterValue: '',
-    filters:false
-  };
-},
-
-  methods: {
-
-    async loadAuditoriumData() {
-        try {
-          const response = await UserService.getAllAudit(); // Replace with your API endpoint
-          this.rowData.value = Array.isArray(response.data) ? response.data : [response.data];
-          this.loading=false;
-        } catch (error) {
-          console.error('Error:', error);
-        }
-      },
-
-      navigateToAddAudit() {
-    
-    this.$router.push(`/addAudit`); // Navigate to the AddStudent route
-},
-
-onFirstDataRendered(params) {
-      this.gridApi = params.api;
-      this.columnApi = params.columnApi;
-
-      // Check if filterModel exists in the route query
-      const filterModelQuery = this.$route.query.filterModel;
-      if (filterModelQuery) {
-        const filterModel = JSON.parse(filterModelQuery);
-        this.gridApi.setFilterModel(filterModel);
-        this.filters=true;
-        
-      }
-
-      const quickFilterQuery = this.$route.query.quickFilter;
-      if (quickFilterQuery) {
-        const quickFilter = JSON.parse(quickFilterQuery);
-        this.gridApi.setQuickFilter(quickFilter);
-        this.quickFilterValue = quickFilter;
-        this.filters=true;
-      }
-    },
-    onFilterChanged() {
-  // This function will be called whenever filters change.
-  // You can perform your desired action here.
-  // For example, you can get the current filter model:
-  this.filters=false;
-  const savedQuickFilter = this.gridApi.getQuickFilter();
-  const savedFilterModel = this.gridApi.getFilterModel();
-
-  // Initialize an empty object for queryParams
-  const queryParams = {};
-
-  // Check if savedQuickFilter is not empty, then add it to queryParams
-  if (savedQuickFilter) {
-    queryParams.quickFilter = JSON.stringify(savedQuickFilter);
-    this.filters=true;
-  }
-
-  // Check if savedFilterModel is not empty, then add it to queryParams
-  if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
-    queryParams.filterModel = JSON.stringify(savedFilterModel);
-    this.filters=true;
-  }
-
-  // Push the query parameters to the router
-  this.$router.push({ query: queryParams });
-
-  // Do something with the filterModel or trigger other actions as needed.
-},
-  clearFilters(){
-
-  
-    this.gridApi.setFilterModel();
-    this.gridApi.setQuickFilter();
-    this.quickFilterValue='';
-    this.filters=false;
+    return {
+      daysOfWeek: [],
+      pairs: [1, 2, 3, 4, 5, 6, 7, 8],
+      schedule: [],
+      teachschedule: [],
+      auditoriums: [],
+      groups: [], // Добавляем массив для групп
+      teachers: [],
+      selectedTeacher: null,
+      selectedGroup: null, // Выбранная группа
+      viewMode: 'group',
+      showModal: false,
+      currentDay: null,
+      currentPair: null,
+      selectedAuditorium: null
+    };
   },
-
-  
-    },
-
-    created() {
+  methods: {
     
-    this.loadAuditoriumData();
-
+    getDayName(day_id) {
+      const day = this.daysOfWeek.find(day => day.day_id === day_id);
+      return day ? day.dayofweek : 'Неизвестный день';
     },
+    openModal(day_id, pair) {
+      this.currentDay = day_id;
+      this.currentPair = pair;
+      this.showModal = true;
+    },
+    closeModal() {
 
-    
+      this.showModal = false;
+      this.currentDay = null;
+      this.currentPair = null;
+      this.selectedAuditorium = null;
+    },
+    selectAuditorium(auditorium) {
+    // Проверяем, если та же аудитория уже выбрана, то скрываем информацию
+    if (this.selectedAuditorium && this.selectedAuditorium.id === auditorium.id) {
+      this.selectedAuditorium = null; // Скрываем информацию
+    } else {
+      // Если выбрана другая аудитория, отображаем информацию о новой аудитории
+      this.selectedAuditorium = auditorium;
+    }
+  },
+    async assignAuditorium() {
+      if (!this.selectedAuditorium) {
+        alert("Пожалуйста, выберите аудиторию.");
+        return;
+      }
+
+      try {
+        const response = await UserService.assignAuditorium({
+          aud_id: this.selectedAuditorium,
+          day_id: this.currentDay,
+          timerange: this.currentPair
+        });
+        this.loadSchedule(); // Обновляем расписание после назначения
+        this.closeModal(); // Закрываем модалку
+      } catch (error) {
+        console.error('Ошибка назначения аудитории:', error);
+      }
+    },
+    async loadSchedule() {
+      if (!this.selectedGroup && !this.selectedTeacher) return; // Проверка выбора группы или преподавателя
+      
+      try {
+        let response;
+        if (this.viewMode === 'group') {
+          if (!this.selectedGroup) return; // Проверка, выбрана ли группа
+          response = await UserService.getTeachSchedule(this.selectedGroup);
+        } else if (this.viewMode === 'teacher') {
+          if (!this.selectedTeacher) return; // Проверка, выбран ли преподаватель
+          response = await UserService.getGroupSchedule(this.selectedTeacher);
+        }
+
+        // Убедимся, что данные всегда в формате массива
+        this.teachschedule = Array.isArray(response.data) ? response.data : [response.data];
+        
+        console.log('schedule: ', this.teachschedule); // Выводим расписание в консоль
+      } catch (error) {
+        console.error('Ошибка загрузки расписания:', error);
+      }
+    },
+    async loadAuditoriums() {
+      try {
+        const response = await UserService.getAuditAsIdText();
+        this.auditoriums = Array.isArray(response.data) ? response.data : [response.data];
+      } catch (error) {
+        console.error('Ошибка загрузки аудиторий:', error);
+      }
+    },
+    async loadGroups() {
+      try {
+        const response = await UserService.getGroupsAsIdText(); // Запрос для получения списка групп
+        this.groups = response.data;
+        if (this.groups.length > 0) {
+          this.selectedGroup = this.groups[0].id; // Устанавливаем первую группу по умолчанию
+          this.loadSchedule(); // Загружаем расписание для первой группы
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки групп:', error);
+      }
+    },
+    async loadTeachers() {
+      try {
+        const response = await UserService.getTeachersAsIdText(); // Запрос для получения списка преподавателей
+        this.teachers = response.data;
+        if (this.teachers.length > 0) {
+          this.selectedTeacher = this.teachers[0].id; // Устанавливаем первого преподавателя по умолчанию
+          this.loadSchedule(); // Загружаем расписание для первого преподавателя
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки преподавателей:', error);
+      }
+    },
+    getSchedule(day_id, pair) {
+      
+      const scheduleArray = JSON.parse(JSON.stringify(this.teachschedule)); // Преобразуем Proxy в обычный массив
+      const scheduleItem = scheduleArray.find(item => {
+        const dayComparison = Number(item.day_id) === Number(day_id);
+        const timeComparison = Number(item.time) === Number(pair);
+        return dayComparison && timeComparison;
+      });
+
+      if (!scheduleItem) {
+        console.log("Элемент не найден.");
+      } else {
+        console.log("Найденный элемент:", scheduleItem);
+      }
+
+      return scheduleItem || null;
+    },
+    onGroupChange() {
+      this.loadSchedule(); 
+    },
+    onTeacherChange() {
+      this.loadSchedule(); 
+    }
+  },
+  created() {
+    this.loadGroups(); // Загружаем группы при создании компонента
+    this.loadAuditoriums();
+    this.loadTeachers();
+    this.daysOfWeek = [
+      { day_id: 1, dayofweek: "Понедельник" },
+      { day_id: 2, dayofweek: "Вторник" },
+      { day_id: 3, dayofweek: "Среда" },
+      { day_id: 4, dayofweek: "Четверг" },
+      { day_id: 5, dayofweek: "Пятница" },
+      { day_id: 6, dayofweek: "Суббота" }
+    ];
+  }
 };
-
-
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 
-.ag-row .ag-cell {
+.small-select{
+  max-width: 300px;
+}
+.form-group{
+  margin-top: 15px;
+}
+.radio-group {
   display: flex;
-  justify-content: center; /* align horizontal */
-  align-items: center;
+  flex-direction: column;
 }
 
-.skeleton {
+.radio-group label {
+  margin-bottom: 10px; /* Отступ между радио-кнопками */
+}
+
+.radio-input {
+  margin-right: 8px; /* Отступ между радио-кнопкой и текстом */
+}
+.d-flex {
+  display: flex;
+  align-items: flex-start; /* Выравниваем по верхней части */
+}
+
+.ml-4 {
+  margin-left: 1.5rem; /* Отступ слева для блока информации */
+}
+.schedule-cell {
+  cursor: pointer;
+  padding: 5px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+.modal {
+  background: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(125deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
-}
-  .list{
-    padding-left: 100px;
-    font-size: 5px;
-
-  }
-
-    .text-center * {
-      justify-content: center;
-      display:flex 
-  }
-
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes skeletonFade {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-
-  
-}
-
-@media (max-width: 769px) {
-  .list{
-    padding-left: 100px;
-    font-size: 10px;
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1023px) {
-
-
-
-  .list{
-    padding-left: 100px;
-    font-size: 13px;
-
-  }
-}
-@media (min-width: 1023px) {
-
-
-
-.list{
-  padding-left: 100px;
-  padding-right: 5px;
-
-}
-}
-.nmbr{
-  height: 44px;
-}
-
-
-
-.btn-primary{
-    --bs-btn-bg: rgb(68,99,52);
-    border: none;
-    --bs-btn-hover-bg:rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-    --bs-btn-active-bg: rgb(68,99,52);
-    --bs-btn-disabled-bg: rgb(68,99,52);
-    display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.form-control:focus {
-  border-color: rgba(1, 20, 8, 0.815);
-  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
-}
-.form-select:focus {
-  border-color: rgba(1, 20, 8, 0.815);
-  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
-}
-.page-link{
-  height: 40px;
-  width: 40px;
-  margin: 2px;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-.active{
-  .page-link{
-    background-color: rgb(68,99,52);
-    border: none;
-    --bs-btn-hover-bg:rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
- 
-  }
+.modal-dialog {
+  width: 500px;
+  margin: 10% auto;
 }
-.disabled{
-  .page-link{
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg:rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
+
 </style>

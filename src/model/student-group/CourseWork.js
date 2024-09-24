@@ -1,5 +1,6 @@
 import { useStudentStore } from '@/store2/studentgroup/student';
 import { useTeacherStore } from '@/store2/teachergroup/teacher';
+import { useDepartamentStore } from '@/store2/teachergroup/departament';
 export default class CourseWork {
     course_work_id;
     course_work_teacher_id;
@@ -27,27 +28,25 @@ export default class CourseWork {
         // Assuming we have access to a TeacherStore similar to the original Student model's group
         const teacherStore = useTeacherStore();
         const teacher = teacherStore.teacherMap[this.course_work_teacher_id];
-        return teacher ? `${teacher.first_name} ${teacher.last_name}` : null;
+        return teacher ? `${teacher.last_name} ${teacher.first_name} ${teacher.patronymic}` : null;
     }
 
     get student_name() {
         // Assuming we have access to a StudentStore to get student details by ID
         const studentStore = useStudentStore();
+
         const student = studentStore.studentMap[this.course_work_student_id];
-        return student ? `${student.first_name} ${student.last_name}` : null;
+        return student ? student.full_name : null;
     }
 
-    get kafedra_name() {
+    get dep_name() {
         // Assuming we have a KafedraStore to get the department (kafedra) details by ID
-        const kafedraStore = useKafedraStore();
-        const kafedra = kafedraStore.kafedraMap[this.course_work_kafedra];
-        return kafedra ? kafedra.name : null;
+        const departamentStore = useDepartamentStore();
+        const departament = departamentStore.departamentMap[this.course_work_kafedra];
+        return departament ? departament.dep_name : null;
     }
 
-    get year_formatted() {
-        // Assuming the year is stored in some date format, we format it nicely
-        return Formatter.formatYear(this.course_work_year);
-    }
+
 
     get final_grade() {
         return this.course_work_ocenka ?? 'No grade assigned';

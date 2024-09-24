@@ -66,5 +66,17 @@ export const useCourseWorkStore = defineStore('courseWork', {
                 }
             }
         },
+        async uploadGeneratedFile(fileBlob, fileName) {
+            try {
+                const formData = new FormData();
+                formData.append('file', fileBlob, fileName);
+
+                const response = await api.uploadFile(formData);
+                return response.filePath;
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        }
+
     },
 });

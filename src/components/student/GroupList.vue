@@ -64,6 +64,7 @@
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
+          :localeText="localeText"
         >
         </auto-form>
       </div>
@@ -115,6 +116,7 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -126,6 +128,7 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
@@ -200,7 +203,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
@@ -463,26 +466,6 @@ export default {
   }
 }
 
-@media (max-width: 769px) {
-  .list {
-    padding-left: 100px;
-    font-size: 10px;
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    font-size: 13px;
-  }
-}
-@media (min-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    padding-right: 5px;
-  }
-}
 .nmbr {
   height: 44px;
 }

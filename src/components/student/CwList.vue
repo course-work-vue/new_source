@@ -10,7 +10,7 @@
       <div class="mb-3 col col-12">
         <div class="col col-12">
           <button
-            @click="navigateToAddCW"
+            @click="openCreatingForm"
             class="btn btn-primary float-start"
             type="button"
           >
@@ -57,6 +57,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -70,6 +71,55 @@
       </div>
     </div>
   </div>
+  <Dialog
+    v-model:visible="formVisible"
+    modal
+    header="Форма квалификационных работ"
+  >
+    <div class="card flex flex-row">
+      <div class="form card__form">
+        <auto-form
+          v-model="courseWork"
+          v-model:valid="valid"
+          v-model:errors="errors"
+          item-class="form__item"
+          :scheme="scheme"
+        >
+        </auto-form>
+      </div>
+    </div>
+
+    <Button
+      class="btn btn-primary float-start"
+      :disabled="!valid"
+      @click="submit"
+    >
+      Сохранить
+    </Button>
+    <Button
+      class="btn btn-primary float-end"
+      v-if="this.courseWork.course_work_id"
+      @click="deleteCW"
+    >
+      Удалить
+    </Button>
+  </Dialog>
+
+  <Dialog
+    v-model:visible="docPreview"
+    header="Предпросмотр документа отчёт по научным руководителям"
+    maximizable
+    ref="maxDialog"
+    @show="biggifyDialog"
+    :header="props.name"
+    class="w-full h-full md:w-5/6"
+  >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      documentTitle="Отчёт по научным руководителям"
+    />
+  </Dialog>
 </template>
 
 <script>
@@ -101,6 +151,11 @@ import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
 import { useDepartamentStore } from "@/store2/teachergroup/departament";
 import { useTeacherStore } from "@/store2/teachergroup/teacher";
 import { useStudentStore } from "@/store2/studentgroup/student";
+
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
+import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -109,8 +164,10 @@ export default {
     ButtonCell,
     GroupHref,
     AutoForm,
+    OnlyDocumentEditor,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
@@ -121,7 +178,6 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -134,7 +190,6 @@ export default {
           headerName: "Действия",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
-            onClick: navigateToStudent,
             label: "View Details", // Button label
           },
           maxWidth: 120,
@@ -142,8 +197,8 @@ export default {
         },
         { field: "dep_name", headerName: "Кафедра" },
         { field: "course_work_theme", headerName: "Тема" },
-        { field: "full_name", headerName: "ФИО студента" },
-        { field: "full_name_t", headerName: "ФИО препода" },
+        { field: "student_name", headerName: "ФИО студента" },
+        { field: "teacher_name", headerName: "ФИО преподавателя" },
       ],
     });
 
@@ -164,23 +219,24 @@ export default {
         document.getElementById("filter-text-box").value
       );
     };
-
+    const maxDialog = ref();
+    function biggifyDialog() {
+      maxDialog.value.maximized = true;
+    }
     return {
       onGridReady,
       columnDefs,
       rowData,
       defaultColDef,
-      cellWasClicked: (event) => {
-        // Example of consuming Grid Event
-        console.log("cell was clicked", event);
-      },
+      maxDialog,
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
 
       onFilterTextBoxChanged,
       paginationPageSize,
-      navigateToStudent,
+      biggifyDialog,
     };
   },
   data() {
@@ -189,14 +245,19 @@ export default {
       filters: false,
       pr: false,
       pr_n: null,
-      CourseWork: new CourseWork(),
+      courseWork: new CourseWork(),
+      errors: {},
+      valid: false,
+      scheme: null,
+      formVisible: false,
+      docPreview: false,
     };
   },
   computed: {
     ...mapState(useCourseWorkStore, ["courseWorkList"]),
     ...mapState(useTeacherStore, ["teacherList"]),
     ...mapState(useDepartamentStore, ["departamentList"]),
-    ...mapState(useStudentStore, ["studentList"]),
+    ...mapState(useStudentStore, ["activeSortedStudents"]),
   },
   async mounted() {
     await this.getTeacherList();
@@ -228,7 +289,7 @@ export default {
         key: "course_work_student_id",
         label: "Студент",
         options: [
-          ...[...this.studentList].map((student) => ({
+          ...[...this.activeSortedStudents].map((student) => ({
             label: `${student.first_name} ${student.last_name}`,
             value: student.student_id,
           })),
@@ -278,18 +339,203 @@ export default {
       ,
       "putCourseWork",
       "deleteCourseWork",
+      "uploadGeneratedFile",
     ]),
     ...mapActions(useTeacherStore, ["getTeacherList"]),
     ...mapActions(useDepartamentStore, ["getDepartamentList"]),
     ...mapActions(useStudentStore, ["getStudentList"]),
-    previewDocx() {
-      window.open(
-        `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/CourseWork/ExportCourseWorks`
-      );
+    cellWasClicked(event) {
+      if (event.colDef && event.colDef.headerName === "Действия") {
+        this.edit(event);
+      }
+    },
+    async generateTeacherReport() {
+      const courseWorkStore = useCourseWorkStore();
+      const courseWorks = courseWorkStore.courseWorkList;
+
+      // Group course works by teacher
+      const courseWorksByTeacher = courseWorks.reduce((acc, courseWork) => {
+        const teacherName = courseWork.teacher_name;
+        if (!acc[teacherName]) acc[teacherName] = [];
+        acc[teacherName].push(courseWork);
+        return acc;
+      }, {});
+
+      // Create the DOCX document with the provided header
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Заголовок
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: "«Кубанский государственный университет»",
+                    size: 28,
+                    bold: true,
+                    break: 1,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 }, // No space after this paragraph
+                children: [
+                  new TextRun({
+                    text: "(ФГБОУ ВО «КубГУ»)",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+              }),
+              // Fifth line - Regular alignment and spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "Факультет компьютерных технологий и прикладной математики",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Space before the teacher report
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 300 },
+                children: [
+                  new TextRun({
+                    text: "Отчёт по научным руководителям",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Group by teacher and students
+              ...Object.keys(courseWorksByTeacher)
+                .map((teacherName) => {
+                  // Paragraph for the teacher's name
+                  const teacherHeading = new Paragraph({
+                    alignment: AlignmentType.LEFT,
+                    children: [
+                      new TextRun({
+                        text: `${teacherName}`,
+                        bold: true,
+                        size: 28,
+                      }),
+                    ],
+                  });
+
+                  // List of students under this teacher
+                  const studentParagraphs = courseWorksByTeacher[
+                    teacherName
+                  ].map((courseWork, index) => {
+                    return new Paragraph({
+                      alignment: AlignmentType.LEFT,
+                      children: [
+                        new TextRun({
+                          text: `${index + 1}. ${courseWork.student_name}`,
+                          size: 28,
+                        }),
+                      ],
+                    });
+                  });
+
+                  return [teacherHeading, ...studentParagraphs];
+                })
+                .flat(),
+            ],
+          },
+        ],
+      });
+
+      // Generate the DOCX file and save it
+      const blob = await Packer.toBlob(doc);
+      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
 
-    navigateToAddCW() {
-      this.$router.push(`/addCw`); // Navigate to the AddStudent route
+    resetCW() {
+      this.courseWork = new CourseWork();
+    },
+    edit(event) {
+      this.resetCW();
+      this.courseWork = event.data;
+
+      this.formVisible = true;
+    },
+    openCreatingForm() {
+      this.resetCW();
+      this.formVisible = true;
+    },
+    async validateForm() {
+      let isValid = true;
+      const errors = {};
+
+      for (const item of this.scheme.items) {
+        const result = item.validate(this.courseWork[item.key]);
+
+        if (result !== true) {
+          // Check for `true`, which means the field is valid
+          errors[item.key] = result; // Store the error message if validation fails
+          isValid = false;
+        }
+      }
+
+      this.errors = errors; // Store errors in the component's state
+      this.valid = isValid; // Set the valid flag based on the results
+      return isValid; // Return the validity of the form
+    },
+    async previewDocx() {
+      await this.generateTeacherReport();
+
+      this.docPreview = true;
+    },
+    async submit() {
+      const isValid = await this.validateForm();
+      if (!isValid) {
+        console.error("Form validation failed", this.errors);
+        return;
+      }
+      let courseWork = { ...this.courseWork };
+
+      if (courseWork.course_work_id) {
+        await this.putCourseWork(courseWork);
+      } else {
+        await this.postCourseWork(courseWork);
+      }
+      this.formVisible = false;
+      this.resetCW();
+      this.loadCourseWorksData();
+    },
+
+    async deleteCW() {
+      let courseWork = { ...this.courseWork };
+
+      await this.deleteCourseWork(courseWork);
+      this.formVisible = false;
+      this.resetCW();
+      this.loadCourseWorksData();
     },
 
     async loadCourseWorksData() {
@@ -299,7 +545,6 @@ export default {
             .filter((courseWorkList) => courseWorkList.deleted_at === null)
             .sort((a, b) => a.student_name.localeCompare(b.student_name));
         } else {
-          // Handle case where studentList is not an array
           if (this.courseWorkList.deleted_at === null) {
             this.rowData.value = [this.courseWorkList];
           } else {
@@ -414,26 +659,6 @@ export default {
   }
 }
 
-@media (max-width: 769px) {
-  .list {
-    padding-left: 100px;
-    font-size: 10px;
-    max-width: 1100px;
-  }
-}
-
-@media (max-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    font-size: 13px;
-  }
-}
-@media (min-width: 1023px) {
-  .list {
-    padding-left: 100px;
-    padding-right: 5px;
-  }
-}
 .nmbr {
   height: 44px;
 }
@@ -481,6 +706,23 @@ export default {
     border: none;
     --bs-btn-hover-bg: rgb(6 215 29);
     --bs-btn-hover-border-color: rgb(6 215 29);
+  }
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+
+  &__item {
+    padding: 5px;
+    margin-right: 10px;
+  }
+
+  &__item:nth-child(2n) {
+    margin-right: 0;
+    border-right: none;
   }
 }
 </style>

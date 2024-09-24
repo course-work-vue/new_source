@@ -28,7 +28,19 @@ class RequestExecutor {
 
         return headers;
     }
+    #generateHeadersFile() {
+        let headers = {
+            'accept': '*/*',
+            // Do not include 'Content-Type' header when using FormData
+        };
 
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user && user.accessToken) {
+            headers['Authorization'] = 'Bearer ' + user.accessToken;
+        }
+
+        return headers;
+    }
     get(url, code, needAbort) {
         return this.execute(
             code ? url + '/' + code : url,
@@ -48,7 +60,15 @@ class RequestExecutor {
             needAbort
         );
     }
-
+    postFile(url, formData, needAbort) {
+        return this.execute(
+            url,
+            false,
+            { method: 'POST', headers: this.#generateHeadersFile() }, // Headers without 'Content-Type'
+            formData,  // Pass the formData directly
+            needAbort
+        );
+    }
     put(url, code, data) {
         return this.execute(
             url + '/',
@@ -85,7 +105,12 @@ class RequestExecutor {
                 };
             }
 
-            if (data) init = { ...init, body: JSON.stringify(data) };
+            if (data instanceof FormData) {
+                init = { ...init, body: data };
+            } else if (data) {
+
+                init = { ...init, body: JSON.stringify(data) };
+            }
 
             const location = exact ? url : this.baseUrl + url;
             const response = await fetch(location, init);

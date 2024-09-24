@@ -30,11 +30,6 @@ const model = ref([
         icon: "pi pi-fw pi-users",
         items: [
           {
-            label: "Тест",
-            icon: "pi pi-fw pi-list",
-            to: "/test",
-          },
-          {
             label: "Список студентов",
             icon: "pi pi-fw pi-list",
             to: "/students",
@@ -64,7 +59,7 @@ const model = ref([
             to: "/payers",
           },
           { label: "Группы", icon: "pi pi-fw pi-users", to: "/lgroups" },
-          { label: "Договора", icon: "pi pi-fw pi-file", to: "/contracts" },
+          { label: "Договоры", icon: "pi pi-fw pi-file", to: "/contracts" },
           { label: "Программы", icon: "pi pi-fw pi-book", to: "/programs" },
           {
             label: "График платежей",
@@ -91,10 +86,53 @@ const model = ref([
         to: "/xlparse",
       },
       {
+        label: "Админ панель",
+        icon: "pi pi-fw pi-box",
+        items: [
+          {
+            label: "Процедуры",
+            icon: "pi pi-fw pi-list",
+            to: "/procedures",
+          },
+          {
+            label: "Функции",
+            icon: "pi pi-fw pi-list",
+            to: "/functions",
+          },
+          {
+            label: "Роли",
+            icon: "pi pi-fw pi-list",
+            to: "/roles",
+          },
+          {
+            label: "Пользователи",
+            icon: "pi pi-fw pi-list",
+            to: "/users",
+          },
+          {
+            label: "Триггеры",
+            icon: "pi pi-fw pi-list",
+            to: "/triggers",
+          },
+          {
+            label: "Таблицы",
+            icon: "pi pi-fw pi-list",
+            to: "/tables",
+          },
+        ],
+      },
+      {
+        label: "Журнал",
+        icon: "pi pi-fw pi-book",
+        to: "/teachers"
+           
+      },
+      {
         label: "Настройки",
         icon: "pi pi-fw pi-cog",
         to: "/profile",
       },
+
       {
         label: "Выйти",
         icon: "pi pi-fw pi-sign-out",

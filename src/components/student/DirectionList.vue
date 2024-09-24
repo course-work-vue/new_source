@@ -40,11 +40,11 @@
           :defaultColDef="defaultColDef"
           rowSelection="multiple"
           animateRows="true"
+          :localeText="localeText"
           @cell-clicked="cellWasClicked"
           @grid-ready="onGridReady"
           @firstDataRendered="onFirstDataRendered"
           @filter-changed="onFilterChanged"
-
         >
         </ag-grid-vue>
       </div>
@@ -126,6 +126,7 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -136,6 +137,7 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
@@ -202,7 +204,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
@@ -354,6 +356,7 @@ export default {
 
       // Check if filterModel exists in the route query
       const filterModelQuery = this.$route.query.filterModel;
+
       if (filterModelQuery) {
         const filterModel = JSON.parse(filterModelQuery);
         this.gridApi.setFilterModel(filterModel);
