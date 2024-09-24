@@ -47,7 +47,7 @@ import ButtonCell from "@/components/PaymentButtonCell.vue";
 import GroupHref from "@/components/GroupHrefCellRenderer.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import UserService from "../services/user.service";
+import UserService from "../../services/user.service";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",

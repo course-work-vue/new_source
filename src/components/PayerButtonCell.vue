@@ -10,9 +10,7 @@
       
     },
     methods: {
-      onClick() {
-        this.$router.push(`/payers/${this.params.data.id}`);
-      },
+      onClick() {},
     },
   };
   </script>
