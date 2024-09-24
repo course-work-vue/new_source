@@ -70,6 +70,12 @@
                                     this.selected_dir = dir;
                                     this.selected_subject_obj = {};
                                     this.selected_subject = 0;
+                                    this.selected_group_obj = {};
+                                    this.selected_group = -1;
+                                    this.selected_teacher = -1;
+                                    this.selected_teacher_obj = {};
+                                    this.selected_aud = -1;
+                                    this.selected_aud_obj = {};
                                     this.loadSubjectsData(dir.dir_code);
                                     this.loadGroupsData(dir.dir_id);
                                 "
@@ -94,7 +100,13 @@
                                 @click="
                                     this.selected_subject = subject;
                                     this.findSubject(subject);
+                                    this.selected_group_obj = {};
+                                    this.selected_group = -1;
                                     this.groups_and_teachers = 0;
+                                    this.selected_teacher = -1;
+                                    this.selected_teacher_obj = {};
+                                    this.selected_aud = -1;
+                                    this.selected_aud_obj = {};
                                     // console.log(this.selected_subject_obj);
                 
                                 "
@@ -195,7 +207,6 @@
                             Преподаватель:
                             <span v-if="this.selected_subject_obj.subject_id" @click="
                                 change('Выбрать преподавателя', this.teachers, 'teacher')
-                                
                             ">
                                 <button class="btn btn-primary btn-block m-1">
                                 <div class="d-flex">
@@ -232,13 +243,7 @@
                         </div>
                     </div>
 
-                    <!-- <ScheduleSelectorCard
-                        :title="modalTitle"
-                        :rows="modalRows"
-                        :type="modalType"
-                        v-if="modalTitle!='1'"
-                    >
-                    </ScheduleSelectorCard> -->
+                    
                 </div>
 
 
@@ -334,9 +339,9 @@ export default {
             selected_sem: 1,
             isMag: false,
             audtypes: [
-                                {id:0, value:'Лекционная', text:''},
-                                {id:1, value:'Обычная', text:''},
-                                {id:2, value:'Компьютерный зал', text:''}
+                                {id:0, value:'лекционная', text:''},
+                                {id:1, value:'семинарная', text:''},
+                                {id:2, value:'комп зал', text:''}
                             ],
             dirs: [],
             groups: [], // массив всех групп
@@ -356,6 +361,7 @@ export default {
             selected_teacher: -1,
             selected_teacher_obj: null,
             selected_aud: -1,
+            selected_aud_obj: {},
             marked_teacher: 0,
             dir_loaded: false,
             sub_loaded: false,
@@ -554,10 +560,8 @@ export default {
                     // this.marked_teacher = this.findWlID(this.selected_group, this.selected_subject_id);
 
                     // console.log(this.teachers);
-                    if (group){
-                        
-                        this.marked_teacher = await this.loadWorkloads(group);
-                    }
+                    await this.loadWorkloads(group);
+                      
                     // console.log(this.wl);
                 } catch (error) {
                     console.error('Error loading teachers data:', error);
@@ -585,12 +589,12 @@ export default {
         },
 
         async saveRel(){
-            console.log('sel_gr : ' + this.selected_group);
-            console.log('sel_su : ' + this.selected_subject_id);
+            console.log('sel_gr : ' + this.selected_group_obj);
+            console.log('sel_su : ' + this.selected_subject_obj);
             let tmp = await this.findWl(this.selected_group, this.selected_subject_id);
             console.log(tmp);
             if (tmp == -1){
-                UserService.addWorkload(this.selected_group, this.selected_subject_id, this.selected_teacher, this.selected_group_obj, this.selected_subject_obj, this.selected_teacher_obj);
+                UserService.addWorkload(this.selected_group, this.selected_subject_id, this.selected_teacher, this.selected_aud_obj.value);
                 // console.log(this.findWl(this.selected_group, this.selected_subject_id));
                 // console.log(this.selected_teacher);
                 this.notify_text = 'Преподаватель добавлен';
@@ -606,7 +610,7 @@ export default {
                 console.log('selected = ' + this.selected_teacher);
                 var wlid = await this.findWlID(this.selected_group, this.selected_subject_id);
                 console.log('wlid = ' + wlid);
-                UserService.editWorkload(wlid, this.selected_group, this.selected_subject_id, this.selected_teacher, this.selected_group_obj, this.selected_subject_obj, this.selected_teacher_obj);
+                UserService.editWorkload(wlid, this.selected_teacher, this.selected_aud.value);
                 // console.log(this.findWl(this.selected_group, this.selected_subject_id));
                 // console.log(this.selected_teacher);
                 this.notify_text = 'Преподаватель обновлен';
@@ -655,10 +659,10 @@ export default {
                 // console.log('Group in wl: ' + this.wl[i].groupId);
                 // console.log('Group in find: ' + group_id);
                 // console.log(this.wl[i]);
-                if (this.wl[i].groupId == group_id) {
-                    if (this.wl[i].subjectId == subject_id) 
-                        // console.log('FOUND: ' + this.wl[i].teacherId);
-                        return this.wl[i].teacherId;
+                if (this.wl[i].group_id == group_id) {
+                    if (this.wl[i].subject_id == subject_id) 
+                        console.log('FOUND: ' + this.wl[i].teacherId);
+                        return this.wl[i].teacher_id;
                 }
             }
             
@@ -753,7 +757,7 @@ export default {
             if (this.modalType == 'audit'){
                 this.selected_aud = id;
                 this.selected_aud_obj = this.audtypes.find(aud => aud.id === id);
-                console.log('Выбран тип ', selected_aud_obj);
+                console.log('Выбран тип ', this.selected_aud_obj);
             }
 
             if (this.modalType == 'teacher'){

@@ -554,11 +554,12 @@ getWorkload(group_id){
 
 
 
-editWorkload(wl_id, teacher_id){
+editWorkload(wl_id, teacher_id, audtype){
   const query = {
     query: `UPDATE "workload"
     SET
-      "teacher_id" = '${teacher_id}'
+      "teacher_id" = '${teacher_id}',
+      "audtype" = '${audtype}'
     WHERE
       "wl_id" = '${wl_id}'
     ;`,
@@ -566,16 +567,18 @@ editWorkload(wl_id, teacher_id){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-addWorkload(group_id, subject_id, teacher_id){
+addWorkload(group_id, subject_id, teacher_id, audtype){
   const query = {
     query: `INSERT INTO "workload" (
       "group_id",
       "subject_id",
-      "teacher_id"
+      "teacher_id",
+      "audtype"
   ) VALUES (
       '${group_id}',
       '${subject_id}',
-      '${teacher_id}'
+      '${teacher_id}',
+      '${audtype}'
   );`,
   };
   return axios.post(API_URL, query, { headers: authHeader() });
