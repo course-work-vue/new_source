@@ -66,6 +66,39 @@
         </auto-form>
 </div>
 </div>
+
+<div class="col-5">
+    <table class="table table-bordered col col-3">
+      <thead>
+      <tr>
+        <th style="min-width: 100px;">День</th>
+        <th>Время начала</th>
+        <th>Время окончания</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(entry, index) in tableData" :key="index" >
+        
+        <td>
+          <select class="form-select" v-model="entry.day_id">
+            <option v-for="day in days" :key="day.value" :value="day.id">
+              {{ day.text }}
+            </option>
+          </select>
+        </td>
+        <td>
+          <input class="form-control" type="time" v-model="entry.starttime">
+        </td>
+        <td>
+          <input class="form-control" type="time" v-model="entry.endtime">
+        </td>
+      
+      </tr>
+    </tbody>
+    </table>
+    <button type="button" class="btn btn-primary" @click="addRow">+</button>
+  </div>
+
   <Button
         class="btn btn-primary float-start"
         @click="submit"
@@ -126,6 +159,15 @@ export default {
     AutoForm,
   },
   setup() {
+
+    const tableData = ref([]);
+
+    const addRow = () => {
+    console.log('Adding row'); // Для проверки, что метод вызывается
+    const newRow = { day_id: '', starttime: '', endtime: '' }; 
+    tableData.value.push(newRow); // Добавляем новую строку
+  };
+
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
@@ -196,6 +238,8 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
+      tableData,
+      addRow,
       cellWasClicked: (event) => { // Example of consuming Grid Event
         console.log("cell was clicked", event);
       },
@@ -234,6 +278,26 @@ async mounted() {
     label: "Номер группы",
     placeholder: "",
   }),
+  new ComboboxInput({
+    key: "group_program_id",
+    label: "Программа",
+    options: [
+        ...[...this.programList].map((program) => ({
+            label: program.program_name,
+            value: program.id,
+          })),
+        ],
+  }),
+  new TextInput({
+    key: "hours",
+    label: "Общее количество часов",
+    placeholder: "",
+  }),
+  new TextInput({
+    key: "people_count",
+    label: "Число людей",
+    placeholder: "",
+  }),
 ]);
 },
   methods: {
@@ -257,9 +321,15 @@ async mounted() {
     edit(event) {
       this.resetLgr();
       this.listenergroup = event.data;
+      console.log("В едите: ")
       console.log(this.listenergroup);
       this.showSidebar = true;
     },
+    addRow() {
+    
+    const newRow = { day_id: '', starttime: '', endtime: '' }; // ensure this is a new object
+    this.tableData.push(newRow);
+  },
     async submit() {
 
 console.log("Сабмитаю")
@@ -377,14 +447,24 @@ onFirstDataRendered(params) {
     closeSidebar() {
       this.showSidebar = false; // Закрыть боковую панель
     },
+    async loadDaysData() {
+        try {
+          const response = await UserService.getDaysAsIdText(); 
+          this.days = Array.isArray(response.data) ? response.data : [response.data];
+          this.dataLoading=false;
+        } catch (error) {
+          console.error('Error loading data:', error);
+        }
+      },
 
     },
     computed:{
     ...mapState(useListenergroupStore, ["listenergroupList"]),
+    ...mapState(useProgramStore, ["programList"]),
   },
     created() {
     
-    this.loadListenergroupData();
+    this.loadDaysData();
 
     },
 

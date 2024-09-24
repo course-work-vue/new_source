@@ -15,7 +15,7 @@ export default class Listenergroup {
 
   constructor(listenergroup) {
     this.id = listenergroup?.id ?? null;
-    this.listenergroup_program_id = listenergroup?.group_program_id ?? null;
+    this.group_program_id = listenergroup?.group_program_id ?? null;
     this.hours = listenergroup?.hours ?? null;
     this.group_number = listenergroup?.group_number ?? null;
     this.start_date = listenergroup?.start_date ?? null;
@@ -29,7 +29,7 @@ export default class Listenergroup {
   get program_name() {
 
     const programStore = useProgramStore();
-    const program = programStore.programMap[this.listenergroup_program_id]; 
+    const program = programStore.programMap[this.group_program_id]; 
     console.log(program)
     if (program) {
         return program.program_name || null;

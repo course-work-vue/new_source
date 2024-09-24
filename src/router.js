@@ -230,7 +230,6 @@ const routes = [
 
       //{ path: '/addcw', component: AddCw },
       { path: '/courseworks', component: CWList },
-      { path: '/courseworks/:CwId', component: CWdetail },
 
       { path: '/programs', component: ProgramList },
       { path: '/programs/:programId', component: ProgramDetail },
