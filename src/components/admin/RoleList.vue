@@ -4,10 +4,8 @@
       <div class="col col-12">
         <div class="d-inline-flex">
           <div v-if="!spisok">
-            <h1>Список всех студентов</h1>
+            <h1>Список всех ролей</h1>
           </div>
-          <h1 v-if="spisok">Список студентов {{ groupn }} группы</h1>
-          <h1 class="m-0" v-if="subg">, {{ subgn }} подгруппы</h1>
         </div>
 
         <div class="col col-12">
@@ -17,51 +15,13 @@
               class="btn btn-primary float-start"
               type="button"
             >
-              <i class="material-icons-outlined">add</i>Добавить студента
-            </button>
-            <button
-              @click="previewDocx"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
-              Отчёт о формах обучения
-            </button>
-            <button
-              @click="contingent"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
-              Контингент
+              <i class="material-icons-outlined">add</i>Добавить роль
             </button>
           </div>
         </div>
       </div>
       <div class="col col-12">
-        <div class="col col-6 float-start">
-          <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="group_id"
-              >Фильтр по группе:</label
-            >
-
-            <select
-              class="form-select"
-              id="group_id"
-              v-model="myValue"
-              @change="handleSelectChange(myValue)"
-            >
-              <option selected="selected" value="">Нет</option>
-              <option
-                v-for="group in this.groupList.sort(
-                  (a, b) => a.group_number - b.group_number
-                )"
-                :key="group.group_number"
-                :value="group.group_number"
-              >
-                {{ group.group_number }}
-              </option>
-            </select>
-          </div>
-        </div>
+        <div class="col col-6 float-start"></div>
         <div class="col col-6 float-end d-inline-flex align-items-center">
           <button
             @click="clearFilters"
@@ -81,26 +41,9 @@
           />
         </div>
       </div>
-      <div class="col col-6 float-start">
-        <div class="form-group d-inline-flex align-items-center">
-          <label class="bigger form-label" for="subgroup_id"
-            >Фильтр по подгруппе:</label
-          >
-
-          <select
-            class="form-select"
-            id="subgroup_id"
-            v-model="myValue4"
-            @change="handleSelectChange2(myValue4)"
-          >
-            <option selected="selected" value="">Нет</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-        </div>
-      </div>
+      <br />
       <div style="height: 90vh">
-        <div class="h-100 pt-5">
+        <div class="ag-grid-wrap h-100 pt-5">
           <ag-grid-vue
             class="ag-theme-alpine"
             style="width: 100%; height: 100%"
@@ -120,37 +63,24 @@
         </div>
       </div>
     </div>
-    <div class="container mt-3">
-      <table class="table table-striped">
-        Список отстающих студентов
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">First Name</th>
-            <th scope="col">Last Name</th>
-            <th scope="col">Sum</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in dataFromApi" :key="index">
-            <th scope="row">{{ index }}</th>
-            <td>{{ item.first_name }}</td>
-            <td>{{ item.last_name }}</td>
-            <td>{{ item.sum }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
   <Dialog v-model:visible="formVisible" modal header="Форма студента">
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
-          v-model="student"
+          v-model="role"
           v-model:valid="valid"
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
+        >
+        </auto-form>
+        <auto-form
+          v-model="globalPermission"
+          v-model:valid="valid"
+          v-model:errors="errors"
+          item-class="form__item"
+          :scheme="scheme2"
         >
         </auto-form>
       </div>
@@ -165,27 +95,11 @@
     </Button>
     <Button
       class="btn btn-primary float-end"
-      v-if="this.student.student_id"
-      @click="deleteStd"
+      v-if="this.role.roleid"
+      @click="deleteR"
     >
       Удалить
     </Button>
-  </Dialog>
-
-  <Dialog
-    v-model:visible="docPreview"
-    header="Предпросмотр документа отчёт по студентам"
-    maximizable
-    ref="maxDialog"
-    @show="biggifyDialog"
-    :header="props.name"
-    class="w-full h-full md:w-5/6"
-  >
-    <OnlyDocumentEditor
-      v-if="filePath"
-      :documentUrl="filePath"
-      documentTitle="Отчёт по студентам"
-    />
   </Dialog>
 </template>
 
@@ -201,11 +115,12 @@ import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
+import { useRoleStore } from "@/store2/admingroup/role";
+import { useGlobalPermissionStore } from "@/store2/admingroup/globalPermission";
 import { useStudentStore } from "@/store2/studentgroup/student";
 import { useGroupStore } from "@/store2/studentgroup/group";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
-import users from "@/mock/users";
 
 import {
   emailRule,
@@ -221,10 +136,11 @@ import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
-
+import Role from "@/model/admin-group/Role";
+import GlobalPermission from "@/model/admin-group/GlobalPermission";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
+
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
@@ -282,35 +198,9 @@ export default {
         },
 
         {
-          field: "full_name",
-          headerName: "ФИО",
+          field: "rolename",
+          headerName: "Название роли",
           minWidth: 250,
-          cellRenderer: "StudentHref2",
-        },
-        { field: "group_number", headerName: "Группа", maxWidth: 129 },
-        { field: "subgroup", headerName: "Подгруппа", maxWidth: 129 },
-        {
-          field: "enrollment_order",
-          headerName: "Приказ о зачислении",
-          minWidth: 200,
-          hide: true,
-        },
-        {
-          field: "formatted_enrolled_date",
-          filter: "agDateColumnFilter",
-          filterParams: filterParams,
-          headerName: "Дата зачисления",
-          minWidth: 170,
-          hide: true,
-        },
-
-        {
-          field: "formatted_date_of_birth",
-          filter: "agDateColumnFilter",
-          filterParams: filterParams,
-          headerName: "Дата рождения",
-          minWidth: 170,
-          hide: true,
         },
       ],
     });
@@ -435,23 +325,13 @@ export default {
       groupn: null,
       subgn: null,
       formVisible: false,
-      users,
-      user: {
-        id: "",
-        username: "",
-        email: "",
-        gender: null,
-        phone: "",
-        outstaff: false,
-        fired: false,
-        start_work_dt: null,
-        stack: null,
-        timezone: null,
-      },
       student: new Student(),
+      role: new Role(),
+      globalPermission: new GlobalPermission(),
       errors: {},
       valid: false,
       scheme: null,
+      scheme2: null,
       docPreview: false,
       filePath: null,
     };
@@ -459,172 +339,58 @@ export default {
   async mounted() {
     await this.getGroupList();
     await this.getStudentList();
-
-    this.loadStudentsData();
+    await this.getRoleList();
+    await this.getGlobalPermissionList();
+    this.loadRolesData();
     this.scheme = new FormScheme([
-      new DateInput({
-        key: "date_of_birth",
-        label: "Дата рождения",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
-        showIcon: true,
-        validation: [],
-      }),
-      new DateInput({
-        key: "enrolled_date",
-        label: "Дата зачисления",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
-        showIcon: true,
-        validation: [],
-      }),
-
-      new ComboboxInput({
-        key: "group_id",
-        label: "Номер группы",
-        options: [
-          ...[...this.groupList].map((group) => ({
-            label: group.group_number,
-            value: group.group_id,
-          })),
-        ],
-        validation: [requiredRule],
-      }),
-      new CheckboxInput({
-        key: "is_budget",
-        label: "Бюджет",
-        binary: true,
-      }),
       new TextInput({
-        key: "INN",
-        label: "ИНН",
-        placeholder: "ИНН",
-        icon: "pi pi-credit-card",
-        validation: [],
-      }),
-      new TextInput({
-        key: "SNILS",
-        label: "СНИЛС",
-        placeholder: "СНИЛС",
-        icon: "pi pi-credit-card",
-        validation: [],
-      }),
-      new TextInput({
-        key: "place_of_birth",
-        label: "Место рождения",
-        placeholder: "Место рождения",
-        icon: "pi pi-map-marker",
-        validation: [],
-      }),
-      new TextInput({
-        key: "email",
-        label: "Электронная почта",
-        placeholder: "Электронная почта",
-        icon: "pi pi-send",
-        validation: [emailRule],
-      }),
-      new TextInput({
-        key: "student_login",
-        label: "Логин студента",
-        placeholder: "Логин студента",
-        icon: "pi pi-user",
-        validation: [],
-      }),
-      new TextInput({
-        key: "enrollment_order",
-        label: "Приказ о зачислении",
-        placeholder: "Приказ о зачислении",
-        icon: "pi pi-file",
-        validation: [],
-      }),
-      new TextInput({
-        key: "phone_number",
-        label: "Номер телефона",
-        icon: "pi pi-phone",
-        placeholder: "Номер телефона",
-        validation: [],
-      }),
-      new TextInput({
-        key: "phone_number_rod",
-        label: "Номер телефона (РОД)",
-        icon: "pi pi-phone",
-        placeholder: "Номер телефона (РОД)",
-        validation: [],
-      }),
-      new TextInput({
-        key: "zachetka_number",
-        label: "Номер зачётки",
-        placeholder: "Номер зачётки",
-        icon: "pi pi-credit-card",
-        validation: [],
-      }),
-      new TextInput({
-        key: "first_name",
-        label: "Имя",
-        placeholder: "Имя",
-        icon: "pi pi-user",
-        validation: [requiredRule],
-      }),
-      new TextInput({
-        key: "last_name",
-        label: "Фамилия",
-        placeholder: "Фамилия",
-        icon: "pi pi-user",
-        validation: [requiredRule],
-      }),
-      new TextInput({
-        key: "patronymic",
-        label: "Отчество",
-        placeholder: "Отчество",
-        icon: "pi pi-user",
-        validation: [],
-      }),
-      new RadioInput({
-        key: "gender",
-        label: "Пол",
-        validation: [requiredRule],
-        options: [
-          {
-            label: "Мужчина",
-            value: "m",
-          },
-          {
-            label: "Женщина",
-            value: "f",
-          },
-        ],
-      }),
-      new RadioInput({
-        key: "subgroup",
-        label: "Подгруппа",
-        placeholder: "Подгруппа",
-        icon: "pi pi-users",
-        validation: [requiredRule],
-        options: [
-          {
-            label: "Нет",
-            value: "Нет",
-          },
-          {
-            label: "1",
-            value: "1",
-          },
-          {
-            label: "2",
-            value: "2",
-          },
-        ],
-      }),
-      new TextInput({
-        key: "passport_series_and_number",
-        label: "Серия и номер паспорта",
-        placeholder: "Серия и номер паспорта",
+        key: "rolename",
+        label: "Название роли",
+        placeholder: "Название роли",
         icon: "pi pi-id-card",
         validation: [],
       }),
     ]);
+    this.scheme2 = new FormScheme([
+      new CheckboxInput({
+        key: "create_grant",
+        label: "create",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "create_table_grant",
+        label: "create_table",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "update_table_grant",
+        label: "update_table",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "delete_table_grant",
+        label: "delete_table",
+        binary: true,
+      }),
+    ]);
   },
   methods: {
+    ...mapActions(useRoleStore, [
+      "getRoleList",
+      "postRole",
+      ,
+      "putRole",
+      "deleteRole",
+      "uploadGeneratedFile",
+    ]),
+    ...mapActions(useGlobalPermissionStore, [
+      "getGlobalPermissionList",
+      "postGlobalPermission",
+      ,
+      "putGlobalPermission",
+      "deleteGlobalPermission",
+      "uploadGeneratedFile",
+    ]),
     ...mapActions(useStudentStore, [
       "getStudentList",
       "postStudent",
@@ -632,7 +398,6 @@ export default {
       "putStudent",
       "deleteStudent",
       "uploadGeneratedFile",
-      "getCont",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
     cellWasClicked(event) {
@@ -640,13 +405,16 @@ export default {
         this.edit(event);
       }
     },
-    resetStd() {
-      this.student = new Student();
+    resetRole() {
+      this.role = new Role();
+      this.globalPermission = new GlobalPermission();
     },
     edit(event) {
-      this.resetStd();
-      this.student = event.data;
-
+      this.resetRole();
+      this.role = event.data;
+      this.globalPermissionMap[event.data.roleid]
+        ? (this.globalPermission = this.globalPermissionMap[event.data.roleid])
+        : (this.globalPermission.roleid = event.data.roleid);
       this.formVisible = true;
     },
     async previewDocx() {
@@ -654,68 +422,8 @@ export default {
 
       this.docPreview = true;
     },
-    async contingent() {
-      // Ваши данные из JSON
-      const jsonData = await this.getCont();
-
-      // Преобразуем данные в формат для Excel
-      const formattedData = this.formatDataForExcel(jsonData);
-
-      // Создаем новый рабочий лист
-      const ws = XLSX.utils.json_to_sheet(formattedData);
-
-      // Создаем новую книгу
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Контингент");
-
-      // Генерируем файл
-      XLSX.writeFile(wb, "контингент.xlsx");
-    },
-    formatDataForExcel(data) {
-      const result = [];
-
-      // Группировка и форматирование данных
-      const groupedData = {};
-
-      data.forEach((item) => {
-        const key = `${item.dir_code} ${item.direction_name} (бакалавриат)`;
-        if (!groupedData[key]) {
-          groupedData[key] = {
-            code: item.dir_code,
-            direction: item.direction_name,
-            course: item.course,
-            total_budget: 0,
-            total_contract: 0,
-            lecture_streams: item.lecture_streams,
-            total_groups: item.total_groups,
-            total_subgroups: item.total_subgroups,
-            total_profiles: item.total_profiles,
-            practical_groups: item.practical_groups,
-          };
-        }
-        groupedData[key].total_budget += item.total_students_budget;
-        groupedData[key].total_contract += item.total_students_contract;
-      });
-
-      // Преобразование в массив
-      for (const key in groupedData) {
-        result.push({
-          "Специальность/направление": key,
-          Курс: groupedData[key].course,
-          "Контингент студентов б": groupedData[key].total_budget,
-          "Контингент студентов д": groupedData[key].total_contract,
-          "Количество лекционных потоков": groupedData[key].lecture_streams,
-          "Количество групп": groupedData[key].total_groups,
-          "Количество подгрупп": groupedData[key].total_subgroups,
-          "Количество профилей": groupedData[key].total_profiles,
-          "Количество групп для практики": groupedData[key].practical_groups,
-        });
-      }
-
-      return result;
-    },
     openCreatingForm() {
-      this.resetStd();
+      this.resetRole();
       this.formVisible = true;
     },
     async validateForm() {
@@ -723,7 +431,7 @@ export default {
       const errors = {};
 
       for (const item of this.scheme.items) {
-        const result = item.validate(this.student[item.key]);
+        const result = item.validate(this.role[item.key]);
 
         if (result !== true) {
           // Check for `true`, which means the field is valid
@@ -743,45 +451,43 @@ export default {
         console.error("Form validation failed", this.errors);
         return;
       }
-      let student = { ...this.student };
-
-      if (student.student_id) {
-        await this.putStudent(student);
+      let role = { ...this.role };
+      let globalPermission = { ...this.globalPermission };
+      if (role.roleid) {
+        await this.putRole(role);
+        await this.putGlobalPermission(globalPermission);
       } else {
-        await this.postStudent(student);
+        globalPermission.roleid = await this.postRole(role);
+
+        await this.postGlobalPermission(globalPermission);
       }
       this.formVisible = false;
-      this.resetStd();
-      this.loadStudentsData();
+      this.resetRole();
+      this.loadRolesData();
     },
 
-    async deleteStd() {
-      let student = { ...this.student };
-      console.log(student);
-      await this.deleteStudent(student);
+    async deleteR() {
+      let role = { ...this.role };
+
+      await this.deleteRole(role);
       this.formVisible = false;
-      this.resetStd();
-      this.loadStudentsData();
+      this.resetRole();
+      this.loadRolesData();
     },
 
-    async loadStudentsData() {
+    async loadRolesData() {
       try {
-        if (Array.isArray(this.studentList)) {
-          // Filter out students where deleted_at is not null and sort by full_name
-          this.rowData.value = this.studentList
-            .filter((student) => student.deleted_at === null)
-            .sort((a, b) => a.full_name.localeCompare(b.full_name));
+        if (Array.isArray(this.roleList)) {
+          // Filter out roles where deleted_at is not null and sort by full_name
+          this.rowData.value = this.roleList;
         } else {
-          // Handle case where studentList is not an array
-          if (this.studentList.deleted_at === null) {
-            this.rowData.value = [this.studentList];
-          } else {
-            this.rowData.value = [];
-          }
+          // Handle case where roleList is not an array
+
+          this.rowData.value = [];
         }
         this.loading = false;
       } catch (error) {
-        console.error("Error loading students data:", error);
+        console.error("Error loading roles data:", error);
       }
     },
 
@@ -1079,6 +785,11 @@ export default {
   },
   computed: {
     ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
+    ...mapState(useRoleStore, ["roleList"]),
+    ...mapState(useGlobalPermissionStore, [
+      "globalPermissionList",
+      "globalPermissionMap",
+    ]),
     ...mapState(useGroupStore, ["groupList"]),
   },
   async created() {},
@@ -1108,6 +819,9 @@ var filterParams = {
 </script>
 
 <style lang="scss" scoped>
+.ag-grid-wrap {
+  width: 100%;
+}
 .bigger {
   font-size: 30px;
   white-space: nowrap;
@@ -1219,7 +933,7 @@ var filterParams = {
 
 .form {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 10px;
 

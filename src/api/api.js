@@ -17,6 +17,7 @@ export default {
     },
     //student
     getStudentList: () => ReqExec.get(endpoints.rest.student, null, true),
+    getStudentCont: () => ReqExec.get(endpoints.rest.cont, null, true),
     postStudent: (student) => ReqExec.post(endpoints.rest.student, student),
     putStudent: (student_id, student) => ReqExec.put(endpoints.rest.student, student_id, student),
     deleteStudent: (student) => ReqExec.put(endpoints.procedure.student, student.student_id, student),
@@ -98,5 +99,50 @@ export default {
     ReqExec.put(endpoints.rest.uploaded_file, direction_code, uploaded_file),
   deleteUploaded_File: (uploaded_file) =>
     ReqExec.put(endpoints.procedure.uploaded_file, uploaded_file.id, uploaded_file),
+
+
+  //role
+  getRoleList: () => ReqExec.get(endpoints.rest.role, null, true),
+  postRole: (role) => ReqExec.post(endpoints.function_end.insert_roles, role),
+  putRole: (roleid, role) => ReqExec.put(endpoints.rest.role, roleid, role),
+  deleteRole: (role) => ReqExec.put(endpoints.procedure.role, role.roleid, role),
+  //globalPermission
+  getGlobalPermissionList: () => ReqExec.get(endpoints.rest.globalPermission, null, true),
+  postGlobalPermission: (globalPermission) => ReqExec.post(endpoints.rest.globalPermission, globalPermission),
+  putGlobalPermission: (permissionid, globalPermission) => ReqExec.put(endpoints.rest.globalPermission, permissionid, globalPermission),
+  deleteGlobalPermission: (globalPermission) => ReqExec.put(endpoints.procedure.globalPermission, globalPermission.permissionid, globalPermission),
+  //functionUser
+  getFunctionUserList: () => ReqExec.get(endpoints.rest.functionUser, null, true),
+  postFunctionUser: (functionUser) => ReqExec.post(endpoints.directLinks.createFunction, functionUser),
+  putFunctionUser: (id, functionUser) => ReqExec.put(endpoints.directLinks.updateFunctionFromSql, id, functionUser),
+  deleteFunctionUser: (functionUser) => ReqExec.put(endpoints.procedure.deleteFunctionUser, functionUser, functionUser),
+  //procedureUser
+  getProcedureUserList: () => ReqExec.get(endpoints.rest.procedureUser, null, true),
+  postProcedureUser: (procedureUser) => ReqExec.post(endpoints.directLinks.createProcedure, procedureUser),
+  putProcedureUser: (id, procedureUser) => ReqExec.put(endpoints.directLinks.updateProcedureFromSql, id, procedureUser),
+  deleteProcedureUser: (procedureUser) => ReqExec.put(endpoints.procedure.deleteProcedureUser, procedureUser, procedureUser),
+  //tableUser
+  getTableUserList: () => ReqExec.get(endpoints.rest.tableUser, null, true),
+  postTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.createTable, tableUser),
+  putTableUser: (id, tableUser) => ReqExec.put(endpoints.directLinks.updateTableFromSql, id, tableUser),
+  deleteTableUser: (tableUser) => ReqExec.put(endpoints.table.deleteTableUser, tableUser, tableUser),
+  //triggerUser
+  getTriggerUserList: () => ReqExec.get(endpoints.rest.triggerUser, null, true),
+  postTriggerUser: (triggerUser) => ReqExec.post(endpoints.directLinks.createTrigger, triggerUser),
+  putTriggerUser: (id, triggerUser) => ReqExec.put(endpoints.directLinks.updateTriggerFromSql, id, triggerUser),
+  deleteTriggerUser: (triggerUser) => ReqExec.put(endpoints.trigger.deleteTriggerUser, triggerUser, triggerUser),
+  //user
+  getUserList: () => ReqExec.get(endpoints.rest.user, null, true),
+  postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),
+  putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),
+  deleteUser: (user) => ReqExec.put(endpoints.procedure.user, user.id, user),
+  //userRole
+  getUserRoleList: () => ReqExec.get(endpoints.rest.userRole, null, true),
+  postUserRole: (userRole) => ReqExec.post(endpoints.rest.userRole, userRole),
+  deleteUserRole: (userRole) => ReqExec.put(endpoints.procedure.deleteUserRoleByUserId, userRole.id, userRole),
+  //permission
+  getPermissionList: () => ReqExec.get(endpoints.rest.permission, null, true),
+  postPermission: (permission) => ReqExec.post(endpoints.rest.permission, permission),
+  deletePermission: (permission) => ReqExec.put(endpoints.rest.permission, permission, permission),
 
 };

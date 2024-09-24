@@ -86,10 +86,53 @@ const model = ref([
         to: "/xlparse",
       },
       {
+        label: "Админ панель",
+        icon: "pi pi-fw pi-box",
+        items: [
+          {
+            label: "Процедуры",
+            icon: "pi pi-fw pi-list",
+            to: "/procedures",
+          },
+          {
+            label: "Функции",
+            icon: "pi pi-fw pi-list",
+            to: "/functions",
+          },
+          {
+            label: "Роли",
+            icon: "pi pi-fw pi-list",
+            to: "/roles",
+          },
+          {
+            label: "Пользователи",
+            icon: "pi pi-fw pi-list",
+            to: "/users",
+          },
+          {
+            label: "Триггеры",
+            icon: "pi pi-fw pi-list",
+            to: "/triggers",
+          },
+          {
+            label: "Таблицы",
+            icon: "pi pi-fw pi-list",
+            to: "/tables",
+          },
+        ],
+      },
+      {
+        label: "Журнал",
+        icon: "pi pi-fw pi-file-book",
+        to: "/teachers"
+           
+      },
+      {
         label: "Настройки",
         icon: "pi pi-fw pi-cog",
         to: "/profile",
       },
+
       {
         label: "Выйти",
         icon: "pi pi-fw pi-sign-out",

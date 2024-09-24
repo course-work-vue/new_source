@@ -57,6 +57,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -153,7 +154,7 @@ import { useStudentStore } from "@/store2/studentgroup/student";
 
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 /* eslint-disable vue/no-unused-components */
 export default {
@@ -166,6 +167,7 @@ export default {
     OnlyDocumentEditor,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
@@ -196,7 +198,7 @@ export default {
         { field: "dep_name", headerName: "Кафедра" },
         { field: "course_work_theme", headerName: "Тема" },
         { field: "student_name", headerName: "ФИО студента" },
-        { field: "teacher_name", headerName: "ФИО препода" },
+        { field: "teacher_name", headerName: "ФИО преподавателя" },
       ],
     });
 
@@ -227,6 +229,7 @@ export default {
       rowData,
       defaultColDef,
       maxDialog,
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
