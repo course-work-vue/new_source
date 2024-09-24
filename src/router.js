@@ -5,6 +5,9 @@ import Register from "./components/Register.vue";
 import jwt_decode from "jwt-decode";
 import AuthService from './services/auth.service';
 import AppLayout from './layout/AppLayout.vue'
+
+
+
 // lazy-loaded
 const Profile = () => import("./components/Profile.vue")
 
@@ -17,13 +20,18 @@ const RightsTable = () => import("./components/RightsTable.vue")
 const DirectionList = () => import("./components/student/DirectionList.vue")
 const AddDirection = () => import("./components/AddDirection.vue")
 const DirectionDetail = () => import("./components/DirectionDetail.vue")
-const ProfileList = () => import("./components/ProfileList.vue")
+const ProfileList = () => import("./components/student/ProfileList.vue")
 const AddProfile = () => import("./components/AddProfile.vue")
 const ProfileDetail = () => import("./components/ProfileDetail.vue")
 
-const GroupList = () => import("./components/GroupList.vue")
+const GroupList = () => import("./components/student/GroupList.vue")
 const AddGroup = () => import("./components/AddGroup.vue")
 const GroupDetail = () => import("./components/GroupDetail.vue")
+const AddCw = () => import("./components/AddCw.vue")
+const CWList = () => import("./components/student/CwList.vue")
+const CWdetail = () => import("./components/CwDetail.vue")
+
+
 
 const ListenerList = () => import("./components/ListenerList.vue")
 const ListenerDetail = () => import("./components/ListenerDetail.vue")
@@ -39,9 +47,7 @@ const AddContract = () => import("./components/AddContract.vue")
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue")
 
-const AddCw = () => import("./components/AddCw.vue")
-const CWList = () => import("./components/CwList.vue")
-const CWdetail = () => import("./components/CwDetail.vue")
+
 
 const ProgramList = () => import("./components/ProgramList.vue")
 const AddProgram = () => import("./components/AddProgram.vue")
@@ -66,14 +72,33 @@ const lGroupDetail = () => import("./components/LgroupDetail.vue")
 
 
 const xlparse = () => import("./components/xlparse.vue")
+const ManageExcel = () => import("./components/ManageExcel.vue")
+const ManageExcel2 = () => import("./components/ManageExcel2.vue")
+const ManageExcel3 = () => import("./components/ManageExcel3.vue")
+const ManageExcel4 = () => import("./components/ManageExcel4.vue")
+const ManageExcel5 = () => import("./components/ManageExcel5.vue")
+const ManageExcel6 = () => import("./components/ManageExcel6.vue")
+const ManageExcel7 = () => import("./components/ManageExcel7.vue")
+const ManageExcel8 = () => import("./components/ManageExcel8.vue")
+const ManageExcel9 = () => import("./components/ManageExcel9.vue")
+const ManageExcel10 = () => import("./components/ManageExcel10.vue")
+const ManageExcel11 = () => import("./components/ManageExcel11.vue")
+const ManageExcel12 = () => import("./components/ManageExcel12.vue")
+const ManageExcel13 = () => import("./components/ManageExcel13.vue")
+
+const Test = () => import("./components/base/ExampleComponent.vue")
 
 const routes = [
+
   {
     path: "/",
     name: "home",
     component: AppLayout,
     children: [
-
+      {
+        path: "/test",
+        component: Test,
+      },
       {
         path: "/home",
         component: Home,
@@ -163,6 +188,7 @@ const routes = [
       { path: '/AddStudent', component: AddStudent },
       { path: '/AddStudent/:groupName', component: AddStudent },]
   },
+
 ];
 
 const router = createRouter({

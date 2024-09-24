@@ -2,12 +2,18 @@
   <div class="col col-xs-9 col-lg-12 mt-4 list">
     <div class="col col-12">
       <div class="mb-3 col col-12">
+        <div v-if="!pr">
+          <h1>Список всех групп</h1>
+        </div>
+        <div v-if="pr">
+          <h1>Список всех групп с профилем {{ pr_n }}</h1>
+        </div>
         <button
           @click="openCreatingForm"
           class="btn btn-primary float-start"
           type="button"
         >
-          <i class="material-icons-outlined">add</i>Добавить направление
+          <i class="material-icons-outlined">add</i>Добавить группу
         </button>
         <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
           <button
@@ -30,7 +36,7 @@
       </div>
     </div>
 
-    <div style="height: 90vh">
+    <div style="height: 95vh">
       <div class="h-100 pt-5">
         <ag-grid-vue
           class="ag-theme-alpine"
@@ -44,35 +50,16 @@
           @grid-ready="onGridReady"
           @firstDataRendered="onFirstDataRendered"
           @filter-changed="onFilterChanged"
-
         >
         </ag-grid-vue>
       </div>
     </div>
   </div>
-  <div class="test" v-if="test">
-    <label>Количество бюджета:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_budget_count"
-        disabled
-      />
-    </div>
-    <label>Количество договоров:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_not_budget_count"
-        disabled
-      />
-    </div>
-  </div>
-  <Dialog v-model:visible="formVisible" modal header="Форма направления">
+  <Dialog v-model:visible="formVisible" modal header="Форма группы">
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
-          v-model="direction"
+          v-model="group"
           v-model:valid="valid"
           v-model:errors="errors"
           item-class="form__item"
@@ -91,8 +78,8 @@
     </Button>
     <Button
       class="btn btn-primary float-end"
-      v-if="this.direction.dir_id"
-      @click="deleteDir"
+      v-if="this.group.group_id"
+      @click="deleteGr"
     >
       Удалить
     </Button>
@@ -102,15 +89,17 @@
 <script>
 import { AgGridVue } from "ag-grid-vue3"; // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/student/DirectionButtonCell.vue";
+import ButtonCell from "@/components/student/GroupButtonCell.vue";
+import GroupHref from "@/components/student/GroupHrefCellRenderer.vue";
+import GroupHref2 from "@/components/student/GroupHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 
-import DirectionHref from "@/components/student/DirectionHrefCellRenderer.vue";
-import { useDirectionStore } from "@/store2/studentgroup/direction";
 import { mapState, mapActions } from "pinia";
-import Direction from "@/model/student-group/Direction";
-
+import Group from "@/model/student-group/Group";
+import { useDirectionStore } from "@/store2/studentgroup/direction";
+import { useProfileStore } from "@/store2/studentgroup/profile";
+import { useGroupStore } from "@/store2/studentgroup/group";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -132,7 +121,8 @@ export default {
   components: {
     AgGridVue,
     ButtonCell,
-    DirectionHref,
+    GroupHref,
+    GroupHref2,
     AutoForm,
   },
   setup() {
@@ -146,7 +136,7 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToDirection = () => {};
+    const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -159,22 +149,30 @@ export default {
           headerName: "Действия",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
+            onClick: navigateToStudent,
             label: "View Details", // Button label
           },
-          maxWidth: 120, // Adjust the width as needed
-          cellClass: "grid-cell-centered",
+          maxWidth: 120,
           resizable: false,
         },
-
-        { field: "dir_name", headerName: "Название направления" },
         {
-          field: "dir_code",
-          headerName: "Код направления",
-          cellRenderer: "DirectionHref",
+          field: "group_number",
+          headerName: "Номер группы",
+          cellRenderer: "GroupHref",
+          maxWidth: 179,
         },
+        { field: "course", headerName: "Курс", maxWidth: 129 },
         {
-          field: "magister",
-          headerName: "Магистратура",
+          field: "prof_name",
+          headerName: "Название профиля",
+          cellRenderer: "GroupHref2",
+        },
+        { field: "dir_code", headerName: "Код направления", hide: true },
+        {
+          field: "dir_name",
+          filter: "agDateColumnFilter",
+          headerName: "Название Направления",
+          hide: true,
         },
       ],
     });
@@ -209,73 +207,97 @@ export default {
 
       onFilterTextBoxChanged,
       paginationPageSize,
-      navigateToDirection,
+      navigateToStudent,
     };
   },
   data() {
     return {
-      test: false,
-      quickFilterValue: "", // Initialize with an empty string
+      quickFilterValue: "",
       filters: false,
-      event: null,
-      direction: new Direction(),
+      pr: false,
+      pr_n: null,
+      group: new Group(),
       errors: {},
       valid: false,
       scheme: null,
       formVisible: false,
     };
   },
-  computed: {
-    ...mapState(useDirectionStore, ["directionList"]),
-  },
   async mounted() {
-    await this.getDirectionList(); // Fetch the list of directions
+    await this.getDirectionList(); // Получение списка направлений
+    await this.getProfileList(); // Получение списка профилей
+    await this.getGroupList(); // Получение списка групп
 
-    this.loadDirectionsData();
+    this.loadGroupsData(); // Загрузка данных групп
     this.scheme = new FormScheme([
       new TextInput({
-        key: "dir_name",
-        label: "Название направления",
-        placeholder: "Введите название направления",
-        icon: "pi pi-book",
-        validation: [requiredRule], // Assuming name is a required field
+        key: "group_number",
+        label: "Номер группы",
+        placeholder: "Номер группы",
+        icon: "pi pi-hashtag",
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "group_dir_id",
+        label: "Направление",
+        options: [
+          ...[...this.directionList].map((direction) => ({
+            label: direction.dir_name,
+            value: direction.dir_id,
+          })),
+        ],
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "group_prof_id",
+        label: "Профиль",
+        options: [
+          ...[...this.profileList].map((profile) => ({
+            label: profile.prof_name,
+            value: profile.prof_id,
+          })),
+        ],
+        validation: [requiredRule],
       }),
       new TextInput({
-        key: "dir_code",
-        label: "Код направления",
-        placeholder: "Введите код направления",
-        icon: "pi pi-tag",
-        validation: [requiredRule], // Assuming code is a required field
-      }),
-      new CheckboxInput({
-        key: "magister",
-        label: "Магистратура",
-        binary: true,
+        key: "course",
+        label: "Курс",
+        placeholder: "Курс",
+        icon: "pi pi-graduation-cap",
+        validation: [requiredRule],
       }),
     ]);
   },
+  computed: {
+    ...mapState(useDirectionStore, ["directionList"]),
+    ...mapState(useProfileStore, ["profileList"]),
+    ...mapState(useGroupStore, ["groupList"]),
+  },
   methods: {
-    ...mapActions(useDirectionStore, [
-      "getDirectionList",
-      "postDirection",
+    ...mapActions(useDirectionStore, ["getDirectionList"]),
+    ...mapActions(useProfileStore, ["getProfileList"]),
+    ...mapActions(useGroupStore, [
+      "getGroupList",
+      "postGroup",
       ,
-      "putDirection",
-      "deleteDirection",
+      "putGroup",
+      "deleteGroup",
     ]),
-    async deleteDir() {
-      let direction = { ...this.direction };
+    async deleteGr() {
+      let group = { ...this.group };
 
-      await this.deleteDirection(direction);
+      await this.deleteGroup(group);
       this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
+      this.resetGroup();
+      this.loadGroupsData();
     },
     openCreatingForm() {
-      this.resetDir();
+      this.resetGroup();
       this.formVisible = true;
     },
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "Действия") {
+        console.log(event);
         this.edit(event);
       }
     },
@@ -284,26 +306,24 @@ export default {
       const errors = {};
 
       for (const item of this.scheme.items) {
-        const result = item.validate(this.direction[item.key]);
+        const result = item.validate(this.group[item.key]);
 
         if (result !== true) {
-          // Check for `true`, which means the field is valid
-          errors[item.key] = result; // Store the error message if validation fails
+          errors[item.key] = result;
           isValid = false;
         }
       }
 
-      this.errors = errors; // Store errors in the component's state
-      this.valid = isValid; // Set the valid flag based on the results
-      return isValid; // Return the validity of the form
+      this.errors = errors;
+      this.valid = isValid;
+      return isValid;
     },
-    resetDir() {
-      this.direction = new Direction();
+    resetGroup() {
+      this.group = new Group();
     },
     edit(event) {
-      this.resetDir();
-      this.direction = event.data;
-
+      this.resetGroup();
+      this.group = event.data;
       this.formVisible = true;
     },
     async submit() {
@@ -312,40 +332,34 @@ export default {
         console.error("Form validation failed", this.errors);
         return;
       }
-      let direction = { ...this.direction };
+      let group = { ...this.group };
 
-      if (direction.dir_id) {
-        await this.putDirection(direction);
+      if (group.group_id) {
+        await this.putGroup(group);
       } else {
-        await this.postDirection(direction);
+        await this.postGroup(group);
       }
       this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
+      this.resetGroup();
+      this.loadGroupsData();
     },
-    async loadDirectionsData() {
+    async loadGroupsData() {
       try {
-        if (Array.isArray(this.directionList)) {
-          // Filter out directions where deleted_at is not null and sort by dir_name
-          this.rowData.value = this.directionList
-            .filter((direction) => direction.deleted_at === null)
-            .sort((a, b) => a.dir_name.localeCompare(b.dir_name));
+        if (Array.isArray(this.groupList)) {
+          this.rowData.value = this.groupList
+            .filter((group) => group.deleted_at === null)
+            .sort((a, b) => a.group_number.localeCompare(b.group_number));
         } else {
-          // Handle case where directionList is not an array
-          if (this.directionList.deleted_at === null) {
-            this.rowData.value = [this.directionList];
+          if (this.groupList.deleted_at === null) {
+            this.rowData.value = [this.groupList];
           } else {
             this.rowData.value = [];
           }
         }
         this.loading = false;
       } catch (error) {
-        console.error("Error loading directions data:", error);
+        console.error("Error loading groups data:", error);
       }
-    },
-
-    navigateToAddDirection() {
-      this.$router.push(`/addDirection`); // Navigate to the AddDirection route
     },
 
     onFirstDataRendered(params) {
@@ -389,6 +403,14 @@ export default {
       if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
         queryParams.filterModel = JSON.stringify(savedFilterModel);
         this.filters = true;
+        if (savedFilterModel.prof_name) {
+          this.pr = true;
+          this.pr_n = savedFilterModel.prof_name.filter;
+        } else {
+          this.pr = false;
+        }
+      } else {
+        this.pr = false;
       }
 
       // Push the query parameters to the router
@@ -403,22 +425,10 @@ export default {
       this.filters = false;
     },
   },
-
-  created() {
-    this.loadDirectionsData();
-  },
 };
 </script>
 
 <style lang="scss" scoped>
-.ag-row .ag-cell {
-  display: flex;
-  justify-content: center; /* align horizontal */
-  align-items: center;
-}
-.test {
-  padding-left: 100px;
-}
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -432,11 +442,6 @@ export default {
   animation: skeletonShimmer 3.5s infinite linear;
   border-radius: 4px;
   margin: 0.2em 0;
-}
-
-.text-center * {
-  justify-content: center;
-  display: flex;
 }
 
 @keyframes skeletonShimmer {
@@ -455,6 +460,27 @@ export default {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@media (max-width: 769px) {
+  .list {
+    padding-left: 100px;
+    font-size: 10px;
+    max-width: 1100px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .list {
+    padding-left: 100px;
+    font-size: 13px;
+  }
+}
+@media (min-width: 1023px) {
+  .list {
+    padding-left: 100px;
+    padding-right: 5px;
   }
 }
 .nmbr {
@@ -504,23 +530,6 @@ export default {
     border: none;
     --bs-btn-hover-bg: rgb(6 215 29);
     --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-
-.form {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 10px;
-
-  &__item {
-    padding: 5px;
-    margin-right: 10px;
-  }
-
-  &__item:nth-child(2n) {
-    margin-right: 0;
-    border-right: none;
   }
 }
 </style>

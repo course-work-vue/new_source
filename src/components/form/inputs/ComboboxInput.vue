@@ -1,6 +1,5 @@
 <template>
   <labeled-input :label="label" :item-key="itemKey">
-    <!-- https://primevue.org/dropdown/-->
     <Dropdown
       v-model="model"
       :class="inputClass"

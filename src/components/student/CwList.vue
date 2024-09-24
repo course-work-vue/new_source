@@ -1,36 +1,55 @@
 <template>
   <div class="col col-xs-9 col-lg-12 mt-4 list">
+    <div v-if="!pr">
+      <h1>Список всех квалификационных работ</h1>
+    </div>
+    <div v-if="pr">
+      <h1>Список квалификационных работ с ФИО {{ pr_n }}</h1>
+    </div>
     <div class="col col-12">
       <div class="mb-3 col col-12">
-        <button
-          @click="openCreatingForm"
-          class="btn btn-primary float-start"
-          type="button"
-        >
-          <i class="material-icons-outlined">add</i>Добавить направление
-        </button>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
+        <div class="col col-12">
           <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
+            @click="navigateToAddCW"
+            class="btn btn-primary float-start"
             type="button"
           >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
+            <i class="material-icons-outlined">add</i>Добавить курсовую работу
           </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+          <button
+            @click="previewDocx"
+            class="mx-2 btn btn-primary float-start"
+            type="button"
+          >
+            Отчёт о научных руководителях
+          </button>
+
+          <div class="col col-6 float-end d-inline-flex align-items-center">
+            <button
+              @click="clearFilters"
+              :disabled="!filters"
+              class="btn btn-sm btn-primary text-nowrap mx-2"
+              type="button"
+            >
+              <i class="material-icons-outlined">close</i>Очистить фильтры
+            </button>
+            <input
+              class="form-control"
+              type="text"
+              v-model="quickFilterValue"
+              id="filter-text-box"
+              v-on:input="onFilterTextBoxChanged()"
+              placeholder="Поиск..."
+            />
+          </div>
         </div>
+        <br />
       </div>
     </div>
+    <br />
 
-    <div style="height: 90vh">
+    <br />
+    <div style="height: 95vh">
       <div class="h-100 pt-5">
         <ag-grid-vue
           class="ag-theme-alpine"
@@ -44,73 +63,24 @@
           @grid-ready="onGridReady"
           @firstDataRendered="onFirstDataRendered"
           @filter-changed="onFilterChanged"
-
+          :pagination="true"
+          :paginationPageSize="paginationPageSize"
         >
         </ag-grid-vue>
       </div>
     </div>
   </div>
-  <div class="test" v-if="test">
-    <label>Количество бюджета:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_budget_count"
-        disabled
-      />
-    </div>
-    <label>Количество договоров:</label>
-    <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
-      <input
-        class="form-control"
-        v-model="event.data.total_not_budget_count"
-        disabled
-      />
-    </div>
-  </div>
-  <Dialog v-model:visible="formVisible" modal header="Форма направления">
-    <div class="card flex flex-row">
-      <div class="form card__form">
-        <auto-form
-          v-model="direction"
-          v-model:valid="valid"
-          v-model:errors="errors"
-          item-class="form__item"
-          :scheme="scheme"
-        >
-        </auto-form>
-      </div>
-    </div>
-
-    <Button
-      class="btn btn-primary float-start"
-      :disabled="!valid"
-      @click="submit"
-    >
-      Сохранить
-    </Button>
-    <Button
-      class="btn btn-primary float-end"
-      v-if="this.direction.dir_id"
-      @click="deleteDir"
-    >
-      Удалить
-    </Button>
-  </Dialog>
 </template>
 
 <script>
 import { AgGridVue } from "ag-grid-vue3"; // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/student/DirectionButtonCell.vue";
+import ButtonCell from "@/components/student/CWButtonCell.vue";
+import GroupHref from "@/components/student/GroupHrefCellRenderer.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 
-import DirectionHref from "@/components/student/DirectionHrefCellRenderer.vue";
-import { useDirectionStore } from "@/store2/studentgroup/direction";
-import { mapState, mapActions } from "pinia";
-import Direction from "@/model/student-group/Direction";
-
+import CourseWork from "@/model/student-group/CourseWork";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -126,13 +96,18 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import { mapState, mapActions } from "pinia";
+import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
+import { useDepartamentStore } from "@/store2/teachergroup/departament";
+import { useTeacherStore } from "@/store2/teachergroup/teacher";
+import { useStudentStore } from "@/store2/studentgroup/student";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
   components: {
     AgGridVue,
     ButtonCell,
-    DirectionHref,
+    GroupHref,
     AutoForm,
   },
   setup() {
@@ -146,7 +121,7 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToDirection = () => {};
+    const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -159,23 +134,16 @@ export default {
           headerName: "Действия",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
+            onClick: navigateToStudent,
             label: "View Details", // Button label
           },
-          maxWidth: 120, // Adjust the width as needed
+          maxWidth: 120,
           cellClass: "grid-cell-centered",
-          resizable: false,
         },
-
-        { field: "dir_name", headerName: "Название направления" },
-        {
-          field: "dir_code",
-          headerName: "Код направления",
-          cellRenderer: "DirectionHref",
-        },
-        {
-          field: "magister",
-          headerName: "Магистратура",
-        },
+        { field: "dep_name", headerName: "Кафедра" },
+        { field: "course_work_theme", headerName: "Тема" },
+        { field: "full_name", headerName: "ФИО студента" },
+        { field: "full_name_t", headerName: "ФИО препода" },
       ],
     });
 
@@ -202,152 +170,147 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      cellWasClicked: (event) => {
+        // Example of consuming Grid Event
+        console.log("cell was clicked", event);
+      },
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
 
       onFilterTextBoxChanged,
       paginationPageSize,
-      navigateToDirection,
+      navigateToStudent,
     };
   },
   data() {
     return {
-      test: false,
-      quickFilterValue: "", // Initialize with an empty string
+      quickFilterValue: "",
       filters: false,
-      event: null,
-      direction: new Direction(),
-      errors: {},
-      valid: false,
-      scheme: null,
-      formVisible: false,
+      pr: false,
+      pr_n: null,
+      CourseWork: new CourseWork(),
     };
   },
   computed: {
-    ...mapState(useDirectionStore, ["directionList"]),
+    ...mapState(useCourseWorkStore, ["courseWorkList"]),
+    ...mapState(useTeacherStore, ["teacherList"]),
+    ...mapState(useDepartamentStore, ["departamentList"]),
+    ...mapState(useStudentStore, ["studentList"]),
   },
   async mounted() {
-    await this.getDirectionList(); // Fetch the list of directions
+    await this.getTeacherList();
 
-    this.loadDirectionsData();
+    await this.getDepartamentList();
+    await this.getStudentList();
+    await this.getCourseWorkList();
+    this.loadCourseWorksData();
     this.scheme = new FormScheme([
       new TextInput({
-        key: "dir_name",
-        label: "Название направления",
-        placeholder: "Введите название направления",
+        key: "course_work_theme",
+        label: "Тема курсовой",
+        placeholder: "Введите тему курсовой работы",
         icon: "pi pi-book",
-        validation: [requiredRule], // Assuming name is a required field
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "course_work_teacher_id",
+        label: "Преподаватель",
+        options: [
+          ...[...this.teacherList].map((teacher) => ({
+            label: `${teacher.first_name} ${teacher.last_name}`,
+            value: teacher.teacher_id,
+          })),
+        ],
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "course_work_student_id",
+        label: "Студент",
+        options: [
+          ...[...this.studentList].map((student) => ({
+            label: `${student.first_name} ${student.last_name}`,
+            value: student.student_id,
+          })),
+        ],
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "course_work_kafedra",
+        label: "Кафедра",
+        options: [
+          ...[...this.departamentList].map((departament) => ({
+            label: departament.dep_name,
+            value: departament.dep_id,
+          })),
+        ],
+        validation: [requiredRule],
       }),
       new TextInput({
-        key: "dir_code",
-        label: "Код направления",
-        placeholder: "Введите код направления",
-        icon: "pi pi-tag",
-        validation: [requiredRule], // Assuming code is a required field
+        key: "course_work_year",
+        label: "Год курсовой работы",
+        placeholder: "Введите год",
+        icon: "pi pi-calendar",
+        validation: [requiredRule],
+      }),
+      new ComboboxInput({
+        key: "course_work_ocenka",
+        label: "Оценка",
+        options: [
+          { label: "Отлично", value: 5 },
+          { label: "Хорошо", value: 4 },
+          { label: "Удовлетворительно", value: 3 },
+          { label: "Неудовлетворительно", value: 2 },
+        ],
       }),
       new CheckboxInput({
-        key: "magister",
-        label: "Магистратура",
+        key: "course_work_vipysk",
+        label: "Выпускная работа",
         binary: true,
       }),
     ]);
   },
+
   methods: {
-    ...mapActions(useDirectionStore, [
-      "getDirectionList",
-      "postDirection",
+    ...mapActions(useCourseWorkStore, [
+      "getCourseWorkList",
+      "postCourseWork",
       ,
-      "putDirection",
-      "deleteDirection",
+      "putCourseWork",
+      "deleteCourseWork",
     ]),
-    async deleteDir() {
-      let direction = { ...this.direction };
+    ...mapActions(useTeacherStore, ["getTeacherList"]),
+    ...mapActions(useDepartamentStore, ["getDepartamentList"]),
+    ...mapActions(useStudentStore, ["getStudentList"]),
+    previewDocx() {
+      window.open(
+        `https://docs.google.com/viewerng/viewer?url=http://195.93.252.168:5050/api/CourseWork/ExportCourseWorks`
+      );
+    },
 
-      await this.deleteDirection(direction);
-      this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
+    navigateToAddCW() {
+      this.$router.push(`/addCw`); // Navigate to the AddStudent route
     },
-    openCreatingForm() {
-      this.resetDir();
-      this.formVisible = true;
-    },
-    cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
-        this.edit(event);
-      }
-    },
-    async validateForm() {
-      let isValid = true;
-      const errors = {};
 
-      for (const item of this.scheme.items) {
-        const result = item.validate(this.direction[item.key]);
-
-        if (result !== true) {
-          // Check for `true`, which means the field is valid
-          errors[item.key] = result; // Store the error message if validation fails
-          isValid = false;
-        }
-      }
-
-      this.errors = errors; // Store errors in the component's state
-      this.valid = isValid; // Set the valid flag based on the results
-      return isValid; // Return the validity of the form
-    },
-    resetDir() {
-      this.direction = new Direction();
-    },
-    edit(event) {
-      this.resetDir();
-      this.direction = event.data;
-
-      this.formVisible = true;
-    },
-    async submit() {
-      const isValid = await this.validateForm();
-      if (!isValid) {
-        console.error("Form validation failed", this.errors);
-        return;
-      }
-      let direction = { ...this.direction };
-
-      if (direction.dir_id) {
-        await this.putDirection(direction);
-      } else {
-        await this.postDirection(direction);
-      }
-      this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
-    },
-    async loadDirectionsData() {
+    async loadCourseWorksData() {
       try {
-        if (Array.isArray(this.directionList)) {
-          // Filter out directions where deleted_at is not null and sort by dir_name
-          this.rowData.value = this.directionList
-            .filter((direction) => direction.deleted_at === null)
-            .sort((a, b) => a.dir_name.localeCompare(b.dir_name));
+        if (Array.isArray(this.courseWorkList)) {
+          this.rowData.value = this.courseWorkList
+            .filter((courseWorkList) => courseWorkList.deleted_at === null)
+            .sort((a, b) => a.student_name.localeCompare(b.student_name));
         } else {
-          // Handle case where directionList is not an array
-          if (this.directionList.deleted_at === null) {
-            this.rowData.value = [this.directionList];
+          // Handle case where studentList is not an array
+          if (this.courseWorkList.deleted_at === null) {
+            this.rowData.value = [this.courseWorkList];
           } else {
             this.rowData.value = [];
           }
         }
         this.loading = false;
       } catch (error) {
-        console.error("Error loading directions data:", error);
+        console.error("Error loading students data:", error);
       }
     },
-
-    navigateToAddDirection() {
-      this.$router.push(`/addDirection`); // Navigate to the AddDirection route
-    },
-
     onFirstDataRendered(params) {
       this.gridApi = params.api;
       this.columnApi = params.columnApi;
@@ -389,6 +352,14 @@ export default {
       if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
         queryParams.filterModel = JSON.stringify(savedFilterModel);
         this.filters = true;
+        if (savedFilterModel.full_name) {
+          this.pr = true;
+          this.pr_n = savedFilterModel.full_name.filter;
+        } else {
+          this.pr = false;
+        }
+      } else {
+        this.pr = false;
       }
 
       // Push the query parameters to the router
@@ -404,21 +375,11 @@ export default {
     },
   },
 
-  created() {
-    this.loadDirectionsData();
-  },
+  created() {},
 };
 </script>
 
 <style lang="scss" scoped>
-.ag-row .ag-cell {
-  display: flex;
-  justify-content: center; /* align horizontal */
-  align-items: center;
-}
-.test {
-  padding-left: 100px;
-}
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -432,11 +393,6 @@ export default {
   animation: skeletonShimmer 3.5s infinite linear;
   border-radius: 4px;
   margin: 0.2em 0;
-}
-
-.text-center * {
-  justify-content: center;
-  display: flex;
 }
 
 @keyframes skeletonShimmer {
@@ -455,6 +411,27 @@ export default {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@media (max-width: 769px) {
+  .list {
+    padding-left: 100px;
+    font-size: 10px;
+    max-width: 1100px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .list {
+    padding-left: 100px;
+    font-size: 13px;
+  }
+}
+@media (min-width: 1023px) {
+  .list {
+    padding-left: 100px;
+    padding-right: 5px;
   }
 }
 .nmbr {
@@ -504,23 +481,6 @@ export default {
     border: none;
     --bs-btn-hover-bg: rgb(6 215 29);
     --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-
-.form {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 10px;
-
-  &__item {
-    padding: 5px;
-    margin-right: 10px;
-  }
-
-  &__item:nth-child(2n) {
-    margin-right: 0;
-    border-right: none;
   }
 }
 </style>

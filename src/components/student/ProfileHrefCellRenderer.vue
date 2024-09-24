@@ -1,19 +1,18 @@
 <template>
-<div class="krasivsk">
-    <button @click="onClick" class="btn btn-primary btn-sm"><i class="material-icons-outlined">visibility</i>Детали</button>
-  </div>
+
+<a :href="'#/directions?filterModel=' + JSON.stringify({ dir_code: { filterType: 'text', type: 'equals', filter: this.params.data.dir_code } })">{{ this.params.data.dir_code }}</a>
+
+
   </template>
   
   <script>
   export default {
     props: ['params'],
     computed: {
-      
+
     },
     methods: {
-      onClick() {
-        this.$router.push(`/groups/${this.params.data.group_id}`);
-      },
+
     },
   };
   </script>
@@ -22,13 +21,25 @@
 <style lang="scss" scoped>
 
 
-.krasivsk{
-  height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+a:link {
+  text-decoration: underline;
+  color: #181d1f;
 }
 
+a:visited {
+  text-decoration: underline;
+  color: #181d1f;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #181d1f;
+}
+
+a:active {
+  text-decoration: underline;
+  color: #181d1f;
+}
 .btn-primary{
     --bs-btn-bg: rgb(68,99,52);
     border: none;

@@ -1,7 +1,6 @@
 <template>
   <labeled-input :label="label" :item-key="itemKey">
     <input-with-icon :icon="icon" :icon-right="iconRight">
-      <!-- https://primevue.org/inputmask/-->
       <InputMask
         :id="itemKey"
         v-model.lazy="model"
