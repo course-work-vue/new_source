@@ -2,8 +2,11 @@
 const prefix = '/api/Query/anyProcedure/';
 export default Object.freeze({
     student: prefix + 'delete_students',
+    group: prefix + 'delete_groups',
     direction: prefix + 'delete_directions',
     profile: prefix + 'delete_profiles',
+    courseWork: prefix + 'delete_course_work',
+
     listener: prefix + 'delete_listeners',
     contract: prefix + 'delete_contracts',
     l_group: prefix + 'delete_l_groups',
@@ -11,5 +14,4 @@ export default Object.freeze({
     pay_graph:prefix + 'delete_pay_graph',
     program: prefix + 'delete_programs',
     uploaded_file: prefix + 'delete_uploaded_files',
-    courseWork: prefix + 'delete_course_work'
 });

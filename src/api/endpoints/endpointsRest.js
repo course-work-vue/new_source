@@ -9,6 +9,7 @@ export default Object.freeze({
     teacher: prefix + 'teachers',
     departament: prefix + 'departaments',
 
+
     profile: prefix + 'profiles',
     
     contract: prefix + 'contracts',

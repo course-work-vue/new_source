@@ -82,7 +82,7 @@ export default {
   putPayment: (id, pay_graph) =>
     ReqExec.put(endpoints.rest.pay_graph, id, pay_graph),
   deletePayment: (pay_graph) =>
-    ReqExec.put(endpoints.procedure.pay_graph, pay_graph.id, pay_graph),
+    ReqExec.put(endpoints.procedure.pay_graph, payment.id, pay_graph),
   //program
   getProgramList: () => ReqExec.get(endpoints.rest.program, null, true),
   postProgram: (program) => ReqExec.post(endpoints.rest.program, program),
@@ -93,10 +93,10 @@ export default {
   //uploaded_files
 
   getUploaded_FileList: () => ReqExec.get(endpoints.rest.uploaded_file, null, true),
-  postUploadedFile: (uploaded_file) => ReqExec.post(endpoints.rest.uploaded_file, uploaded_file),
-  putUploadedFile: (id, uploaded_file) =>
-    ReqExec.put(endpoints.rest.uploaded_file, id, uploaded_file),
-  deleteUploadedFile: (uploaded_file) =>
+  postUploaded_File: (uploaded_file) => ReqExec.post(endpoints.rest.uploaded_file, uploaded_file),
+  putUploaded_File: (direction_code, uploaded_file) =>
+    ReqExec.put(endpoints.rest.uploaded_file, direction_code, uploaded_file),
+  deleteUploaded_File: (uploaded_file) =>
     ReqExec.put(endpoints.procedure.uploaded_file, uploaded_file.id, uploaded_file),
 
 };

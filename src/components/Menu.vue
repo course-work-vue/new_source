@@ -61,60 +61,63 @@ export default {
         icon: "contact_page",
         children: [
           {
-            label: "Список слушателей",
-            link: "/listeners",
-          },
-          {
-            label: "Плательщики",
-            link: "/payers",
-          },
-          {
-            label: "Группы",
-            link: "/lgroups",
-          },
-          {
-            label: "Договоры",
-            link: "/contracts",
-          },
-          {
-            label: "Программы",
-            link: "/programs",
-          },
-          {
-            label: "График платежей",
-            link: "/payments",
-          },
-        ],
-      },
-      {
-        label: "Расписание",
-        link: "",
-        icon: "calendar_month",
-        children: [
-          {
-            label: "Нагрузка",
-            link: "/ScheduleLoads",
-          },
-          {
-            label: "Аудитории",
-            link: "/audits",
-          },
-        ],
-      },
-      {
+              label: "Список слушателей",
+              link: "/listeners",
+            },
+            {
+              label: "Плательщики",
+              link: "/payers",
+            },
+            {
+              label: "Группы",
+              link: "/lgroups",
+            },
+            {
+              label: "Договоры",
+              link: "/contracts",
+            },
+            {
+              label: "Программы",
+              link: "/programs",
+            },
+            {
+              label: "График платежей",
+              link: "/payments",
+            },
+            
+            
+
+          ]
+        },
+        {
+          label: "Расписание",
+          link: "",
+          icon: "calendar_month",
+          children: [
+            {
+              label: "Нагрузка",
+              link: "/ScheduleLoads",
+            },
+            {
+              label: "Аудитории",
+              link: "/audits",
+            }
+          ]
+        },
+        {
         label: "Excel",
         link: "/xlparse",
         icon: "description",
       },
-      {
-        label: "Настройки",
-        link: "/profile",
-        icon: "settings",
-      },
-      {
-        label: "Выйти",
-        link: "",
-        icon: "logout",
+        {
+          label: "Настройки",
+          link: "/profile",
+          icon: "settings"
+        },
+        {
+          label: "Выйти",
+          link: "",
+          icon: "logout"
       },
     ],
   }),
