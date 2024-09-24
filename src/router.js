@@ -65,6 +65,18 @@ const addLgroup = () => import("./components/AddListenergroup.vue")
 const lGroupList = () => import("./components/ListenergroupList.vue")
 const lGroupDetail = () => import("./components/LgroupDetail.vue")
 
+//ЖУРНАЛ
+const TeacherList = () => import("./components/TeacherList.vue")
+const AddTeacher = () => import("./components/AddTeacher.vue")
+const TeacherDetail = () => import("./components/TeacherDetail.vue")
+
+
+const TegrsuList = () => import("./components/TegrsuList.vue")
+const AddTegrsu = () => import("./components/AddTegrsu.vue")
+const TegrsuDetail = () => import("./components/TegrsuDetail.vue")
+
+const JournalList = () => import("./components/JournalList.vue")
+//ЖУРНАЛ
 
 const xlparse = () => import("./components/xlparse.vue")
 const ManageExcel = () => import("./components/ManageExcel.vue")
@@ -245,8 +257,18 @@ const routes = [
       { path: '/audits', component: AuditList },
       { path: '/audits/:scheduleId', component: AuditDetail },
       { path: '/AddAudit', component: AddAudit },
-
-
+      
+      //ЖУРНАЛ
+      { path: '/teachers', component: TeacherList },
+      { path: '/teachers/:teacherId', component: TeacherDetail },
+      { path: '/AddTeacher', component: AddTeacher },
+    
+      { path: '/tegrsus', component: TegrsuList },
+      { path: '/tegrsus/:tegrsuId', component: TegrsuDetail },
+      { path: '/AddTegrsu', component: AddTegrsu },
+    
+      { path: '/journals', component: JournalList },
+      //ЖУРНАЛ
 
 
       { path: '/lgroups', component: lGroupList },
