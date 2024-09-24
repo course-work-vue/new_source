@@ -81,7 +81,7 @@ const model = ref([
         ],
       },
       {
-        label: "Excel",
+        label: "Импорт данных",
         icon: "pi pi-fw pi-file-excel",
         to: "/xlparse",
       },
