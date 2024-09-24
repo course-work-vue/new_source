@@ -1241,6 +1241,14 @@ updateContractById(id, listener_id, payer_id, contr_number, program_id) {
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
+  getStudentsCount(id){
+    const query = {
+      query: `select count(students.*) from students
+where group_id='${id}';`,
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
   
 // ВЗАИМОДЕЙСТВИЕ С ТАБЛИЦЕЙ COURSE_WORK
 deleteCwById(cw_id){

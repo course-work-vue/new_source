@@ -176,6 +176,10 @@
                                     </div>
                                 </button>
                             </span>
+                            Контингент:
+                            <span v-if="this.selected_subject_obj.subject_id" @click="change('Выбрать группу', groups, 'group');">
+                                <b>{{ this.selected_group_obj.students_count }}</b>
+                            </span>
                         </div>
                         <div class="">
                             Тип занятия: <b>{{ this.selected_subject_obj.sub_type }}</b>
@@ -317,6 +321,7 @@ import ScheduleCard from "./ScheduleCard.vue";
 import { mapState, mapActions } from "pinia";
 import { useDirectionStore } from "@/store2/studentgroup/direction";
 import { reactive, onMounted, ref } from "vue";
+import userService from "../services/user.service";
 
 
 export default {
@@ -382,6 +387,8 @@ export default {
             not_suc: false,
             not_upd: false,
             not_ex: false,
+
+            students_count: -1,
 
             modalTitle: '',
             modalRows: {},
@@ -531,6 +538,13 @@ export default {
                 this.groups = this.groups.filter(group => 
                     (group.course === this.selected_course) && (group.group_dir_id == dir_id)
                 );
+
+                for (var group of this.groups){
+                    const response = await UserService.getStudentsCount(group.group_id)
+                    let a = Array.isArray(response.data) ? response.data : [response.data]
+                    group.students_count = a[0].count;
+                    console.log(group);
+                }
             
                 this.group_loaded = true;
                 this.teacher_loaded = false;
