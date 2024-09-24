@@ -875,9 +875,6 @@ export default {
 
     }
 
-    .sched{
-        margin-left: -120px;
-    }
 }
 
 .ml-240px{

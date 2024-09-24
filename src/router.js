@@ -72,19 +72,7 @@ const lGroupDetail = () => import("./components/LgroupDetail.vue")
 
 
 const xlparse = () => import("./components/xlparse.vue")
-const ManageExcel = () => import("./components/ManageExcel.vue")
-const ManageExcel2 = () => import("./components/ManageExcel2.vue")
-const ManageExcel3 = () => import("./components/ManageExcel3.vue")
-const ManageExcel4 = () => import("./components/ManageExcel4.vue")
-const ManageExcel5 = () => import("./components/ManageExcel5.vue")
-const ManageExcel6 = () => import("./components/ManageExcel6.vue")
-const ManageExcel7 = () => import("./components/ManageExcel7.vue")
-const ManageExcel8 = () => import("./components/ManageExcel8.vue")
-const ManageExcel9 = () => import("./components/ManageExcel9.vue")
-const ManageExcel10 = () => import("./components/ManageExcel10.vue")
-const ManageExcel11 = () => import("./components/ManageExcel11.vue")
-const ManageExcel12 = () => import("./components/ManageExcel12.vue")
-const ManageExcel13 = () => import("./components/ManageExcel13.vue")
+
 
 const Test = () => import("./components/base/ExampleComponent.vue")
 
