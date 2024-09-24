@@ -1,15 +1,17 @@
 <template>
-
-<a :href="'#/contracts?filterModel=' + JSON.stringify({ listener_full_name: { filterType: 'text', type: 'contains', filter: this.params.data.full_name } })">{{ this.params.data.full_name }}</a>
-
-
-  </template>
+  <a>{{ fullName }}</a>
+</template>
   
   <script>
   export default {
     props: ['params'],
+    mounted() {
+    },
     computed: {
-
+      fullName() {
+      const data = this.params.data;
+      return `${data.surname} ${data.name} ${data.lastname}`;
+    }
     },
     methods: {
 

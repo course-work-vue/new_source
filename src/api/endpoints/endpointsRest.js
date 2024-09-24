@@ -18,4 +18,15 @@ export default Object.freeze({
     user: prefix + 'users',
     permission: prefix + 'permissions',
     cont: prefix + 'contingent',
+
+    profile: prefix + 'profiles',
+    
+    contract: prefix + 'contracts',
+    l_group: prefix + 'l_groups',
+    listener: prefix + 'listeners',
+    payer: prefix + 'payers',
+    pay_graph: prefix + 'pay_graphs',
+    program: prefix + 'programs',
+
+    uploaded_file: prefix+'uploaded_files',
 });

@@ -11,9 +11,7 @@
       
     },
     methods: {
-      onClick() {
-        this.$router.push(`/lgroups/${this.params.data.lg_id}`);
-      },
+      onClick() {},
     },
   };
   </script>

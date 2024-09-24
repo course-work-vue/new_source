@@ -52,6 +52,7 @@ export default class Student {
     get group_number() {
         const groupStore = useGroupStore();
         const group = groupStore.groupMap[this.group_id];
+        console.log(group);
         return group ? group.group_number : null; // Return the group number if it exists, otherwise return null or a default value
     }
 

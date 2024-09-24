@@ -1,18 +1,16 @@
 <template>
-
-<a :href="'#/lgroups?filterModel=' + JSON.stringify({ group_number: { filterType: 'text', type: 'contains', filter: this.params.data.group_number } })">{{ this.params.data.group_number }}</a>
-
-
+<div class="krasivsk">
+    <button @click="onClick" class="btn btn-primary btn-sm"><i class="material-icons-outlined">visibility</i>Детали</button>
+  </div>
   </template>
   
   <script>
   export default {
     props: ['params'],
     computed: {
-
+      
     },
     methods: {
-
     },
   };
   </script>
@@ -21,25 +19,13 @@
 <style lang="scss" scoped>
 
 
-a:link {
-  text-decoration: underline;
-  color: #181d1f;
+.krasivsk{
+  height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-a:visited {
-  text-decoration: underline;
-  color: #181d1f;
-}
-
-a:hover {
-  text-decoration: underline;
-  color: #181d1f;
-}
-
-a:active {
-  text-decoration: underline;
-  color: #181d1f;
-}
 .btn-primary{
     --bs-btn-bg: rgb(68,99,52);
     border: none;

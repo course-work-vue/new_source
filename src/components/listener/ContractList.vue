@@ -4,20 +4,27 @@
   <div class="col col-xs-9 col-lg-12 mt-4 list">
     <div class="col col-12">
     <div class="mb-3 col col-12">
-    
-      <button @click="navigateToAddListener" class="btn btn-primary float-start" type="button"><i class="material-icons-outlined">add</i>Добавить законного представителя</button>
-    
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
-      <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2" type="button"><i class="material-icons-outlined">close</i>Очистить фильтры</button>
-      <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
+
+      <button
+       onclick="location.href='http://195.93.252.168:5050/api/Contract/Export'" 
+       class="mx-2 btn btn-primary float-start" 
+       type="button"
+      >
+       Отчёт о договорах
+      </button>
+      
+       <button
+       @click="navigateToAddContract" class="btn btn-primary float-start" type="button"><i class="material-icons-outlined">add</i>Добавить договор</button>
+      
+      <div class="col col-3 float-end">
+      <input class="form-control"  id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
     </div>
-  
   </div>
 </div>
 
 
-<br>
-<div style="height: 90vh">
+
+<div style="height: 50vh">
 <div class="h-100 pt-5">
   <ag-grid-vue
     class="ag-theme-alpine"
@@ -27,7 +34,7 @@
     :defaultColDef="defaultColDef"
     rowSelection="multiple"
     animateRows="true"
-    @cell-clicked="cellWasClicked"
+    @cell-clicked="onCellClicked"
     @grid-ready="onGridReady"
     @firstDataRendered="onFirstDataRendered"
     @filter-changed="onFilterChanged"
@@ -35,8 +42,64 @@
     :paginationPageSize="paginationPageSize"  
   >
   </ag-grid-vue>
+  <div v-html="dynamicHtml"></div>
 </div>
-</div></div>
+
+</div>
+
+<div class="" v-if="test">
+
+  <label>СНИЛС слушателя:</label>
+  <div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
+  <input class="form-control" v-model=event.data.listener_snils disabled>
+</div>
+
+<label>Email слушателя:</label>
+  <div class="form-group d-inline-flex align-items-center mb-2 col-2">
+  <input class="form-control" v-model=event.data.listener_email disabled>
+</div>
+<label>Телефон слушателя:</label>
+  <div class="form-group d-inline-flex align-items-center mb-2 col-2">
+  <input class="form-control" v-model=event.data.listener_phone_number disabled>
+</div>
+<label>Дата зачисления:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-2 mx-1">
+  <input class="form-control" v-model=event.data.date_enroll disabled>
+</div>
+<label>Дата отчисления:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-2 mx-1">
+  <input class="form-control" v-model=event.data.date_kick disabled>
+</div>
+<label>Паспорт слушателя:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
+  <input class="form-control" v-model=event.data.listener_passport disabled>
+</div>
+<label>Паспорт слушателя:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
+  <input class="form-control" v-model=event.data.listener_passport disabled>
+</div>
+
+<label>Всего часов:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-1 mx-1">
+  <input class="form-control" v-model=event.data.hours disabled>
+</div>
+<label>Программа:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-3 mx-1">
+  <input class="form-control" v-model=event.data.program_name disabled>
+</div>
+<label>Дата начала:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-2 mx-1">
+  <input class="form-control" v-model=event.data.start_date disabled>
+</div>
+<label>Дата окончания:</label>
+<div class="form-group d-inline-flex align-items-center mb-2 col-2 mx-1">
+  <input class="form-control" v-model=event.data.end_date disabled>
+</div>
+</div>
+
+</div>
+
+
 
 </template>
 
@@ -44,18 +107,24 @@
 
 import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/PayerButtonCell.vue";
-import GroupHref from "@/components/GroupHrefCellRenderer.vue";
+import ButtonCell from "@/components/listener/ContractButtonCell.vue";
+import ContractHref from "@/components/listener/ContractHrefCellRenderer.vue";
+import ContractHref2 from "@/components/ContractHrefCellRenderer2.vue";
+import ContractHref3 from "@/components/ContractHrefCellRenderer3.vue";
+import ContractHref4 from "@/components/ContractHrefCellRenderer4.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import UserService from "../services/user.service";
+import UserService from "../../services/user.service";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
   components: {
     AgGridVue,
     ButtonCell,
-    GroupHref
+    ContractHref,
+    ContractHref2,
+    ContractHref3,
+    ContractHref4
   },
   setup() {
     const gridApi = ref(null); // Optional - for accessing Grid's API
@@ -90,20 +159,20 @@ export default {
         onClick: navigateToStudent,
         label: 'View Details', // Button label
       },
+      cellClass: "grid-cell-centered",
       maxWidth: 120, resizable: false
 
     },
-           
-           { field: "full_name", headerName: 'ФИО' },
+           { field: "listener_full_name", headerName: 'ФИО слушателя', cellRenderer:'ContractHref' },
            {
-            field: 'email',
-            headerName: 'email', hide: true
+            field: 'payer_full_name',
+            headerName: 'ФИО законного представителя', cellRenderer:'ContractHref2'
            },
            {
-            field: 'phone_number',
-            headerName: 'телефон'
-           }
-       
+            field: 'contr_number',
+            headerName: 'Номер договора', cellRenderer:'ContractHref3'
+           },
+           { field: "program_name", headerName: 'Название курса', cellRenderer:'ContractHref4' }
 
 
            
@@ -137,43 +206,49 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-      cellWasClicked: (event) => { // Example of consuming Grid Event
-        console.log("cell was clicked", event);
-      },
-      deselectRows: () =>{
-        gridApi.value.deselectAll()
-      },
+     
+
+
 
       onFilterTextBoxChanged,
       paginationPageSize,
       navigateToStudent,
 
-
-      
+      dynamicHtml: '',
+  
 
     };
   },
   data() {
-  return {
-    quickFilterValue: '',
-    filters:false
-  };
-},
 
+  
+      return {
+        test:false,
+        test2:null,
+        event:null
+      };
+    },
   methods: {
-
-    async loadPayersData() {
+    onCellClicked(event) {
+      // Add HTML content based on the clicked cell
+      this.test=true;
+      console.log(this.test);
+      console.log(event);
+      this.test2=event.data.listener_snils;
+      this.event=event;
+    },
+    async loadListenersData() {
         try {
-          const response = await UserService.getAllPayers(); // Replace with your API endpoint
+          const response = await UserService.getAllContracts(); // Replace with your API endpoint
           this.rowData.value = Array.isArray(response.data) ? response.data : [response.data];
           this.loading=false;
         } catch (error) {
           console.error('Error loading students data:', error);
         }
       },
-      navigateToAddListener() {
+      navigateToAddContract() {
     
-    this.$router.push(`/addPayer`); // Navigate to the AddStudent route
+    this.$router.push(`/addContract`); // Navigate to the AddStudent route
 },
 
 onFirstDataRendered(params) {
@@ -185,59 +260,23 @@ onFirstDataRendered(params) {
       if (filterModelQuery) {
         const filterModel = JSON.parse(filterModelQuery);
         this.gridApi.setFilterModel(filterModel);
-        this.filters=true;
-        
-      }
-
-      const quickFilterQuery = this.$route.query.quickFilter;
-      if (quickFilterQuery) {
-        const quickFilter = JSON.parse(quickFilterQuery);
-        this.gridApi.setQuickFilter(quickFilter);
-        this.quickFilterValue = quickFilter;
-        this.filters=true;
       }
     },
     onFilterChanged() {
-  // This function will be called whenever filters change.
-  // You can perform your desired action here.
-  // For example, you can get the current filter model:
-  this.filters=false;
-  const savedQuickFilter = this.gridApi.getQuickFilter();
-  const savedFilterModel = this.gridApi.getFilterModel();
-
-  // Initialize an empty object for queryParams
-  const queryParams = {};
-
-  // Check if savedQuickFilter is not empty, then add it to queryParams
-  if (savedQuickFilter) {
-    queryParams.quickFilter = JSON.stringify(savedQuickFilter);
-    this.filters=true;
-  }
-
-  // Check if savedFilterModel is not empty, then add it to queryParams
-  if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
-    queryParams.filterModel = JSON.stringify(savedFilterModel);
-    this.filters=true;
-  }
-
-  // Push the query parameters to the router
-  this.$router.push({ query: queryParams });
-
-  // Do something with the filterModel or trigger other actions as needed.
-},
-  clearFilters(){
-
-  
-    this.gridApi.setFilterModel();
-    this.gridApi.setQuickFilter();
-    this.quickFilterValue='';
-    this.filters=false;
+    // This function will be called whenever filters change.
+    // You can perform your desired action here.
+    // For example, you can get the current filter model:
+    const savedFilterModel = this.gridApi.getFilterModel();
+    const query = { filterModel: JSON.stringify(savedFilterModel) };
+    this.$router.push({ query });
+    // Do something with the filterModel or trigger other actions as needed.
   },
+  
     },
 
     created() {
     
-    this.loadPayersData();
+    this.loadListenersData();
 
     },
 
