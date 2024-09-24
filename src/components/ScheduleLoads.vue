@@ -145,61 +145,81 @@
                 <div class="border border-success rounded-1 bg-white p-3">
                     <div class=""><h3>Дисциплина: <b>{{ this.selected_subject_obj.subject_name }}</b></h3></div>
                     <div>
-                        <div class="">Направление: <b>{{ this.selected_dir.dir_name }}</b></div>
                         <div class="">
-                        Группа:
-                        <span v-if="this.selected_subject_obj.subject_id" @click="change('Выбрать группу', groups, 'group');">
-                            <button class="btn btn1 border-success p-1">
-                                <div v-if="this.selected_group != -1">
-                                    {{ this.selected_group }}
-                                    группа
-                                </div>
-                                <div v-else>
-                                    Выбрать
-                                </div>
-                            </button>
-                        </span>
+                            Направление:
+                            <b>{{ this.selected_dir.dir_name }}</b>
                         </div>
                         <div class="">
-                        Тип занятия: <b>{{ this.selected_subject_obj.sub_type }}</b>
+                            Группа:
+                            <span v-if="this.selected_subject_obj.subject_id" @click="change('Выбрать группу', groups, 'group');">
+                                <button class="btn btn-primary btn-block m-1">
+                                    <div class="d-flex">
+                                        <div v-if="this.selected_group != -1">
+                                            {{ this.selected_group_obj.group_number }}
+                                        </div>
+                                        <div v-else>
+                                            Не выбрана
+                                        </div>
+                                        <i class="material-icons-outlined">edit</i>
+                                    </div>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="">
+                            Тип занятия: <b>{{ this.selected_subject_obj.sub_type }}</b>
+                            <span v-if="this.selected_subject_obj.sub_type == 'лекция'" class="ml-3">
+                                <button class="btn btn-primary m-1">
+                                    Объединить
+                                </button>
+                            </span>
                         </div>
                         <div class="">
                         Тип аудитории:
                         <span v-if="this.selected_subject_obj.subject_id" @click="
                             change('Выбрать тип аудитории', this.audtypes, 'audit')
                         ">
-                            <button class="btn btn1 border-success p-1">
-                                <div v-if="this.selected_aud != -1">
-                                    {{ this.selected_aud }}
-                                    тип
-                                </div>
-                                <div v-else>
-                                    Выбрать
+                            <button class="btn btn-primary btn-block m-1">
+                                <div class="d-flex">
+                                    <div v-if="this.selected_aud != -1">
+                                        {{ this.selected_aud_obj.value }}
+                                    </div>
+                                    <div v-else>
+                                        Не выбран
+                                    </div>
+                                    <i class="material-icons-outlined">edit</i>
                                 </div>
                             </button>
                         </span>
                         </div>
                         <div class="">
-                        Преподаватель:
-                        <span v-if="this.selected_subject_obj.subject_id" @click="
-                            change('Выбрать преподавателя', this.teachers, 'teacher')
-                            
-                        ">
-                            <button class="btn btn1 border-success p-1">
-                            Выбрать
-                            </button>
-                        </span>
+                            Преподаватель:
+                            <span v-if="this.selected_subject_obj.subject_id" @click="
+                                change('Выбрать преподавателя', this.teachers, 'teacher')
+                                
+                            ">
+                                <button class="btn btn-primary btn-block m-1">
+                                <div class="d-flex">
+                                        <div v-if="this.selected_teacher != -1">
+                                            {{ this.selected_teacher_obj.last_name }}
+                                        </div>
+                                        <div v-else>
+                                            Не выбран
+                                        </div>
+                                    <i class="material-icons-outlined">edit</i>
+                                </div>
+                                </button>
+                            </span>
                         </div>
                     </div>
 
-                    <div class="selectorcard">
+                    <div class="selectorcard" v-if="this.selected_subject_obj.subject_id">
                         <div class="card border border-success bg-white">
                             <div>
                             <b>{{ modalTitle }}</b>
                             </div>
                             <div>
                                 <div class="" v-for="row in this.info" :key="row">
-                                    <button class="btn btn1 border-success m-1 bg-light" @click="select(row.id)">
+                                    <button class="btn btn-primary border-success m-1" @click="select(row.id)">
                                         {{ row.text }}
                                         {{ row.value }}
                                         <!-- <br>
@@ -261,7 +281,7 @@
             
         </div> 
         <div>
-            <button v-if="selected_teacher != -1" class="btn btn-primary btn-block" @click="
+            <button v-if="selected_teacher != -1" class="btn btn-primary btn-block btn-save" @click="
                 saveRel();
                 ">
                 Сохранить связь
@@ -274,7 +294,7 @@
                         alert_error : not_ex
                     }"
                     
-                    class="alert col-4"
+                    class="alert col-3"
                     v-if="this.showNotification"
                 >
                     {{ this.notify_text }}
@@ -465,6 +485,7 @@ export default {
                     console.error('Error loading subjects data:', error);
                 }
         },
+
         async findSubject(subName) {
             try {
                 const response = await UserService.getAllSubjects();
@@ -725,17 +746,20 @@ export default {
         select(id){
             if (this.modalType == 'group'){
                 this.selected_group = id;
-                console.log('Выбрана группа ', id);
+                this.selected_group_obj = this.groups.find(group => group.group_id === id);
+                console.log('Выбрана группа ', this.selected_group_obj);
             }
 
             if (this.modalType == 'audit'){
                 this.selected_aud = id;
-                console.log('Выбран тип ', id);
+                this.selected_aud_obj = this.audtypes.find(aud => aud.id === id);
+                console.log('Выбран тип ', selected_aud_obj);
             }
 
             if (this.modalType == 'teacher'){
                 this.selected_teacher = id;
-                console.log('Выбран преподаватель ', id);
+                this.selected_teacher_obj = this.teachers.find(t => t.teacher_id === id);
+                console.log('Выбран преподаватель ', this.selected_teacher_obj);
             }
         },
         
@@ -871,7 +895,6 @@ export default {
     --bs-btn-hover-border-color: rgb(6 215 29);
     --bs-btn-active-bg: rgb(68,99,52);
     --bs-btn-disabled-bg: rgb(68,99,52);
-    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -943,15 +966,16 @@ table{
     border: none;
 }
 .alert {
-    padding: 15px;
-    margin-top: 10px;
+    position: absolute;
+    top: 88%;
+    left: 35%;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
 
 .alert_success {
-    color: #3c763d;
-    background-color: #dff0d8;
+    color: #004901;
+    background-color: #c1e1b4;
     border-color: #d6e9c6;
 }
 
@@ -977,7 +1001,11 @@ table{
 .btn1:hover{
         background-color: rgba(0, 0, 0, 0.07);
         opacity: 0.8;
-    }
+}
 
+.btn-save{
+    position: absolute;
+    top: 90%;
+}
 
 </style>
