@@ -122,6 +122,12 @@ const model = ref([
         ],
       },
       {
+        label: "Журнал",
+        icon: "pi pi-fw pi-file-book",
+        to: "/teachers"
+           
+      },
+      {
         label: "Настройки",
         icon: "pi pi-fw pi-cog",
         to: "/profile",
