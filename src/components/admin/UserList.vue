@@ -87,6 +87,7 @@
             <label>
               <input
                 type="checkbox"
+                class="form-check-input"
                 :value="role.roleid"
                 v-model="selectedRoles"
               />
@@ -390,7 +391,7 @@ export default {
     ...mapActions(useUserRoleStore, [
       "getUserRoleList",
       "postUserRole",
-      ,
+      "getUserRoleList",
       "putUserRole",
       "deleteUserRole",
       "uploadGeneratedFile",
@@ -469,6 +470,8 @@ export default {
       for (const userRole of userRolesToSave) {
         await this.postUserRole(userRole);
       }
+
+      await this.getUserRoleList();
 
       this.formVisible = false;
       this.resetUser();

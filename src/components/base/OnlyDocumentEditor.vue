@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeUnmount } from "vue";
+import { defineComponent, computed } from "vue";
 import { DocumentEditor } from "@onlyoffice/document-editor-vue";
 
 export default defineComponent({
@@ -28,59 +28,78 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    // Новый проп для выбора типа документа (например, "excel" или "doc")
+    objectType: {
+      type: String,
+      required: true,
+    },
   },
-  data() {
-    return {
-      loading: true,
-      config: {
+  setup(props) {
+    // Вычисляем конфигурацию в зависимости от значения objectType
+    const config = computed(() => {
+      if (props.objectType === "excel") {
+        return {
+          document: {
+            fileType: "xlsx",
+            title: props.documentTitle,
+            url: props.documentUrl,
+          },
+          documentType: "cell",
+          editorConfig: {
+            lang: "ru",
+          },
+        };
+      }
+      // По умолчанию (например, для Word)
+      return {
         document: {
           fileType: "docx",
-          title: this.documentTitle,
-          url: this.documentUrl, // Bind the prop here
+          title: props.documentTitle,
+          url: props.documentUrl,
         },
         documentType: "word",
         editorConfig: {
           lang: "ru",
         },
-      },
-    };
-  },
-  watch: {
-    documentUrl(newUrl) {
-      this.config.document.url = newUrl; // Update config when prop changes
-    },
-    documentTitle(newTitle) {
-      this.config.document.url = newTitle; // Update config when prop changes
-    },
-  },
-  methods: {
-    onDocumentReady() {
+      };
+    });
+
+    // Обработчик события загрузки документа
+    const onDocumentReady = () => {
       console.log("Document is loaded");
-      this.loading = false;
-    },
-    onLoadComponentError(errorCode, errorDescription) {
+    };
+
+    // Обработчик ошибок загрузки компонента
+    const onLoadComponentError = (
+      errorCode: number,
+      errorDescription: string
+    ) => {
       switch (errorCode) {
         case -1:
-          console.log(errorDescription);
-          break;
         case -2:
-          console.log(errorDescription);
-          break;
         case -3:
           console.log(errorDescription);
           break;
+        default:
+          console.log("Unknown error", errorDescription);
       }
-    },
+    };
+
+    return {
+      config,
+      onDocumentReady,
+      onLoadComponentError,
+    };
   },
+  // Очистка при переходе с маршрута
   beforeRouteLeave(to, from, next) {
-    // Clean up OnlyOffice Document Editor instance
     const editorElement = document.getElementById("docEditor");
     if (editorElement) {
-      // Destroy the instance or perform necessary cleanup
-      editorElement.innerHTML = ""; // Example cleanup
+      editorElement.innerHTML = "";
     }
     next();
   },
+  // Очистка при размонтировании компонента
   beforeUnmount() {
     const editorElement = document.getElementById("docEditor");
     if (editorElement) {

@@ -184,7 +184,8 @@
     <OnlyDocumentEditor
       v-if="filePath"
       :documentUrl="filePath"
-      documentTitle="Отчёт по студентам"
+      :documentTitle="documentTitle"
+      :objectType="objectType"
     />
   </Dialog>
 </template>
@@ -454,6 +455,8 @@ export default {
       scheme: null,
       docPreview: false,
       filePath: null,
+      documentTitle: "Предпросмотр",
+      objectType: "word",
     };
   },
   async mounted() {
@@ -669,7 +672,20 @@ export default {
       XLSX.utils.book_append_sheet(wb, ws, "Контингент");
 
       // Генерируем файл
-      XLSX.writeFile(wb, "контингент.xlsx");
+      // XLSX.writeFile(wb, "контингент.xlsx");
+      // Генерируем данные книги в виде ArrayBuffer
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+      // Создаем Blob из сгенерированного ArrayBuffer
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      this.objectType = "excel";
+      this.documentTitle = "Предпросмотр контингента";
+      // Отправляем Blob на сервер
+      this.filePath = await this.uploadGeneratedFile(blob, "контингент.xlsx");
+      this.docPreview = true;
     },
     formatDataForExcel(data) {
       const result = [];
@@ -1073,7 +1089,8 @@ export default {
       // Генерация и сохранение документа
       const blob = await Packer.toBlob(doc);
       //saveAs(blob, "Report.docx");
-
+      this.objectType = "docx";
+      this.documentTitle = "Предпросмотр отчёта";
       this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
   },
