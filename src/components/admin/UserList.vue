@@ -82,6 +82,9 @@
         >
         </auto-form>
         <div class="form__item">
+          <button @click="deauthUserWithId(user.id)">{{ user.id }}</button>
+        </div>
+        <div class="form__item">
           <h3>Роли</h3>
           <div v-for="role in roleList" :key="role.roleid">
             <label>
@@ -387,6 +390,7 @@ export default {
       "putUser",
       "deleteUser",
       "uploadGeneratedFile",
+      "deauthUser",
     ]),
     ...mapActions(useUserRoleStore, [
       "getUserRoleList",
@@ -406,6 +410,9 @@ export default {
       "uploadGeneratedFile",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
+    async deauthUserWithId(userId) {
+      await this.deauthUser(userId);
+    },
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "Действия") {
         this.edit(event);

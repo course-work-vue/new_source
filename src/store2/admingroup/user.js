@@ -52,6 +52,9 @@ export const useUserStore = defineStore('user', {
             }
         },
 
+        async deauthUser(user) {
+            await api.deauthUser({ id: user });
 
+        },
     },
 });

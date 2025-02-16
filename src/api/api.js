@@ -136,6 +136,8 @@ export default {
   postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),
   putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),
   deleteUser: (user) => ReqExec.put(endpoints.procedure.user, user.id, user),
+  deauthUser: (user) => ReqExec.post(endpoints.procedure.deauth_user, user),
+  
   //userRole
   getUserRoleList: () => ReqExec.get(endpoints.rest.userRole, null, true),
   postUserRole: (userRole) => ReqExec.post(endpoints.rest.userRole, userRole),

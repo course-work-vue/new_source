@@ -1,5 +1,6 @@
 import { useLayoutStore } from '@/store2/layout';
-import AuthService from './auth.service';
+import { useAuthStore } from "../store2/auth";
+
 
 class RequestExecutor {
     baseUrl;
@@ -116,8 +117,11 @@ class RequestExecutor {
             const response = await fetch(location, init);
 
             if (response.status === 401) {
-                AuthService.logout();
-                this.$router.push(`/login`);
+
+                const authStore = useAuthStore();
+                authStore.logout();
+                window.location.href = "/login";
+
                 return;
             }
             if (response.status === 404) throw new Error('Not found!');
@@ -126,7 +130,7 @@ class RequestExecutor {
             return await response.json();
         } catch (error) {
             console.log('here test')
-            console.error(error);
+
             throw new Error(error);
         } finally {
             if (this.loadingMask) layoutStore.setIsLoading(false);

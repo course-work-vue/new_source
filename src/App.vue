@@ -56,15 +56,17 @@
 
 <script>
 import Menu from "./components/Menu.vue";
+
+import { useAuthStore } from "./store2/auth";
+import { mapState, mapActions } from "pinia";
 export default {
   created() {
-    this.$store.dispatch("auth/checkTokenExpiration");
+    this.checkTokenExpiration();
   },
+
   components: {},
   computed: {
-    currentUser() {
-      return this.$store.state.auth.user;
-    },
+    ...mapState(useAuthStore, ["noAccess"]),
     /*
     showAdminBoard() {
       if (this.currentUser && this.currentUser['roles']) {
@@ -83,12 +85,7 @@ export default {
       */
   },
 
-  methods: {
-    logOut() {
-      this.$store.dispatch("auth/logout");
-      this.$router.push("/login");
-    },
-  },
+  methods: { ...mapActions(useAuthStore, ["checkTokenExpiration"]) },
 };
 </script>
 

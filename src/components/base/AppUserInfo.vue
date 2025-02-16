@@ -1,13 +1,13 @@
 <template>
   <li class="flex align-items-center">
     <Avatar icon="pi pi-user" class="mr-2" size="large" shape="circle" />
-    <span class="text-lg">{{user ? user.username : 'Не в аккаунте'}}</span>
+    <span class="text-lg">{{ authStore.user ?  authStore.user.username : 'Гость' }}</span>
   </li>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-//import { useAuthStore } from '@/stores/auth'
-const user = ref(JSON.parse(localStorage.getItem('user')));
+import { ref } from "vue";
+import { useAuthStore } from "../../store2/auth";
+const authStore = useAuthStore();
 //const authStore = useAuthStore()
 </script>

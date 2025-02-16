@@ -9,7 +9,7 @@
       :icon="item.icon"
       :depth="0"
       :smallMenu="smallMenu"
-      @click.prevent="index === menuTree.length - 1 ? logOut() : null"
+      @click.prevent="index === menuTree.length - 1 ? loggOut() : null"
       :class="{ 'bottom-fixed': index === menuTree.length - 1 }"
     />
   </div>
@@ -17,7 +17,8 @@
 
 <script>
 import MenuItem from "./MenuItem.vue";
-
+import { useAuthStore } from "../store2/auth";
+import { mapActions } from "pinia";
 export default {
   name: "recursive-menu",
   data: () => ({
@@ -61,63 +62,60 @@ export default {
         icon: "contact_page",
         children: [
           {
-              label: "Список слушателей",
-              link: "/listeners",
-            },
-            {
-              label: "Плательщики",
-              link: "/payers",
-            },
-            {
-              label: "Группы",
-              link: "/lgroups",
-            },
-            {
-              label: "Договоры",
-              link: "/contracts",
-            },
-            {
-              label: "Программы",
-              link: "/programs",
-            },
-            {
-              label: "График платежей",
-              link: "/payments",
-            },
-            
-            
-
-          ]
-        },
-        {
-          label: "Расписание",
-          link: "",
-          icon: "calendar_month",
-          children: [
-            {
-              label: "Нагрузка",
-              link: "/ScheduleLoads",
-            },
-            {
-              label: "Аудитории",
-              link: "/audits",
-            }
-          ]
-        },
-        {
+            label: "Список слушателей",
+            link: "/listeners",
+          },
+          {
+            label: "Плательщики",
+            link: "/payers",
+          },
+          {
+            label: "Группы",
+            link: "/lgroups",
+          },
+          {
+            label: "Договоры",
+            link: "/contracts",
+          },
+          {
+            label: "Программы",
+            link: "/programs",
+          },
+          {
+            label: "График платежей",
+            link: "/payments",
+          },
+        ],
+      },
+      {
+        label: "Расписание",
+        link: "",
+        icon: "calendar_month",
+        children: [
+          {
+            label: "Нагрузка",
+            link: "/ScheduleLoads",
+          },
+          {
+            label: "Аудитории",
+            link: "/audits",
+          },
+        ],
+      },
+      {
         label: "Excel",
         link: "/xlparse",
         icon: "description",
       },
-        {
-          label: "Настройки",
-          link: "/profile",
-          icon: "settings"
-        },
-        {
-          label: "Выйти",
-          link: "",
-          icon: "logout"
+      {
+        label: "Настройки",
+        link: "/profile",
+        icon: "settings",
+      },
+      {
+        label: "Выйти",
+        link: "",
+        icon: "logout",
       },
     ],
   }),
@@ -125,10 +123,11 @@ export default {
     MenuItem,
   },
   methods: {
-    logOut() {
-      this.$store.dispatch("auth/logout");
-      this.$router.push("/login");
-    },
+    ...mapActions(useAuthStore, ["logout"]),
+    // loggOut() {
+    //   //this.logout();
+    //   //this.$router.push("/login");
+    // },
   },
 };
 </script>
