@@ -1,5 +1,5 @@
 import { useLayoutStore } from '@/store2/layout';
-
+import AuthService from './auth.service';
 
 class RequestExecutor {
     baseUrl;
@@ -115,11 +115,17 @@ class RequestExecutor {
             const location = exact ? url : this.baseUrl + url;
             const response = await fetch(location, init);
 
+            if (response.status === 401) {
+                AuthService.logout();
+                this.$router.push(`/login`);
+                return;
+            }
             if (response.status === 404) throw new Error('Not found!');
             if (response.status === 500) throw new Error(await response.text());
 
             return await response.json();
         } catch (error) {
+            console.log('here test')
             console.error(error);
             throw new Error(error);
         } finally {

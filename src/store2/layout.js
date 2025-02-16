@@ -4,6 +4,7 @@ export const useLayoutStore = defineStore('layout', {
     state: () => ({
         isLoading: 0,
         visibleMenu: true,
+        noPermission: false,
     }),
 
     getters: {
