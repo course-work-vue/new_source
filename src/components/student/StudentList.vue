@@ -153,6 +153,13 @@
           :scheme="scheme"
         >
         </auto-form>
+        <button
+          @click="previewStudyingStatus"
+          class="mx-2 btn btn-primary float-start"
+          type="button"
+        >
+          Справка об обучении
+        </button>
       </div>
     </div>
 
@@ -223,7 +230,14 @@ import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
 
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  AlignmentType,
+  BorderStyle,
+} from "docx";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
@@ -652,6 +666,11 @@ export default {
 
       this.formVisible = true;
     },
+    async previewStudyingStatus() {
+      await this.createStudyingStatusDocx();
+
+      this.docPreview = true;
+    },
     async previewDocx() {
       await this.createDocx();
 
@@ -914,6 +933,206 @@ export default {
       this.subg = false;
       this.spisok = false;
       this.filters = false;
+    },
+    async createStudyingStatusDocx() {
+      // Создаем документ
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Заголовок
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Министерство науки и высшего образования",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Российской Федерации",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "Федеральное государственное бюджетное",
+                    size: 22,
+                    bold: false,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 },
+                children: [
+                  new TextRun({
+                    text: "образовательное учреждение высшего образования",
+                    size: 22,
+                  }),
+                  new TextRun({
+                    text: "«Кубанский государственный университет»",
+                    size: 24,
+                    bold: true,
+                    break: 1,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 0 }, // No space after this paragraph
+                children: [
+                  new TextRun({
+                    text: "(ФГБОУ ВО «КубГУ»)",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+              }),
+              // Fifth line - Regular alignment and spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({
+                    text: "Факультет компьютерных технологий и прикладной математики",
+                    size: 24,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({
+                    text: "Ставропольская ул., д. 149, г. Краснодар, 350040",
+                    size: 22,
+                    break: 0,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [
+                  new TextRun({
+                    text: "тел.: (861) 219-95-02; факс: (861) 219-95-17;e-mail: rector@kubsu.ru; http://www.kubsu.ru",
+                    size: 24,
+                    break: 0,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 100 },
+                children: [
+                  new TextRun({
+                    text: "ОКПО 02067847; ОГРН 102230192516; ИНН/КПП 2312038420/231201001",
+                    size: 24,
+                    break: 0,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({
+                    text: "СПРАВКА",
+                    size: 24,
+                    break: 0,
+                  }),
+                ],
+              }),
+
+              new Paragraph({
+                border: {
+                  bottom: {
+                    style: BorderStyle.DOTTED,
+                    size: 26,
+                    color: "000000",
+                    space: 1,
+                  },
+                },
+              }),
+              // Sixth line - Bold, with spacing
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: "ОТЧЕТ ПО ФОРМАМ ОБУЧЕНИЯ СТУДЕНТОВ",
+                    size: 28,
+                    break: 1,
+                  }),
+                ],
+              }),
+
+              // Количество и список студентов на договорной форме обучения
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Количество студентов на договорной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Список студентов на договорной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+
+              // Количество и список студентов на бюджетной форме обучения
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Количество студентов на бюджетной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `Список студентов на бюджетной форме обучения:`,
+                    size: 28,
+                  }),
+                ],
+              }),
+            ],
+          },
+        ],
+      });
+
+      // Генерация и сохранение документа
+      const blob = await Packer.toBlob(doc);
+      //saveAs(blob, "Report.docx");
+      this.objectType = "docx";
+      this.documentTitle = "Предпросмотр отчёта";
+      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
     async createDocx() {
       // Получаем список студентов

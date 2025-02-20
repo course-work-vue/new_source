@@ -126,14 +126,15 @@ const routes = [
 
       //{ path: '/students/:studentId', component: StudentDetail },
       { path: '/rights/:table', component: RightsTable },
-      { path: '/directions', component: DirectionList },
+      { path: '/directions', name: "Направления", component: DirectionList },
+      { path: '/groups', name: "Группы", component: GroupList },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
       { path: '/profiles', name: "Профили", component: ProfileList },
       // { path: '/profiles/:profileId', component: ProfileDetail },
 
 
-      { path: '/groups', name: "Группы", component: GroupList },
+
       // { path: '/groups/:groupId', component: GroupDetail },
 
 
@@ -166,7 +167,7 @@ const routes = [
       },
       {
         path: '/lgroups',
-        name: "Группы",
+        name: "Группы слушателей",
         component: lGroupList
       },
       {
