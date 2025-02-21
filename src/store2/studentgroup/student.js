@@ -44,8 +44,10 @@ export const useStudentStore = defineStore('student', {
 
         async putStudent(student) {
             const response = await api.putStudent(student.student_id, student);
+
             if (response.success === true) {
-                const index = this.studentList.findIndex(s => s.id === student.student_id);
+                const index = this.studentList.findIndex(s => s.student_id === student.student_id);
+
                 if (index !== -1) {
                     this.studentList.splice(index, 1, new Student(student));
                 }

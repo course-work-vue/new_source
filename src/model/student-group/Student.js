@@ -55,7 +55,9 @@ export default class Student {
         console.log(group);
         return group ? group.group_number : null; // Return the group number if it exists, otherwise return null or a default value
     }
-
+    get dateOfBirth() {
+        return Formatter.formatDate(this.date_of_birth);
+    }
 
 
     get full_name() {

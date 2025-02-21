@@ -153,13 +153,6 @@
           :scheme="scheme"
         >
         </auto-form>
-        <button
-          @click="previewStudyingStatus"
-          class="mx-2 btn btn-primary float-start"
-          type="button"
-        >
-          Справка об обучении
-        </button>
       </div>
     </div>
 
@@ -202,6 +195,7 @@ import { Form, Field, ErrorMessage } from "vee-validate";
 import { AgGridVue } from "ag-grid-vue3"; // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
 import ButtonCell from "@/components/student/StudentButtonCell.vue";
+import ButtonCell2 from "@/components/student/StudentButtonCell2.vue";
 import StudentHref from "@/components/student/StudentHrefCellRenderer.vue";
 import StudentHref2 from "@/components/student/StudentHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
@@ -211,6 +205,7 @@ import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useStudentStore } from "@/store2/studentgroup/student";
 import { useGroupStore } from "@/store2/studentgroup/group";
+import { useDirectionStore } from "@/store2/studentgroup/direction";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import users from "@/mock/users";
@@ -237,6 +232,7 @@ import {
   TextRun,
   AlignmentType,
   BorderStyle,
+  UnderlineType,
 } from "docx";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
@@ -248,6 +244,7 @@ export default {
   components: {
     AgGridVue,
     ButtonCell,
+    ButtonCell2,
     StudentHref,
     StudentHref2,
     Form,
@@ -326,6 +323,19 @@ export default {
           headerName: "Дата рождения",
           minWidth: 170,
           hide: true,
+        },
+        {
+          sortable: false,
+          filter: false,
+          headerName: "Справка",
+          headerClass: "text-center",
+          cellRenderer: "ButtonCell2",
+          cellRendererParams: {
+            onClick: navigateToStudent,
+            label: "View Details", // Button label
+          },
+          maxWidth: 120,
+          resizable: false,
         },
       ],
     });
@@ -474,6 +484,7 @@ export default {
     };
   },
   async mounted() {
+    await this.getDirectionList();
     await this.getGroupList();
     await this.getStudentList();
 
@@ -652,9 +663,14 @@ export default {
       "getCont",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
+    ...mapActions(useDirectionStore, ["getDirectionList"]),
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "Действия") {
         this.edit(event);
+      } else {
+        if (event.colDef && event.colDef.headerName === "Справка") {
+          this.previewStudyingStatus(event.data.student_id);
+        }
       }
     },
     resetStd() {
@@ -666,8 +682,8 @@ export default {
 
       this.formVisible = true;
     },
-    async previewStudyingStatus() {
-      await this.createStudyingStatusDocx();
+    async previewStudyingStatus(student_id) {
+      await this.createStudyingStatusDocx(student_id);
 
       this.docPreview = true;
     },
@@ -934,8 +950,57 @@ export default {
       this.spisok = false;
       this.filters = false;
     },
-    async createStudyingStatusDocx() {
+    async createStudyingStatusDocx(student_id) {
       // Создаем документ
+      const months = [
+        "января",
+        "февраля",
+        "марта",
+        "апреля",
+        "мая",
+        "июня",
+        "июля",
+        "августа",
+        "сентября",
+        "октября",
+        "ноября",
+        "декабря",
+      ];
+
+      const today = new Date();
+      const day = today.getDate();
+      const month = months[today.getMonth()]; // возвращает корректное название месяца
+      const year = today.getFullYear();
+
+      // 2. Получаем актуальный номер справки из БД
+      // Предполагается, что этот метод реализован для получения номера из БД
+      const certificateNumber = "8234/06.07"; // например, "8234/06.07"
+
+      // 3. Получаем имя в дательном падеже через API Morpher
+
+      const std = this.studentMap[student_id];
+
+      const fullName = std.full_name; // либо динамически из вашего источника
+      const morpherUrl = `https://ws3.morpher.ru/russian/declension?s=${encodeURIComponent(
+        fullName
+      )}&flags=name`;
+      let dativeName = "";
+      try {
+        const response = await fetch(morpherUrl);
+        const xmlText = await response.text();
+        // Парсинг XML-ответа
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+        const dTag = xmlDoc.getElementsByTagName("Д")[0];
+        if (dTag) {
+          dativeName = dTag.textContent;
+        }
+      } catch (error) {
+        console.error("Ошибка при получении данных с Morpher API:", error);
+      }
+
+      const typeOfEdu = std.is_budget ? "бюджет" : "договор";
+      const finalString = `от «${day}» ${month} ${year} г. № ${certificateNumber} ${dativeName}`;
       const doc = new Document({
         sections: [
           {
@@ -1066,59 +1131,224 @@ export default {
                   },
                 },
               }),
-              // Sixth line - Bold, with spacing
+
               new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
+                alignment: AlignmentType.LEFT,
                 children: [
                   new TextRun({
-                    text: "ОТЧЕТ ПО ФОРМАМ ОБУЧЕНИЯ СТУДЕНТОВ",
-                    size: 28,
                     break: 1,
+                    text: "от ",
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: `«${day}» ${month} ${year} г.`,
+                    size: 24,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                  new TextRun({
+                    text: " № ",
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: certificateNumber,
+                    size: 24,
+
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [
+                  new TextRun({
+                    break: 1,
+                    text: "Дана ",
+                    size: 28,
+                  }),
+                  new TextRun({
+                    text: `${dativeName}, ${std.dateOfBirth} г. рождения`,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                  new TextRun({
+                    break: 1,
+                    text: "в том, что он(а) является студентом(кой) ",
+                    size: 28,
+                  }),
+                  new TextRun({
+                    text: `${this.groupMap[std.group_id].course}`,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                  new TextRun({
+                    text: ` курса`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [
+                  new TextRun({
+                    text: "факультета компьютерных технологий и прикладной математики",
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    text: "ФГБОУ   ВО  «Кубанский   государственный   университет»    и    обучается ",
+                    size: 28,
+                  }),
+                  new TextRun({
+                    text: `по направлению подготовки ${
+                      this.directionMap[
+                        this.groupMap[std.group_id].group_dir_id
+                      ].dir_code
+                    } ${
+                      this.directionMap[
+                        this.groupMap[std.group_id].group_dir_id
+                      ].dir_name
+                    },`,
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [
+                  new TextRun({
+                    text: "очной формы обучения,",
+                    size: 28,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: [
+                  new TextRun({
+                    text: `${typeOfEdu}.`,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
               }),
 
-              // Количество и список студентов на договорной форме обучения
               new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 200 },
+                alignment: AlignmentType.DISTRIBUTE,
                 children: [
                   new TextRun({
-                    text: `Количество студентов на договорной форме обучения:`,
+                    break: 1,
+                    text: `Приказ о зачислении `,
                     size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                  new TextRun({
+                    text: `${std.enrollment_order}`,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
               }),
               new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 200 },
+                alignment: AlignmentType.DISTRIBUTE,
                 children: [
                   new TextRun({
-                    text: `Список студентов на договорной форме обучения:`,
+                    text: `Начало обучения: `,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    text: `Окончание обучения: `,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    break: 1,
+                    text: `Справка дана для представления по месту требования.`,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    break: 1,
+                    text: `Декан ФКТиПМ`,
+                    size: 28,
+                  }),
+                  new TextRun({
+                    text: `  								 `,
+                    size: 28,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                  new TextRun({
+                    text: `А.Д. Колотий`,
                     size: 28,
                   }),
                 ],
               }),
 
-              // Количество и список студентов на бюджетной форме обучения
               new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 200 },
+                alignment: AlignmentType.DISTRIBUTE,
                 children: [
                   new TextRun({
-                    text: `Количество студентов на бюджетной форме обучения:`,
-                    size: 28,
+                    break: 1,
+                    text: `М.П.`,
+                    size: 24,
+                  }),
+                ],
+              }),
+
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    break: 1,
+                    text: `Ю.А. Проценко, `,
+                    size: 24,
+                    underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
               }),
               new Paragraph({
-                alignment: AlignmentType.LEFT,
-                spacing: { after: 200 },
+                alignment: AlignmentType.DISTRIBUTE,
                 children: [
                   new TextRun({
-                    text: `Список студентов на бюджетной форме обучения:`,
-                    size: 28,
+                    text: `секретарь деканата`,
+                    size: 24,
+                    underline: { type: UnderlineType.SINGLE },
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.DISTRIBUTE,
+                children: [
+                  new TextRun({
+                    break: 1,
+                    text: `т. `,
+                    size: 24,
+                  }),
+                  new TextRun({
+                    text: `8(861)21-99-578`,
+                    size: 24,
+                    underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
               }),
@@ -1324,8 +1554,13 @@ export default {
     },
   },
   computed: {
-    ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
-    ...mapState(useGroupStore, ["groupList"]),
+    ...mapState(useStudentStore, [
+      "studentList",
+      "activeSortedStudents",
+      "studentMap",
+    ]),
+    ...mapState(useGroupStore, ["groupList", "groupMap"]),
+    ...mapState(useDirectionStore, ["directionMap"]),
   },
   async created() {},
 };
