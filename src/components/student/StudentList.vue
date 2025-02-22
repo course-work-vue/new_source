@@ -12,25 +12,13 @@
 
         <div class="col col-12">
           <div class="float-start">
-            <button
-              @click="openCreatingForm"
-              class="btn btn-primary float-start"
-              type="button"
-            >
+            <button @click="openCreatingForm" class="btn btn-primary float-start" type="button">
               <i class="material-icons-outlined">add</i>Добавить студента
             </button>
-            <button
-              @click="previewDocx"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
+            <button @click="previewDocx" class="mx-2 btn btn-primary float-start" type="button">
               Отчёт о формах обучения
             </button>
-            <button
-              @click="contingent"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
+            <button @click="contingent" class="mx-2 btn btn-primary float-start" type="button">
               Контингент
             </button>
           </div>
@@ -39,60 +27,32 @@
       <div class="col col-12">
         <div class="col col-6 float-start">
           <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="group_id"
-              >Фильтр по группе:</label
-            >
+            <label class="bigger form-label" for="group_id">Фильтр по группе:</label>
 
-            <select
-              class="form-select"
-              id="group_id"
-              v-model="myValue"
-              @change="handleSelectChange(myValue)"
-            >
+            <select class="form-select" id="group_id" v-model="myValue" @change="handleSelectChange(myValue)">
               <option selected="selected" value="">Нет</option>
-              <option
-                v-for="group in this.groupList.sort(
-                  (a, b) => a.group_number - b.group_number
-                )"
-                :key="group.group_number"
-                :value="group.group_number"
-              >
+              <option v-for="group in this.groupList.sort(
+                (a, b) => a.group_number - b.group_number
+              )" :key="group.group_number" :value="group.group_number">
                 {{ group.group_number }}
               </option>
             </select>
           </div>
         </div>
         <div class="col col-6 float-end d-inline-flex align-items-center">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
+          <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button">
             <i class="material-icons-outlined">close</i>Очистить фильтры
           </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+          <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..." />
         </div>
       </div>
       <div class="col col-6 float-start">
         <div class="form-group d-inline-flex align-items-center">
-          <label class="bigger form-label" for="subgroup_id"
-            >Фильтр по подгруппе:</label
-          >
+          <label class="bigger form-label" for="subgroup_id">Фильтр по подгруппе:</label>
 
-          <select
-            class="form-select"
-            id="subgroup_id"
-            v-model="myValue4"
-            @change="handleSelectChange2(myValue4)"
-          >
+          <select class="form-select" id="subgroup_id" v-model="myValue4" @change="handleSelectChange2(myValue4)">
             <option selected="selected" value="">Нет</option>
             <option value="1">1</option>
             <option value="2">2</option>
@@ -101,21 +61,10 @@
       </div>
       <div style="height: 90vh">
         <div class="h-100 pt-5">
-          <ag-grid-vue
-            class="ag-theme-alpine"
-            style="width: 100%; height: 100%"
-            :columnDefs="columnDefs.value"
-            :rowData="rowData.value"
-            :defaultColDef="defaultColDef"
-            :localeText="localeText"
-            rowSelection="multiple"
-            animateRows="true"
-            includeHiddenColumnsInQuickFilter="true"
-            @cell-clicked="cellWasClicked"
-            @grid-ready="onGridReady"
-            @firstDataRendered="onFirstDataRendered"
-            @filter-changed="onFilterChanged"
-          >
+          <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%" :columnDefs="columnDefs.value"
+            :rowData="rowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+            animateRows="true" includeHiddenColumnsInQuickFilter="true" @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged">
           </ag-grid-vue>
         </div>
       </div>
@@ -145,48 +94,24 @@
   <Dialog v-model:visible="formVisible" modal header="Форма студента">
     <div class="card flex flex-row">
       <div class="form card__form">
-        <auto-form
-          v-model="student"
-          v-model:valid="valid"
-          v-model:errors="errors"
-          item-class="form__item"
-          :scheme="scheme"
-        >
+        <auto-form v-model="student" v-model:valid="valid" v-model:errors="errors" item-class="form__item"
+          :scheme="scheme">
         </auto-form>
       </div>
     </div>
 
-    <Button
-      class="btn btn-primary float-start"
-      :disabled="!valid"
-      @click="submit"
-    >
+    <Button class="btn btn-primary float-start" :disabled="!valid" @click="submit">
       Сохранить
     </Button>
-    <Button
-      class="btn btn-primary float-end"
-      v-if="this.student.student_id"
-      @click="deleteStd"
-    >
+    <Button class="btn btn-primary float-end" v-if="this.student.student_id" @click="deleteStd">
       Удалить
     </Button>
   </Dialog>
 
-  <Dialog
-    v-model:visible="docPreview"
-    header="Предпросмотр документа отчёт по студентам"
-    maximizable
-    ref="maxDialog"
-    @show="biggifyDialog"
-    :header="props.name"
-    class="w-full h-full md:w-5/6"
-  >
-    <OnlyDocumentEditor
-      v-if="filePath"
-      :documentUrl="filePath"
-      :documentTitle="documentTitle"
-      :objectType="objectType"
-    />
+  <Dialog v-model:visible="docPreview" header="Предпросмотр документа отчёт по студентам" maximizable ref="maxDialog"
+    @show="biggifyDialog" :header="props.name" class="w-full h-full md:w-5/6">
+    <OnlyDocumentEditor v-if="filePath" :documentUrl="filePath" :documentTitle="documentTitle"
+      :objectType="objectType" />
   </Dialog>
 </template>
 
@@ -268,7 +193,7 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToStudent = () => {};
+    const navigateToStudent = () => { };
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
     const maxDialog = ref();
@@ -417,7 +342,7 @@ export default {
     };
 
     // Example load data from server
-    onMounted(() => {});
+    onMounted(() => { });
 
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
@@ -500,7 +425,7 @@ export default {
       }),
       new DateInput({
         key: "enrolled_date",
-        label: "Дата зачисления",
+        label: "Дата начала обучения",
         dateFormat: "dd/mm/yy",
         size: "sm",
         showIcon: true,
@@ -980,6 +905,26 @@ export default {
 
       const std = this.studentMap[student_id];
 
+      // 2. Вычисляем год окончания обучения  
+      // Используем текущий календарный год и текущий курс обучения.
+      // Предполагается, что для первого курса this.currentCourse = 0, тогда окончание обучения = currentYear + 4.
+      const enrollmentInfo = std.enrollment_order; // пример строки; на практике получаем из БД или другого источника
+      const regex = /(\d{2})\.(\d{2})\.(\d{4})/;
+      let enrollmentYear = 2021; // значение по умолчанию
+      const match = enrollmentInfo.match(regex);
+      if (match) {
+        enrollmentYear = parseInt(match[3], 10);
+      }
+
+      // Фиксированные день и месяц для начала обучения
+      const startEducationString = `«01» сентября ${enrollmentYear} г.`;
+
+
+      const currentYear = new Date().getFullYear();
+      const currentCourse = this.groupMap[std.group_id].course || 0; // если не определён, то по умолчанию 0
+      const graduationYear = currentYear + (4 - currentCourse);
+      const endEducationString = `«31» августа ${graduationYear} г.`;
+
       const fullName = std.full_name; // либо динамически из вашего источника
       const morpherUrl = `https://ws3.morpher.ru/russian/declension?s=${encodeURIComponent(
         fullName
@@ -1203,15 +1148,13 @@ export default {
                     size: 28,
                   }),
                   new TextRun({
-                    text: `по направлению подготовки ${
-                      this.directionMap[
-                        this.groupMap[std.group_id].group_dir_id
-                      ].dir_code
-                    } ${
-                      this.directionMap[
+                    text: `по направлению подготовки ${this.directionMap[
+                      this.groupMap[std.group_id].group_dir_id
+                    ].dir_code
+                      } ${this.directionMap[
                         this.groupMap[std.group_id].group_dir_id
                       ].dir_name
-                    },`,
+                      },`,
                     size: 28,
                   }),
                 ],
@@ -1243,7 +1186,6 @@ export default {
                     break: 1,
                     text: `Приказ о зачислении `,
                     size: 28,
-                    underline: { type: UnderlineType.SINGLE },
                   }),
                   new TextRun({
                     text: `${std.enrollment_order}`,
@@ -1258,6 +1200,10 @@ export default {
                   new TextRun({
                     text: `Начало обучения: `,
                     size: 28,
+                  }),
+                  new TextRun({
+                    text: `${startEducationString}`,
+                    size: 28,
                     underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
@@ -1268,7 +1214,11 @@ export default {
                   new TextRun({
                     text: `Окончание обучения: `,
                     size: 28,
+                  }),
+                  new TextRun({
+                    text: `${endEducationString}`,
                     underline: { type: UnderlineType.SINGLE },
+                    size: 28,
                   }),
                 ],
               }),
@@ -1280,7 +1230,6 @@ export default {
                     break: 1,
                     text: `Справка дана для представления по месту требования.`,
                     size: 28,
-                    underline: { type: UnderlineType.SINGLE },
                   }),
                 ],
               }),
@@ -1562,7 +1511,7 @@ export default {
     ...mapState(useGroupStore, ["groupList", "groupMap"]),
     ...mapState(useDirectionStore, ["directionMap"]),
   },
-  async created() {},
+  async created() { },
 };
 var filterParams = {
   comparator: (filterLocalDateAtMidnight, cellValue) => {
@@ -1593,21 +1542,21 @@ var filterParams = {
   font-size: 30px;
   white-space: nowrap;
 }
+
 .ag-row .ag-cell {
   display: flex;
-  justify-content: center; /* align horizontal */
+  justify-content: center;
+  /* align horizontal */
   align-items: center;
 }
 
 .skeleton {
   width: 100%;
   height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
+  background-image: linear-gradient(125deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%);
   background-size: 200% 100%;
   animation: skeletonShimmer 3.5s infinite linear;
   border-radius: 4px;
@@ -1623,16 +1572,19 @@ var filterParams = {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
 
 @keyframes skeletonFade {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
@@ -1653,16 +1605,19 @@ var filterParams = {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .page-link {
   height: 40px;
   width: 40px;
@@ -1671,6 +1626,7 @@ var filterParams = {
   justify-content: center;
   align-items: center;
 }
+
 .active {
   .page-link {
     background-color: rgb(68, 99, 52);
@@ -1679,6 +1635,7 @@ var filterParams = {
     --bs-btn-hover-border-color: rgb(6 215 29);
   }
 }
+
 .disabled {
   .page-link {
     background-color: rgb(57, 79, 46);

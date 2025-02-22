@@ -1,12 +1,8 @@
 <template>
   <labeled-input :label="label" :item-key="itemKey">
     <input-with-icon :icon="icon" :icon-right="iconRight">
-      <InputText
-        :id="itemKey"
-        v-model.lazy="model"
-        :placeholder="placeholder"
-        :class="inputClass"
-      ></InputText>
+      {{ type }}
+      <InputText :type="type === 'text'? 'text' : 'number'" :id="itemKey" v-model.lazy="model" :placeholder="placeholder" :class="inputClass"></InputText>
     </input-with-icon>
   </labeled-input>
   <input-error :error="error"></input-error>
@@ -48,6 +44,10 @@ export default {
     error: {
       type: String,
     },
+    type: {
+      type: String,
+      default: 'text',
+    }
   },
   setup(props, { emit }) {
     const { inputClass } = useInputClass(props);

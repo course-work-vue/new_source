@@ -8,49 +8,26 @@
         <div v-if="pr">
           <h1>Список всех групп с профилем {{ pr_n }}</h1>
         </div>
-        <button
-          @click="openCreatingForm"
-          class="btn btn-primary float-start"
-          type="button"
-        >
+        <button @click="openCreatingForm" class="btn btn-primary float-start" type="button">
           <i class="material-icons-outlined">add</i>Добавить группу
         </button>
         <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
+          <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button">
             <i class="material-icons-outlined">close</i>Очистить фильтры
           </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+          <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..." />
         </div>
       </div>
     </div>
 
     <div style="height: 95vh">
       <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-        >
+        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%" :columnDefs="columnDefs.value"
+          :rowData="rowData.value" :defaultColDef="defaultColDef" rowSelection="multiple" animateRows="true"
+          @cell-clicked="cellWasClicked" @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onFilterChanged">
         </ag-grid-vue>
       </div>
     </div>
@@ -58,30 +35,16 @@
   <Dialog v-model:visible="formVisible" modal header="Форма группы">
     <div class="card flex flex-row">
       <div class="form card__form">
-        <auto-form
-          v-model="group"
-          v-model:valid="valid"
-          v-model:errors="errors"
-          item-class="form__item"
-          :scheme="scheme"
-          :localeText="localeText"
-        >
+        <auto-form v-model="group" v-model:valid="valid" v-model:errors="errors" item-class="form__item"
+          :scheme="scheme" :localeText="localeText">
         </auto-form>
       </div>
     </div>
 
-    <Button
-      class="btn btn-primary float-start"
-      :disabled="!valid"
-      @click="submit"
-    >
+    <Button class="btn btn-primary float-start" :disabled="!valid" @click="submit">
       Сохранить
     </Button>
-    <Button
-      class="btn btn-primary float-end"
-      v-if="this.group.group_id"
-      @click="deleteGr"
-    >
+    <Button class="btn btn-primary float-end" v-if="this.group.group_id" @click="deleteGr">
       Удалить
     </Button>
   </Dialog>
@@ -139,7 +102,7 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToStudent = () => {};
+    const navigateToStudent = () => { };
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
 
@@ -190,7 +153,7 @@ export default {
     };
 
     // Example load data from server
-    onMounted(() => {});
+    onMounted(() => { });
 
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
@@ -267,6 +230,7 @@ export default {
         label: "Курс",
         placeholder: "Курс",
         icon: "pi pi-graduation-cap",
+        type: "number",
         validation: [requiredRule],
       }),
     ]);
@@ -435,12 +399,10 @@ export default {
 .skeleton {
   width: 100%;
   height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
+  background-image: linear-gradient(125deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%);
   background-size: 200% 100%;
   animation: skeletonShimmer 3.5s infinite linear;
   border-radius: 4px;
@@ -451,16 +413,19 @@ export default {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
 
 @keyframes skeletonFade {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
@@ -481,16 +446,19 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .page-link {
   height: 40px;
   width: 40px;
@@ -499,6 +467,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .active {
   .page-link {
     background-color: rgb(68, 99, 52);
@@ -507,6 +476,7 @@ export default {
     --bs-btn-hover-border-color: rgb(6 215 29);
   }
 }
+
 .disabled {
   .page-link {
     background-color: rgb(57, 79, 46);

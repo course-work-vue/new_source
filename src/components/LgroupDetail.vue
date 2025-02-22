@@ -1,4 +1,4 @@
-<template>
+template>
   <div class="col-md-12 list">
     <div v-if="group" >
       <Form @submit="updateGroup" :validation-schema="schema" v-slot="{ errors }">
@@ -226,7 +226,7 @@
   /* eslint-disable */
 import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
 import { reactive, onMounted, ref } from "vue";
-import ButtonCell from "@/components/listeners/ListenerButtonCell.vue";
+import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ListenerHref from "@/components/listener/ListenerHrefCellRenderer.vue";
 import ListenerHref2 from "@/components/listener/ListenerHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
