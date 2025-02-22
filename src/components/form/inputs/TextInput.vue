@@ -1,8 +1,14 @@
 <template>
   <labeled-input :label="label" :item-key="itemKey">
     <input-with-icon :icon="icon" :icon-right="iconRight">
-      {{ type }}
-      <InputText :type="type === 'text'? 'text' : 'number'" :id="itemKey" v-model.lazy="model" :placeholder="placeholder" :class="inputClass"></InputText>
+      <InputText
+        :type="types === 'text' ? 'text' : 'number'"
+        :id="itemKey"
+        v-model.lazy="model"
+        :placeholder="placeholder"
+        :class="inputClass"
+        @input="handleInput"
+      ></InputText>
     </input-with-icon>
   </labeled-input>
   <input-error :error="error"></input-error>
@@ -36,7 +42,7 @@ export default {
       type: Boolean,
     },
     value: {
-      type: String,
+      type: [String, Number],
     },
     placeholder: {
       type: String,
@@ -44,16 +50,24 @@ export default {
     error: {
       type: String,
     },
-    type: {
+    types: {
       type: String,
-      default: 'text',
-    }
+      default: "text",
+    },
   },
   setup(props, { emit }) {
     const { inputClass } = useInputClass(props);
     const { model } = useModel(props, emit);
 
-    return { inputClass, model };
+    const handleInput = (event) => {
+      let value = event.target.value;
+      if (props.types === "number") {
+        value = value === "" ? null : Number(value); // Convert to number if applicable
+      }
+      emit("update:value", value); // Emit as number if needed
+    };
+
+    return { handleInput, inputClass, model };
   },
 };
 </script>

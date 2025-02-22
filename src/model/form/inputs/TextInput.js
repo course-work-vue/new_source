@@ -15,14 +15,10 @@ export class TextInput extends BaseInput {
 
     placeholder;
 
-    type = 'number';
     constructor(props) {
         super(props);
-        console.log(props);
-        const { size = 'md', icon, iconRight = false, placeholder, type = 'text' } = props;
-        console.log(type);
+        const { size = 'md', icon, iconRight = false, placeholder } = props;
         this.size = size;
-        this.type = type;
         this.icon = icon;
         this.iconRight = iconRight;
         this.placeholder = placeholder;
