@@ -72,7 +72,6 @@
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
-          :localeText="localeText"
         >
         </auto-form>
       </div>
@@ -374,6 +373,43 @@ export default {
         console.error("Error loading directions data:", error);
       }
     },
+    onFilterChanged() {
+      // This function will be called whenever filters change.
+      // You can perform your desired action here.
+      // For example, you can get the current filter model:
+      this.filters = false;
+      const savedQuickFilter = this.gridApi.getQuickFilter();
+      const savedFilterModel = this.gridApi.getFilterModel();
+
+      // Initialize an empty object for queryParams
+      const queryParams = {};
+
+      // Check if savedQuickFilter is not empty, then add it to queryParams
+      if (savedQuickFilter) {
+        queryParams.quickFilter = JSON.stringify(savedQuickFilter);
+        this.filters = true;
+      }
+
+      // Check if savedFilterModel is not empty, then add it to queryParams
+      if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
+        queryParams.filterModel = JSON.stringify(savedFilterModel);
+        this.filters = true;
+        if (savedFilterModel.prof_name) {
+          this.pr = true;
+          this.pr_n = savedFilterModel.prof_name.filter;
+        } else {
+          this.pr = false;
+        }
+      } else {
+        this.pr = false;
+      }
+
+      // Push the query parameters to the router
+      this.$router.push({ query: queryParams });
+
+      // Do something with the filterModel or trigger other actions as needed.
+    },
+
     clearFilters() {
       this.gridApi.setFilterModel();
       this.gridApi.setQuickFilter();

@@ -82,7 +82,9 @@
         >
         </auto-form>
         <div class="form__item">
-          <button @click="deauthUserWithId(user.id)">{{ user.id }}</button>
+          <button class="btn btn-primary" @click="deauthUserWithId(user.id)">
+            Отозвать токен
+          </button>
         </div>
         <div class="form__item">
           <h3>Роли</h3>

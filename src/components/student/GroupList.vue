@@ -231,52 +231,54 @@ export default {
     await this.getGroupList(); // Получение списка групп
 
     this.loadGroupsData(); // Загрузка данных групп
-    this.scheme = new FormScheme([
-      new TextInput({
-        key: "group_number",
-        label: "Номер группы",
-        placeholder: "Номер группы",
-        icon: "pi pi-hashtag",
-        validation: [requiredRule],
-        types: "text",
-      }),
-      new ComboboxInput({
-        key: "group_dir_id",
-        label: "Направление",
-        options: [
-          ...[...this.directionList].map((direction) => ({
-            label: direction.dir_name,
-            value: direction.dir_id,
-          })),
-        ],
-        validation: [requiredRule],
-      }),
-      new ComboboxInput({
-        key: "group_prof_id",
-        label: "Профиль",
-        options: [
-          ...[...this.profileList].map((profile) => ({
-            label: profile.prof_name,
-            value: profile.prof_id,
-          })),
-        ],
-        validation: [requiredRule],
-      }),
-      new TextInput({
-        key: "course",
-        label: "Курс",
-        placeholder: "Курс",
-
-        icon: "pi pi-graduation-cap",
-        validation: [requiredRule],
-        types: "number",
-      }),
-    ]);
   },
   computed: {
     ...mapState(useDirectionStore, ["directionList"]),
     ...mapState(useProfileStore, ["profileList"]),
     ...mapState(useGroupStore, ["groupList"]),
+
+    scheme() {
+      return new FormScheme([
+        new TextInput({
+          key: "group_number",
+          label: "Номер группы",
+          placeholder: "Номер группы",
+          icon: "pi pi-hashtag",
+          validation: [requiredRule],
+          types: "text",
+        }),
+        new ComboboxInput({
+          key: "group_dir_id",
+          label: "Направление",
+          options: this.directionList.map((direction) => ({
+            label: direction.dir_name,
+            value: direction.dir_id,
+          })),
+          validation: [requiredRule],
+        }),
+        new ComboboxInput({
+          key: "group_prof_id",
+          label: "Профиль",
+          options: this.profileList
+            .filter(
+              (profile) => profile.prof_dir_id === this.group.group_dir_id
+            )
+            .map((profile) => ({
+              label: profile.prof_name,
+              value: profile.prof_id,
+            })),
+          validation: [requiredRule],
+        }),
+        new TextInput({
+          key: "course",
+          label: "Курс",
+          placeholder: "Курс",
+          icon: "pi pi-graduation-cap",
+          validation: [requiredRule],
+          types: "number",
+        }),
+      ]);
+    },
   },
   methods: {
     ...mapActions(useDirectionStore, ["getDirectionList"]),
