@@ -12,10 +12,10 @@ const layoutConfig = reactive({
 
 const layoutState = reactive({
     staticMenuDesktopInactive: false,
-    overlayMenuActive: false,
-    profileSidebarVisible: false,
+    overlayMenuActive: true,
+    profileSidebarVisible: true,
     staticMenuMobileActive: false,
-    menuHoverActive: false
+    menuHoverActive: true
 });
 
 export function useLayout() {
@@ -32,15 +32,17 @@ export function useLayout() {
             layoutState.overlayMenuActive = !layoutState.overlayMenuActive;
         }
 
-        if (window.innerWidth > 991) {
-            layoutState.staticMenuDesktopInactive = !layoutState.staticMenuDesktopInactive;
-        } else {
-            layoutState.staticMenuMobileActive = !layoutState.staticMenuMobileActive;
-        }
+        layoutState.staticMenuDesktopInactive = false;
+        //to:do fix
+        // if (window.innerWidth > 991) {
+        //     layoutState.staticMenuDesktopInactive = !layoutState.staticMenuDesktopInactive;
+        // } else {
+        //     layoutState.staticMenuMobileActive = !layoutState.staticMenuMobileActive;
+        // }
     };
 
-    const isSidebarActive = computed(() => layoutState.overlayMenuActive || layoutState.staticMenuMobileActive);
-
+    // const isSidebarActive = computed(() => layoutState.overlayMenuActive || layoutState.staticMenuMobileActive);
+    const isSidebarActive = computed(() => true);
     const isDarkTheme = computed(() => layoutConfig.darkTheme);
 
     return { layoutConfig: toRefs(layoutConfig), layoutState: toRefs(layoutState), setScale, onMenuToggle, isSidebarActive, isDarkTheme, setActiveMenuItem };

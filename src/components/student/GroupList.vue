@@ -312,7 +312,7 @@ export default {
       let isValid = true;
       const errors = {};
 
-      for (const item of this.scheme.items) {
+      for (const item of this.scheme?.items || []) {
         const result = item.validate(this.group[item.key]);
 
         if (result !== true) {
