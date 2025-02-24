@@ -2,173 +2,189 @@
   <div class="col col-xs-9 col-lg-12 mt-4 list">
     <div class="col col-12">
       <div class="mb-3 col col-12">
-
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
+        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
           <button
             @click="openSidebar"
             class="btn btn-primary float-start"
             type="button"
           >
-             <i class="material-icons-outlined">add</i>Добавить слушателя
-            </button>
+            <i class="material-icons-outlined">add</i>Добавить слушателя
+          </button>
         </div>
-        
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2 ">
-          <button 
-          @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2" type="button"><i class="material-icons-outlined">close</i>Очистить фильтры</button>
-          <input 
-          class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box" v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..."> 
+        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
+          <button
+            @click="clearFilters"
+            :disabled="!filters"
+            class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button"
+          >
+            <i class="material-icons-outlined">close</i>Очистить фильтры
+          </button>
+          <input
+            class="form-control"
+            type="text"
+            v-model="quickFilterValue"
+            id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()"
+            placeholder="Поиск..."
+          />
         </div>
-
       </div>
     </div>
 
+    <div style="height: 50vh">
+      <div class="h-100 pt-5">
+        <ag-grid-vue
+          class="ag-theme-alpine"
+          style="width: 100%; height: 100%;"
+          :columnDefs="columnDefs.value"
+          :rowData="rowData.value"
+          :defaultColDef="defaultColDef"
+          rowSelection="multiple"
+          animateRows="true"
+          @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onFilterChanged"
+          :pagination="true"
+          :paginationPageSize="paginationPageSize"
+        >
+        </ag-grid-vue>
+      </div>
+    </div>
+  </div>
 
-    
-<div style="height: 50vh">
-<div class="h-100 pt-5">
-  <ag-grid-vue
-    class="ag-theme-alpine"
-    style="width: 100%; height: 100%;"
-    :columnDefs="columnDefs.value"
-    :rowData="rowData.value"
-    :defaultColDef="defaultColDef"
-    rowSelection="multiple"
-    animateRows="true"
-    @cell-clicked="cellWasClicked"
-    @grid-ready="onGridReady"
-    @firstDataRendered="onFirstDataRendered"
-    @filter-changed="onFilterChanged"
-    :pagination="true"            
-    :paginationPageSize="paginationPageSize"  
+  <Sidebar
+    v-model:visible="showSidebar"
+    position="bottom"
+    modal
+    header="Данные слушателя"
+    class="custom-sidebar h-auto"
+    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
   >
-  </ag-grid-vue>
-</div>
-</div>
-
-</div>
-
-<Sidebar
-      v-model:visible="showSidebar"
-      position="bottom"
-      modal
-      header="Данные слушателя"
-      class="custom-sidebar h-auto"
-      :style="{ width: '55%', maxHeight: '750px', height: 'auto',margin: 'auto'}"
-    >
-
     <div class="card flex flex-row">
-    <div class="form card__form">
+      <div class="form card__form">
         <auto-form
           v-model="listener"
           v-model:errors="errors"
           :scheme="scheme"
           class="custom-form"
-        >
-        </auto-form>
-</div>
-</div>
-<div class="form-header">
-    <h3>Пожелания слушателя</h3>
+        ></auto-form>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <Button class="btn btn-secondary d-flex align-items-center" @click="openWishesForm">
+        <i class="material-icons-outlined">assignment</i>Пожелания слушателя
+      </Button>
+      <div>
+        <Button class="btn btn-primary float-start me-3" @click="submit">
+          Сохранить
+        </Button>
+        <Button class="btn btn-primary float-end" v-if="listener.id" @click="deleteLst">
+          Удалить
+        </Button>
+      </div>
+    </div>
+  </Sidebar>
 
-    <div class="col-5">
-    <table class="table table-bordered col col-3">
-      <thead>
-      <tr>
-        <th style="min-width: 100px;">День</th>
-        <th>Время начала</th>
-        <th>Время окончания</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="(entry, index) in tableData" :key="index" >
-        
-        <td>
-          <select class="form-select" v-model="entry.day_id">
-            <option v-for="day in days" :key="day.value" :value="day.id">
-              {{ day.text }}
-            </option>
-          </select>
-        </td>
-        <td>
-          <input class="form-control" type="time" v-model="entry.starttime">
-        </td>
-        <td>
-          <input class="form-control" type="time" v-model="entry.endtime">
-        </td>
-      
-      </tr>
-    </tbody>
-    </table>
-    <button type="button" class="btn btn-primary" @click="addRow">+</button>
-  </div>
-
+  <Sidebar
+    v-model:visible="showWishes"
+    position="bottom"
+    modal
+    header="Пожелания слушателя"
+    class="custom-sidebar h-auto"
+    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+  >
     <div class="card flex flex-row">
-    <div class="form card__form">
+      <div class="col-5" style="margin-right: auto;">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th style="min-width: 100px;">День</th>
+              <th>Время начала</th>
+              <th>Время окончания</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(entry, index) in tableData" :key="index">
+              <td>
+                <select class="form-select" v-model="entry.day_id">
+                  <option v-for="day in days" :key="day.day_id" :value="day.day_id">
+                    {{ day.dayofweek }}
+                  </option>
+                </select>
+              </td>
+              <td>
+                <input class="form-control" type="time" v-model="entry.starttime" />
+              </td>
+              <td>
+                <input class="form-control" type="time" v-model="entry.endtime" />
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="removeRow(index)"
+                >
+                  Удалить
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-primary" @click="addRow">+</button>
+      </div>
+      <div>
+        <div class="form2 card__form">
         <auto-form
           v-model="listener"
           v-model:errors="errors"
           :scheme="secondScheme"
           class="custom-form"
-        >
-        </auto-form>
-</div>
-</div>
-    
-  </div>
-  <Button
-        class="btn btn-primary float-start"
-        @click="submit"
-      >
-        Сохранить
-      </Button>
-      <Button
-      class="btn btn-primary float-end"
-      v-if="this.listener.id"
-      @click="deleteLst"
-    >
-      Удалить
+        ></auto-form>
+      </div>
+      <div class="form3">
+        <auto-form
+          v-model="listener"
+          v-model:errors="errors"
+          :scheme="thirdScheme"
+          class="custom-form"
+        ></auto-form>
+      </div>
+      </div>
+    </div>
+    <Button class="btn btn-primary" @click="submitWishes">
+      Сохранить пожелания
     </Button>
-    </Sidebar>
-
-      
-
+  </Sidebar>
 </template>
 
-
 <script>
-import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
+import { AgGridVue } from "ag-grid-vue3";
 import { reactive, onMounted, ref } from "vue";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ListenerHref from "@/components/listener/ListenerHrefCellRenderer.vue";
 import ListenerHref2 from "@/components/listener/ListenerHrefCellRenderer2.vue";
-import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
-import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useListenerStore } from "@/store2/listenergroup/listener";
 import { useListenergroupStore } from "@/store2/listenergroup/listenergroup";
+import { useDayStore } from "@/store2/listenergroup/day";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
   emailRule,
-  minLengthRule,
-  phoneRule,
   requiredRule,
 } from "@/model/form/validation/rules";
 import { TextInput } from "@/model/form/inputs/TextInput";
-import { MaskInput } from "@/model/form/inputs/MaskInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
-import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
-import { RadioInput } from "@/model/form/inputs/RadioInput";
-import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Listener from "@/model/listener-group/Listener";
 
-import UserService from "../../services/user.service";
-
-/* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
   components: {
@@ -179,21 +195,20 @@ export default {
     AutoForm,
   },
   setup() {
-
     const tableData = ref([]);
+    
 
     const addRow = () => {
-    console.log('Adding row'); // Для проверки, что метод вызывается
-    const newRow = { day_id: '', starttime: '', endtime: '' }; 
-    tableData.value.push(newRow); // Добавляем новую строку
-  };
+      const newRow = { day_id: "", starttime: "", endtime: "" };
+      tableData.value.push(newRow);
+    };
 
-    const gridApi = ref(null); // Optional - for accessing Grid's API
+    const removeRow = (index) => {
+      tableData.value.splice(index, 1);
+    };
+
+    const gridApi = ref(null);
     const gridColumnApi = ref();
-    
-    const dataFromApi = ref(null); // This will store the data from the API
-    const dataLoaded = ref(false); // This flag will indicate if data is loaded
-
     const route = useRoute();
     const paginationPageSize = 60;
 
@@ -201,79 +216,75 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToListener = () => {};
 
-    const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
+    const rowData = reactive({});
+    const days = reactive([]);
 
-    // Each Column Definition results in one Column.
     const columnDefs = reactive({
       value: [
-      {
+        {
           sortable: false,
           filter: false,
           headerName: "Действия",
           headerClass: "text-center",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
-            onClick: navigateToListener,
-            label: "View Details", // Button label
+            label: "View Details",
           },
           maxWidth: 120,
           resizable: false,
         },
-   
-           { 
-            field: "full_name", 
-            headerName: 'ФИО', 
-            cellRenderer:  'ListenerHref2',
-          }, 
-           { 
-            field: "listenergroup_number", 
-            headerName: 'Группа', 
-          }, 
-           {
-            field: 'people_count',
-            headerName: 'Желаемое количество человек', 
-            hide: true
-           },
-           {
-            field: 'days_of_week',
-            headerName: 'Желаемые дни', 
-            hide: true
-           },
-           { 
-            field: "phone_number", 
-           headerName: 'Номер телефона', 
-           hide: true 
-          },
-           { 
-            field: "email", 
-           headerName: 'Email', 
-           hide: true 
-          },
-           { 
-            field: "full_name2", 
-           headerName: 'ФИО законного представителя' , 
-           hide: true
-           },
+        {
+          field: "full_name",
+          headerName: "ФИО",
+          cellRenderer: "ListenerHref2",
+        },
+        {
+          field: "listenergroup_number",
+          headerName: "Группа",
+        },
+        {
+          field: "people_count",
+          headerName: "Желаемое количество человек",
+          hide: true,
+        },
+        {
+          field: "days_of_week",
+          headerName: "Желаемые дни",
+          hide: true,
+        },
+        {
+          field: "phone_number",
+          headerName: "Номер телефона",
+          hide: true,
+        },
+        {
+          field: "email",
+          headerName: "Email",
+          hide: true,
+        },
+        {
+          field: "full_name2",
+          headerName: "ФИО законного представителя",
+          hide: true,
+        },
       ],
     });
 
-    // DefaultColDef sets props common to all Columns
     const defaultColDef = {
       sortable: true,
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300
+      minWidth: 300,
     };
 
-    // Example load data from server
-    onMounted(() => {});
+    onMounted(() => {
+    });
 
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
-        document.getElementById('filter-text-box').value
+        document.getElementById("filter-text-box").value
       );
     };
 
@@ -281,46 +292,42 @@ export default {
       onGridReady,
       columnDefs,
       rowData,
+      days,
       defaultColDef,
+      paginationPageSize,
+      onFilterTextBoxChanged,
       tableData,
       addRow,
-      days_of_week: null,
-      listenergroups:null,
-      days:null,
-
-      deselectRows: () =>{
-        gridApi.value.deselectAll()
-      },
-
-      onFilterTextBoxChanged,
-      paginationPageSize,
-      navigateToListener,
-      dataFromApi,
-      dataLoaded,
+      removeRow,
     };
   },
   data() {
-  return {
-    showSidebar: false,
-    quickFilterValue: '',
-    filters:false,
-    listener: new Listener(),
-    errors: {},
-    scheme: null,
-    secondScheme: null,
-  };
-},
-  
+    return {
+      showSidebar: false,
+      showWishes: false,
+      quickFilterValue: "",
+      filters: false,
+      listener: new Listener(),
+      errors: {},
+      scheme: null,
+      secondScheme: null,
+      thirdScheme: null,
+    };
+  },
   async mounted() {
     try {
-    await this.getListenerList();
-    await this.getListenergroupList();
-    this.loadListenersData();
-  } catch (error) {
-    console.error("Ошибка при загрузке данных слушателей:", error);
-  }
-  this.scheme = new FormScheme([
-  new TextInput({
+      await this.getListenerList();
+      await this.getListenergroupList();
+      await this.getDayList();
+      this.loadListenersData();
+      this.loadDaysData();
+    } catch (error) {
+      console.error("Ошибка при загрузке данных слушателей:", error);
+    }
+
+    // Инициализация схем формы (основные поля)
+    this.scheme = new FormScheme([
+      new TextInput({
         key: "surname",
         label: "Фамилия",
         placeholder: "Фамилия",
@@ -342,7 +349,7 @@ export default {
         key: "group_id",
         label: "Номер группы",
         options: [
-        ...[...this.listenergroupList].map((listenergroup) => ({
+          ...[...this.listenergroupList].map((listenergroup) => ({
             label: listenergroup.group_number,
             value: listenergroup.id,
           })),
@@ -371,10 +378,9 @@ export default {
       new TextInput({
         key: "registration_address",
         label: "Адрес регистрации",
-        placeholder: "Адрес регистраци",
+        placeholder: "Адрес регистрации",
         validation: [requiredRule],
       }),
-
       new TextInput({
         key: "snils",
         label: "СНИЛС",
@@ -386,7 +392,6 @@ export default {
         label: "Кем выдан",
         validation: [requiredRule],
       }),
-      
       new TextInput({
         key: "phone_number",
         label: "Номер телефона",
@@ -398,10 +403,11 @@ export default {
         placeholder: "Электронная почта",
         validation: [emailRule],
       }),
-    ])
+    ]);
 
+    // Вторая схема формы (пожелания)
     this.secondScheme = new FormScheme([
-    new TextInput({
+      new TextInput({
         key: "people_count",
         label: "Количество человек",
         placeholder: "Количество человек",
@@ -427,25 +433,25 @@ export default {
         size: "sm",
         validation: [requiredRule],
       }),
-      new TextInput({
-        key: "wish_description",
-        label: "Комментарий:",
-        validation: [requiredRule],
-        className: "wide-input", 
-      }),
-  ])
-
-
+    ]);
+    this.thirdScheme = new FormScheme([
+  new TextInput({
+    key: "wish_description",
+    label: "Комментарий:",
+    validation: [requiredRule],
+    className: "wish_description",
+  }),
+]);
   },
   methods: {
     ...mapActions(useListenerStore, [
       "getListenerList",
       "postListener",
-      ,
       "putListener",
       "deleteListener",
     ]),
     ...mapActions(useListenergroupStore, ["getListenergroupList"]),
+    ...mapActions(useDayStore, ["getDayList"]),
 
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "Действия") {
@@ -458,157 +464,125 @@ export default {
     edit(event) {
       this.resetLst();
       this.listener = event.data;
-      console.log(this.listener);
       this.showSidebar = true;
     },
-
     async submit() {
-
       let listener = { ...this.listener };
-
       if (listener.id) {
-        console.log("До пута")
-        console.log(listener)
         await this.putListener(listener);
-        console.log("После пута")
       } else {
-        console.log("До поста")
-        console.log(listener)
         await this.postListener(listener);
-        console.log("После поста")
       }
       this.showSidebar = false;
       this.resetLst();
       this.loadListenersData();
     },
-
     async deleteLst() {
       let listener = { ...this.listener };
-      console.log(listener);
       await this.deleteListener(listener);
       this.showSidebar = false;
       this.resetLst();
       this.loadListenersData();
     },
-
+    async loadDaysData(){
+      try {
+        if (Array.isArray(this.dayList)) {
+          this.days = this.dayList
+          console.log("Дни",this.days)
+        } else {
+          this.days.value = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных дней:", error);
+        this.days.value = [];
+      }
+    },
     async loadListenersData() {
-  try {
-    if (Array.isArray(this.listenerList)) {
-      this.rowData.value = this.listenerList
-      .filter(listener => listener.deleted_at === null)
-      .sort((a, b) => a.full_name.localeCompare(b.full_name));
-    } else if (this.listenerList && this.listenerList.deleted_at === null) {
-      this.rowData.value = [this.listenerList];
-    } else {
-      this.rowData.value = [];
-    }
-    
-  } catch (error) {
-    console.error("Ошибка при загрузке данных слушателей:", error);
-    this.rowData.value = [];  // Очистка в случае ошибки
-  }
-},
-
-onFirstDataRendered(params) {
+      try {
+        if (Array.isArray(this.listenerList)) {
+          this.rowData.value = this.listenerList
+            .filter((listener) => listener.deleted_at === null)
+            .sort((a, b) => a.full_name.localeCompare(b.full_name));
+        } else if (this.listenerList && this.listenerList.deleted_at === null) {
+          this.rowData.value = [this.listenerList];
+        } else {
+          this.rowData.value = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных слушателей:", error);
+        this.rowData.value = [];
+      }
+    },
+    onFirstDataRendered(params) {
       this.gridApi = params.api;
       this.columnApi = params.columnApi;
-
-      // Check if filterModel exists in the route query
       const filterModelQuery = this.$route.query.filterModel;
       if (filterModelQuery) {
         const filterModel = JSON.parse(filterModelQuery);
         this.gridApi.setFilterModel(filterModel);
-        this.filters=true;
+        this.filters = true;
       }
-
       const quickFilterQuery = this.$route.query.quickFilter;
       if (quickFilterQuery) {
         const quickFilter = JSON.parse(quickFilterQuery);
         this.gridApi.setQuickFilter(quickFilter);
         this.quickFilterValue = quickFilter;
-        this.filters=true;
+        this.filters = true;
       }
     },
-
     onFilterChanged() {
-  // This function will be called whenever filters change.
-  // You can perform your desired action here.
-  // For example, you can get the current filter model:
-  this.filters=false;
-  const savedQuickFilter = this.gridApi.getQuickFilter();
-  const savedFilterModel = this.gridApi.getFilterModel();
-
-  // Initialize an empty object for queryParams
-  const queryParams = {};
-
-  // Check if savedQuickFilter is not empty, then add it to queryParams
-  if (savedQuickFilter) {
-    queryParams.quickFilter = JSON.stringify(savedQuickFilter);
-    this.filters=true;
-  }
-
-  // Check if savedFilterModel is not empty, then add it to queryParams
-  if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
-    queryParams.filterModel = JSON.stringify(savedFilterModel);
-    this.filters=true;
-  }
-
-  // Push the query parameters to the router
-  this.$router.push({ query: queryParams });
-
-  // Do something with the filterModel or trigger other actions as needed.
-},
-
-  clearFilters(){
-    this.gridApi.setFilterModel();
-    this.gridApi.setQuickFilter();
-
-
-
-    this.quickFilterValue='';
-    this.filters=false;
-  },
-  openSidebar() {
+      this.filters = false;
+      const savedQuickFilter = this.gridApi.getQuickFilter();
+      const savedFilterModel = this.gridApi.getFilterModel();
+      const queryParams = {};
+      if (savedQuickFilter) {
+        queryParams.quickFilter = JSON.stringify(savedQuickFilter);
+        this.filters = true;
+      }
+      if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
+        queryParams.filterModel = JSON.stringify(savedFilterModel);
+        this.filters = true;
+      }
+      this.$router.push({ query: queryParams });
+    },
+    clearFilters() {
+      this.gridApi.setFilterModel();
+      this.gridApi.setQuickFilter();
+      this.quickFilterValue = "";
+      this.filters = false;
+    },
+    openSidebar() {
       this.resetLst();
-      this.showSidebar = true; // Открыть боковую панель
+      this.showSidebar = true;
+    },
+    openWishesForm() {
+      this.showWishes = true;
     },
     closeSidebar() {
-      this.showSidebar = false; // Закрыть боковую панель
+      this.showSidebar = false;
     },
-
-      async loadDaysData() {
-        try {
-          const response = await UserService.getDaysAsIdText(); 
-          this.days = Array.isArray(response.data) ? response.data : [response.data];
-          this.dataLoading=false;
-        } catch (error) {
-          console.error('Error loading data:', error);
-        }
-      },
-},
-
-computed:{
+    submitWishes() {
+      this.showWishes = false;
+    },
+  },
+  computed: {
     ...mapState(useListenerStore, ["listenerList"]),
     ...mapState(useListenergroupStore, ["listenergroupList"]),
+    ...mapState(useDayStore, ["dayList"]),
   },
-    created() {
-      this.loadDaysData();
-    },
 };
 </script>
 
 <style lang="scss" scoped>
-
 .bigger {
   font-size: 30px;
   white-space: nowrap;
 }
 .ag-row .ag-cell {
   display: flex;
-  justify-content: center; /* align horizontal */
+  justify-content: center;
   align-items: center;
 }
-
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -618,12 +592,10 @@ computed:{
   border-radius: 4px;
   margin: 0.2em 0;
 }
-
 .text-center * {
   justify-content: center;
   display: flex;
 }
-
 @keyframes skeletonShimmer {
   0% {
     background-position: 200% 0;
@@ -632,72 +604,59 @@ computed:{
     background-position: -200% 0;
   }
 }
-
 @keyframes skeletonFade {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.5;
   }
   50% {
     opacity: 1;
   }
-
-  
 }
-
 @media (max-width: 769px) {
-  .list{
+  .list {
     padding-left: 100px;
     font-size: 10px;
     max-width: 1100px;
   }
 }
-
 @media (max-width: 1023px) {
-
-
-
-  .list{
+  .list {
     padding-left: 100px;
     font-size: 13px;
-
   }
 }
 @media (min-width: 1023px) {
-
-
-
-.list{
-  padding-left: 100px;
-  padding-right: 5px;
-
+  .list {
+    padding-left: 100px;
+    padding-right: 5px;
+  }
 }
-}
-.nmbr{
+.nmbr {
   height: 44px;
 }
-
-
-
-.btn-primary{
-    --bs-btn-bg: rgb(68,99,52);
-    border: none;
-    --bs-btn-hover-bg:rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-    --bs-btn-active-bg: rgb(68,99,52);
-    --bs-btn-disabled-bg: rgb(68,99,52);
-    display: flex;
+.btn-primary {
+  --bs-btn-bg: rgb(68, 99, 52);
+  border: none;
+  --bs-btn-hover-bg: rgb(6, 215, 29);
+  --bs-btn-hover-border-color: rgb(6, 215, 29);
+  --bs-btn-active-bg: rgb(68, 99, 52);
+  --bs-btn-disabled-bg: rgb(68, 99, 52);
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
-  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
+  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
+    0 0 8px rgba(6, 215, 29, 0.6);
 }
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
-  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
+  box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
+    0 0 8px rgba(6, 215, 29, 0.6);
 }
-.page-link{
+.page-link {
   height: 40px;
   width: 40px;
   margin: 2px;
@@ -705,48 +664,51 @@ computed:{
   justify-content: center;
   align-items: center;
 }
-.active{
-  .page-link{
-    background-color: rgb(68,99,52);
+.active {
+  .page-link {
+    background-color: rgb(68, 99, 52);
     border: none;
-    --bs-btn-hover-bg:rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
- 
+    --bs-btn-hover-bg: rgb(6, 215, 29);
+    --bs-btn-hover-border-color: rgb(6, 215, 29);
   }
 }
-
-
 .card {
   &__form {
     margin-right: 30px;
   }
-
   &__image {
     margin-left: auto;
   }
 }
-
 .form {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin-bottom: 10px;
-
   &__item {
     padding: 5px;
     margin-right: 10px;
   }
-
   &__item:nth-child(2n) {
     margin-right: 0;
     border-right: none;
   }
 }
 
-.wide-input {
-  width: 500px;  /* Задайте желаемую ширину, например, 400px */
+// Пожелания
+.form2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 10px;
+  &__item {
+    padding: 5px;
+    margin-right: 10px;
+  }
+  &__item:nth-child(2n) {
+    margin-right: 0;
+    border-right: none;
+  }
 }
-
-
 
 </style>

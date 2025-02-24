@@ -18,6 +18,16 @@
         @update:value="update($event, item.key)"
       ></text-input>
 
+      <time-picker-input
+  v-if="item instanceof TIME"
+  :item-key="item.key"
+  :value="modelValue[item.key]"
+  :error="errors[item.key]"
+  :label="item.label"
+  :placeholder="item.placeholder"
+  @update:value="update($event, item.key)"
+></time-picker-input>
+
       <mask-input
         v-if="item instanceof MASK"
         :item-key="item.key"
@@ -101,6 +111,7 @@
 
 <script>
 import TextInput from "@/components/form/inputs/TextInput.vue";
+import TimePickerInput from "@/components/form/inputs/TimePickerInput.vue";
 import MaskInput from "@/components/form/inputs/MaskInput.vue";
 import DateInput from "@/components/form/inputs/DateInput.vue";
 import CheckboxInput from "@/components/form/inputs/CheckboxInput.vue";
@@ -110,6 +121,7 @@ import ComboboxInput from "@/components/form/inputs/ComboboxInput.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 
 import { TextInput as TextInputModel } from "@/model/form/inputs/TextInput";
+import { TimePickerInput as TimePickerInputModel } from "@/model/form/inputs/TimePickerInput";
 import { MaskInput as MaskInputModel } from "@/model/form/inputs/MaskInput";
 import { DateInput as DateInputModel } from "@/model/form/inputs/DateInput";
 import { CheckboxInput as CheckboxInputModel } from "@/model/form/inputs/CheckboxInput";
@@ -121,6 +133,7 @@ export default {
   name: "AutoForm",
   components: {
     TextInput,
+    TimePickerInput,
     MaskInput,
     DateInput,
     CheckboxInput,
@@ -150,6 +163,7 @@ export default {
   data() {
     return {
       TEXT: TextInputModel,
+      TIME: TimePickerInputModel,
       MASK: MaskInputModel,
       DATE: DateInputModel,
       CHECKBOX: CheckboxInputModel,

@@ -18,6 +18,7 @@ export const useProgramStore = defineStore('program', {
         async getProgramList() {
             console.log("Я в программах")
             const responseData = await api.getProgramList();
+            //console.log(responseData)
             this.programList = responseData.map((program) => {
                 return new Program(program);
             });

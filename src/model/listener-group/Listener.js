@@ -3,7 +3,6 @@ import { useListenergroupStore } from '@/store2/listenergroup/listenergroup';
 
 export default class Listener {
   id;
-  people_count;
   name;
   surname;
   lastname;
@@ -21,7 +20,6 @@ export default class Listener {
 
   constructor(listener) {
     this.id = listener?.id ?? null;
-    this.people_count = listener?.people_count ?? null;
     this.name = listener?.name ?? null;
     this.surname = listener?.surname ?? null;
     this.lastname = listener?.lastname ?? null;

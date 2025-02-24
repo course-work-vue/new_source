@@ -213,7 +213,7 @@ import Uploaded_File from "@/model/uploaded_file-group/Uploaded_File";
 import * as XLSX from 'xlsx';
 
 export default {
-  name: 'xlparse',
+  name: 'import',
   components: {
     AgGridVue,
     ButtonCell,

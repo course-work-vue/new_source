@@ -56,6 +56,8 @@ export default {
     ReqExec.put(endpoints.rest.listener, id, listener),
   deleteListener: (listener) =>
     ReqExec.put(endpoints.procedure.listener, listener.id, listener),
+  //day
+  getDayList: () => ReqExec.get(endpoints.rest.day, null, true),
   //contract
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),

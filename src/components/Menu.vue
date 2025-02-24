@@ -106,7 +106,7 @@ export default {
         },
         {
         label: "Excel",
-        link: "/xlparse",
+        link: "/import",
         icon: "description",
       },
         {

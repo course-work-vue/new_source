@@ -28,6 +28,7 @@ export default class Uploaded_File {
   z_e;
   weeks;
   deleted_at;
+  selected;
 
   constructor(uploaded_file) {
     this.id = uploaded_file?.id ?? null;
@@ -57,5 +58,6 @@ export default class Uploaded_File {
     this.z_e = uploaded_file?.z_e ?? null;
     this.weeks = uploaded_file?.weeks ?? null;
     this.deleted_at = uploaded_file?.deleted_at ?? null;
+    this.selected = uploaded_file?.selected ?? null;
   }
 }

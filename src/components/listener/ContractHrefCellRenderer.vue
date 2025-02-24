@@ -1,6 +1,6 @@
 <template>
 
-  <a :href="'#/listeners?filterModel=' + JSON.stringify({ full_name: { filterType: 'text', type: 'contains', filter: this.params.data.listener_full_name } })">{{ this.params.data.listener_full_name }}</a>
+  <a> {{ listener_full_name }} </a>
   
   
     </template>

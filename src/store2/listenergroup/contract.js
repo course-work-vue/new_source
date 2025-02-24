@@ -16,8 +16,9 @@ export const useContractStore = defineStore('contract', {
     },
     actions: {
         async getContractList() {
-            console.log("Я в договорах")
+            console.log("Я в договорах");
             const responseData = await api.getContractList();
+            console.log(responseData);
             this.contractList = responseData.map((contract) => {
                 return new Contract(contract);
             });

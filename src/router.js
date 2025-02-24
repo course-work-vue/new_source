@@ -26,29 +26,18 @@ const GroupList = () => import("./components/student/GroupList.vue")
 const CWList = () => import("./components/student/CwList.vue")
 
 
-
+// Импорты слушателей
 
 const ListenerList = () => import("./components/listener/ListenerList.vue")
-const ListenerDetail = () => import("./components/ListenerDetail.vue")
-
 const PayerList = () => import("./components/listener/PayerList.vue")
-const PayerDetail = () => import("./components/PayerDetail.vue")
-
+const lGroupList = () => import("./components/listener/ListenergroupList.vue")
 const ContractList = () => import("./components/listener/ContractList.vue")
-const ContractDetail = () => import("./components/ContractDetail.vue")
-const AddContract = () => import("./components/AddContract.vue")
+const ProgramList = () => import("./components/listener/ProgramList.vue")
+const PaymentList = () => import("./components/listener/PaymentList.vue")
+
+// Конец импортов слушателей
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue")
-
-
-
-const ProgramList = () => import("./components/listener/ProgramList.vue")
-const AddProgram = () => import("./components/AddProgram.vue")
-const ProgramDetail = () => import("./components/ProgramDetail.vue")
-
-const AddPayment = () => import("./components/AddPayment.vue")
-const PaymentList = () => import("./components/listener/PaymentList.vue")
-const PaymentDetail = () => import("./components/PaymentDetail.vue")
 
 const AddCourse = () => import("./components/AddCourse.vue")
 const CourseList = () => import("./components/CourseList.vue")
@@ -60,8 +49,7 @@ const AuditDetail = () => import("./components/AuditDetail.vue")
 const AddAudit = () => import("./components/AddAudit.vue")
 
 const addLgroup = () => import("./components/AddListenergroup.vue")
-const lGroupList = () => import("./components/listener/ListenergroupList.vue")
-const lGroupDetail = () => import("./components/LgroupDetail.vue")
+
 
 //ЖУРНАЛ
 const TeacherList = () => import("./components/TeacherList.vue")
@@ -76,7 +64,7 @@ const TegrsuDetail = () => import("./components/TegrsuDetail.vue")
 const JournalList = () => import("./components/JournalList.vue")
 //ЖУРНАЛ
 
-const xlparse = () => import("./components/xlparse.vue")
+const ImportList = () => import("./components/import/ImportList.vue")
 
 
 const RoleList = () => import("./components/admin/RoleList.vue")
@@ -111,9 +99,9 @@ const routes = [
         component: Profile,
       },
       {
-        path: "/xlparse",
+        path: "/import",
         name: "Импорт данных",
-        component: xlparse,
+        component: ImportList,
       },
 
       // КОМПОНЕНТЫ СТУДЕНТОВ
@@ -149,19 +137,10 @@ const routes = [
         name: "Слушатели",
         component: ListenerList 
       },
-      {
-        path: '/listeners/:listenerId',
-        name: "Данные слушателя",
-        component: ListenerDetail},
       { 
         path: '/payers', 
         name: "Плательщики",
         component: PayerList 
-      },
-      { 
-        path: '/payers/:payerId', 
-        name: "Данные плательщика",
-        component: PayerDetail 
       },
       { 
         path: '/lgroups', 
@@ -174,24 +153,9 @@ const routes = [
         component: addLgroup 
       },
       { 
-        path: '/lgroups/:groupId', 
-        name: "Данные группы",
-        component: lGroupDetail 
-      },
-      { 
         path: '/contracts',
         name: "Договоры", 
         component: ContractList 
-      },
-      { 
-        path: '/contracts/:contractId', 
-        name: "Данные договора",
-        component: ContractDetail 
-      },
-      { 
-        path: '/AddContract', 
-        name: "ДОбавить договор",
-        component: AddContract 
       },
       { 
         path: '/programs', 
@@ -199,29 +163,9 @@ const routes = [
         component: ProgramList 
       },
       { 
-        path: '/programs/:programId', 
-        name: "Информация о программе",
-        component: ProgramDetail 
-      },
-      { 
-        path: '/AddProgram', 
-        name: "Добавить программу",
-        component: AddProgram 
-      },
-      { 
         path: '/payments', 
         name: "Платежи",
         component: PaymentList 
-      },
-      { 
-        path: '/payments/:paymentID', 
-        name: "Данные о платеже",
-        component: PaymentDetail 
-      },
-      { 
-        path: '/AddPayment', 
-        name: "Добавить платёж",
-        component: AddPayment 
       },
 
       // КОНЕЦ КОМПОНЕНТОВ ДЛЯ СЛУШАТЕЛЕЙ
@@ -233,8 +177,6 @@ const routes = [
       // { path: '/courseworks/:CwId', component: CWdetail },
 
       { path: '/programs', component: ProgramList },
-      { path: '/programs/:programId', component: ProgramDetail },
-      { path: '/AddProgram', component: AddProgram },
 
       { path: '/audits', component: AuditList },
       { path: '/audits/:scheduleId', component: AuditDetail },
@@ -254,8 +196,6 @@ const routes = [
 
 
       { path: '/lgroups', component: lGroupList },
-      { path: '/addlgroup', component: addLgroup },
-      { path: '/lgroups/:groupId', component: lGroupDetail },
       {
         path: "/user",
         name: "user",

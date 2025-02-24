@@ -17,6 +17,7 @@ export const useUploaded_FileStore = defineStore('uploaded_file', {
     actions: {
         async getUploaded_FileList() {
             const responseData = await api.getUploaded_FileList();
+            //console.log(responseData);
             this.uploaded_fileList = responseData.map((uploaded_file) => {
                 return new Uploaded_File(uploaded_file);
             });

@@ -16,9 +16,7 @@ export const useListenergroupStore = defineStore('listenergroup', {
     },
     actions: {
         async getListenergroupList() {
-            console.log("Я в группах")
             const responseData = await api.getListenergroupList();
-            console.log(responseData)
             this.listenergroupList = responseData.map((listenergroup) => {
                 return new Listenergroup(listenergroup);
             });

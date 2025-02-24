@@ -1,4 +1,7 @@
 import Formatter from "@/utils/Formatter";
+import { useListenerStore } from '@/store2/listenergroup/listener';
+import { usePayerStore } from '@/store2/listenergroup/payer';
+import { useProgramStore } from '@/store2/listenergroup/program';
 
 export default class Contract {
   id;
@@ -25,5 +28,29 @@ export default class Contract {
     this.group_to_move = contract?.group_to_move ?? null;
     this.contr_number = contract?.contr_number ?? null;
     this.deleted_at = contract?.deleted_at ?? null;
+  }
+
+  get program_name() {
+  
+      const programStore = useProgramStore();
+      const program = programStore.programMap[this.program_id]; 
+      console.log(program)
+      if (program) {
+          return program.program_name || null;
+      } else {
+          return null;
+      }
+  }
+
+  get full_name() {
+    const listenerStore = useListenerStore();
+    const listener = listenerStore.listenerMap[this.listener_id];
+        return listener ? listener.full_name : null;
+  }
+
+  get payer_full_name() {
+    const payerStore = usePayerStore();
+    const payer = payerStore.payerMap[this.payer_id];
+        return payer ? payer.full_name : null;
   }
 }

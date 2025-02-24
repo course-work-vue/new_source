@@ -24,6 +24,7 @@ export default Object.freeze({
     contract: prefix + 'contracts',
     l_group: prefix + 'l_groups',
     listener: prefix + 'listeners',
+    day: prefix + 'days',
     payer: prefix + 'payers',
     pay_graph: prefix + 'pay_graphs',
     program: prefix + 'programs',

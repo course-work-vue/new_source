@@ -83,7 +83,7 @@ const model = ref([
       {
         label: "Импорт данных",
         icon: "pi pi-fw pi-file-excel",
-        to: "/xlparse",
+        to: "/import",
       },
       {
         label: "Админ панель",

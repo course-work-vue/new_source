@@ -112,7 +112,7 @@ import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Payer from "@/model/listener-group/Payer";
 
-import ButtonCell from "@/components/PayerButtonCell.vue";
+import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 
@@ -244,6 +244,12 @@ async mounted() {
   }),
   new TextInput({
     key: "surname",
+    label: "Фамилия",
+    placeholder: "Фамилия",
+    validation: [requiredRule],
+  }),
+  new TextInput({
+    key: "lastname",
     label: "Отчество",
     placeholder: "Отчество",
     validation: [requiredRule],
@@ -274,7 +280,7 @@ async mounted() {
     validation: [requiredRule],
   }),
   new TextInput({
-    key: "SNILS",
+    key: "snils",
     label: "СНИЛС",
     placeholder: "СНИЛС",
     validation: [requiredRule],
@@ -566,12 +572,9 @@ onFirstDataRendered(params) {
 }
 .form {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin-bottom: 10px;
 }
 
-.wide-input {
-  width: 500px; 
-}
 </style>

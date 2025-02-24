@@ -1,6 +1,7 @@
 <template>
-
+<div class="krasivsk">
     <button @click="onClick" class="btn btn-primary btn-sm"><i class="material-icons-outlined">visibility</i>Детали</button>
+  </div>
   </template>
   
   <script>
@@ -10,9 +11,6 @@
       
     },
     methods: {
-      onClick() {
-        this.$router.push(`/payments/${this.params.data.id}`);
-      },
     },
   };
   </script>
@@ -21,6 +19,12 @@
 <style lang="scss" scoped>
 
 
+.krasivsk{
+  height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
 .btn-primary{
     --bs-btn-bg: rgb(68,99,52);
