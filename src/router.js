@@ -105,67 +105,68 @@ const routes = [
       },
 
       // КОМПОНЕНТЫ СТУДЕНТОВ
-      
-      { 
-        path: '/students', 
+
+      {
+        path: '/students',
         name: "Студенты",
-        component: StudentList 
+        component: StudentList
       },
 
       //{ path: '/students/:studentId', component: StudentDetail },
       { path: '/rights/:table', component: RightsTable },
-      { path: '/directions', component: DirectionList },
+      { path: '/directions', name: "Направления", component: DirectionList },
+      { path: '/groups', name: "Группы", component: GroupList },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
-      { path: '/profiles', component: ProfileList },
+      { path: '/profiles', name: "Профили", component: ProfileList },
       // { path: '/profiles/:profileId', component: ProfileDetail },
 
 
-      { path: '/groups', component: GroupList },
+
       // { path: '/groups/:groupId', component: GroupDetail },
 
 
-      { path: '/courses', component: CourseList },
+      { path: '/courses', name: "Курсы", component: CourseList },
       { path: '/courses/:courseID', component: CourseDetail },
       { path: '/AddCourse', component: AddCourse },
 
       // КОНЕЦ КОМПОНЕНТОВ СТУДЕНТОВ
       // КОМПОНЕНТЫ ДЛЯ СЛУШАТЕЛЕЙ
 
-      { 
-        path: '/listeners', 
+      {
+        path: '/listeners',
         name: "Слушатели",
-        component: ListenerList 
+        component: ListenerList
       },
       { 
         path: '/payers', 
         name: "Плательщики",
-        component: PayerList 
+        component: PayerList
       },
       { 
         path: '/lgroups', 
         name: "Группы",
         component: lGroupList 
       },
-      { 
-        path: '/addlgroup', 
+      {
+        path: '/addlgroup',
         name: "Добавить группу",
-        component: addLgroup 
+        component: addLgroup
       },
       { 
         path: '/contracts',
-        name: "Договоры", 
-        component: ContractList 
+        name: "Договоры",
+        component: ContractList
       },
       { 
         path: '/programs', 
         name: "Программы",
-        component: ProgramList 
+        component: ProgramList
       },
       { 
         path: '/payments', 
         name: "Платежи",
-        component: PaymentList 
+        component: PaymentList
       },
 
       // КОНЕЦ КОМПОНЕНТОВ ДЛЯ СЛУШАТЕЛЕЙ
@@ -181,16 +182,16 @@ const routes = [
       { path: '/audits', component: AuditList },
       { path: '/audits/:scheduleId', component: AuditDetail },
       { path: '/AddAudit', component: AddAudit },
-      
+
       //ЖУРНАЛ
       { path: '/teachers', component: TeacherList },
       { path: '/teachers/:teacherId', component: TeacherDetail },
       { path: '/AddTeacher', component: AddTeacher },
-    
+
       { path: '/tegrsus', component: TegrsuList },
       { path: '/tegrsus/:tegrsuId', component: TegrsuDetail },
       { path: '/AddTegrsu', component: AddTegrsu },
-    
+
       { path: '/journals', component: JournalList },
       //ЖУРНАЛ
 
@@ -203,12 +204,12 @@ const routes = [
         component: BoardUser,
       },
 
-      { path: '/procedures', component: ProcedureList },
-      { path: '/functions', component: FunctionList },
-      { path: '/triggers', component: TriggerList },
-      { path: '/tables', component: TableList },
-      { path: '/roles', component: RoleList },
-      { path: '/users', component: UserList },
+      { path: '/procedures', name: "Процедуры", component: ProcedureList, meta: { roles: ["super_admin"] }, },
+      { path: '/functions', name: "Функции", component: FunctionList, meta: { roles: ["super_admin"] }, },
+      { path: '/triggers', name: "Триггеры", component: TriggerList, meta: { roles: ["super_admin"] }, },
+      { path: '/tables', name: "Таблицы", component: TableList, meta: { roles: ["super_admin"] }, },
+      { path: '/roles', name: "Роли", component: RoleList, meta: { roles: ["super_admin"] }, },
+      { path: '/users', name: "Пользователи", component: UserList, meta: { roles: ["super_admin"] }, },
     ]
     // { path: '/AddStudent/:groupName', component: AddStudent },
   },
@@ -220,35 +221,54 @@ const router = createRouter({
   routes,
 });
 
+import { useAuthStore } from "./store2/auth";
+
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/login', '/register', '/home'];
+  const authStore = useAuthStore();
+  const publicPages = ["/login", "/register", "/home"];
   const authRequired = !publicPages.includes(to.path);
-  const loggedIn = localStorage.getItem('user');
-
-
+  const loggedIn = localStorage.getItem("user");
 
   if (authRequired && !loggedIn) {
-    next('/login'); // Redirect to login page if not logged in
+    next("/login");
   } else if (loggedIn) {
     const token = JSON.parse(loggedIn).accessToken;
-    document.title=to.name;
+    document.title = to.name || "Application";
     try {
       const decodedToken = jwt_decode(token);
       const currentTime = Date.now() / 1000;
 
       if (decodedToken.exp < currentTime) {
-        // Token has expired, perform logout and redirect to login
-        AuthService.logout();
-        next('/login');
+        // Если токен просрочен, выполняем логаут и переходим на страницу логина
+        authStore.login();
+        next("/login");
       } else {
-        next(); // Continue to the intended route
+        // Если для маршрута определены требуемые роли, выполняем проверку
+        if (to.meta && to.meta.roles) {
+          // Получаем роли пользователя из authStore (убедитесь, что они сохраняются после логина)
+          const userRoles = authStore.user?.roles || [];
+          const requiredRoles = to.meta.roles;
+          const hasRole = userRoles.some((role) => requiredRoles.includes(role));
+          if (!hasRole) {
+            // Если роль не соответствует, устанавливаем флаг noAccess и (при желании) можно перенаправить на страницу "Нет доступа"
+            authStore.noAccess = true;
+            // Можно сделать редирект, например, next("/no-access");
+            next();
+            return;
+          } else {
+            // Если роль соответствует, сбрасываем флаг noAccess
+            authStore.noAccess = false;
+          }
+        }
+        authStore.noAccess = false;
+        next(); // Продолжаем переход
       }
     } catch (error) {
-      // Handle token decoding errors if needed
+      console.error("Ошибка декодирования токена:", error);
       next();
     }
   } else {
-    next(); // Continue to the intended route (public page)
+    next(); // Для публичных маршрутов
   }
 });
 

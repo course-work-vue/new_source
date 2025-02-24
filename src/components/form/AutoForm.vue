@@ -11,6 +11,7 @@
         :value="modelValue[item.key]"
         :error="errors[item.key]"
         :label="item.label"
+        :types="item.types"
         :icon="item.icon"
         :icon-right="item.iconRight"
         :size="item.size"

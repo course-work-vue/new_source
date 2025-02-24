@@ -9,11 +9,12 @@ export class BaseInput {
 
     validation;
 
-
-    constructor({ label, key, validation = [] }) {
+    types;
+    constructor({ label, key, validation = [], types ='text' }) {
         if (!key) throw new Error('Key is required');
         this.label = label;
         this.key = key;
+        this.types=types;
         if (validation) {
             if (Array.isArray(validation)) {
                 this.validation = validation;

@@ -29,7 +29,7 @@ import { computed } from "vue";
 const layoutStore = useLayoutStore();
 
 const isLoading = computed(() => {
-  return layoutStore.isLoading;
+  return !!layoutStore.isLoading;
 });
 
 const isCancelled = computed(() => {

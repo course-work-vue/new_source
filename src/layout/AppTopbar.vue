@@ -84,16 +84,16 @@ const isOutsideClicked = (event) => {
       <img src="@/assets/images/logo.png" alt="logo" />
     </router-link>
 
-    <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle()">
+    <!-- to:do fix <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle()">
       <i class="pi pi-bars"></i>
-    </button>
+    </button> -->
     <span>{{ title }}</span>
-    <button
+    <!-- <button
       class="p-link layout-topbar-menu-button layout-topbar-button"
       @click="onTopBarMenuButton()"
     >
       <i class="pi pi-ellipsis-v"></i>
-    </button>
+    </button> -->
 
 
   </div>

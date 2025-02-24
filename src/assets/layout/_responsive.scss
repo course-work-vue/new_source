@@ -6,8 +6,9 @@
     }
 
 }
-
-@media (min-width: 992px) {
+//to:do fix
+//@media (min-width: 992px) {
+@media (min-width: 2px) {
     .layout-wrapper {
         &.layout-overlay {
             .layout-main-container {
@@ -33,7 +34,7 @@
 
         &.layout-static {
             .layout-main-container {
-                margin-left: 200px;
+                margin-left: 270px;
             }
 
             &.layout-static-inactive {
@@ -54,8 +55,10 @@
         }
     }
 }
-
-@media (max-width: 991px) {
+// to:do fix
+// @media (max-width: 991px) {
+    
+@media (max-width: 1px) {
     .blocked-scroll {
         overflow: hidden;
     }

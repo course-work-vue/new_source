@@ -26,8 +26,8 @@ export default class Student {
 
     constructor(student) {
         this.student_id = student?.student_id ?? null;
-        this.date_of_birth = student?.date_of_birth ?? null;
-        this.enrolled_date = student?.enrolled_date ?? null;
+        this.date_of_birth = new Date(student?.date_of_birth) ?? null;
+        this.enrolled_date = new Date(student?.enrolled_date) ?? null;
 
         this.group_id = student?.group_id ?? null;
         this.is_budget = student?.is_budget ?? null;
@@ -55,7 +55,9 @@ export default class Student {
         console.log(group);
         return group ? group.group_number : null; // Return the group number if it exists, otherwise return null or a default value
     }
-
+    get dateOfBirth() {
+        return Formatter.formatDate(this.date_of_birth);
+    }
 
 
     get full_name() {

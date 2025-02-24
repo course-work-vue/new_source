@@ -15,7 +15,6 @@ export class TextInput extends BaseInput {
 
     placeholder;
 
-
     constructor(props) {
         super(props);
         const { size = 'md', icon, iconRight = false, placeholder } = props;

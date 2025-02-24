@@ -1698,9 +1698,6 @@ async clearData() {
   
 computed: {
     ...mapState(useUploaded_FileStore, ["uploaded_fileList"]),
-    currentUser() {
-      return this.$store.state.auth.user;
-    },
     currentColumnDefs2() {
       return this.columnDefs2Options[this.selectedOption4];
     },

@@ -64,7 +64,6 @@
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
-          :localeText="localeText"
         >
         </auto-form>
       </div>
@@ -232,49 +231,54 @@ export default {
     await this.getGroupList(); // Получение списка групп
 
     this.loadGroupsData(); // Загрузка данных групп
-    this.scheme = new FormScheme([
-      new TextInput({
-        key: "group_number",
-        label: "Номер группы",
-        placeholder: "Номер группы",
-        icon: "pi pi-hashtag",
-        validation: [requiredRule],
-      }),
-      new ComboboxInput({
-        key: "group_dir_id",
-        label: "Направление",
-        options: [
-          ...[...this.directionList].map((direction) => ({
-            label: direction.dir_name,
-            value: direction.dir_id,
-          })),
-        ],
-        validation: [requiredRule],
-      }),
-      new ComboboxInput({
-        key: "group_prof_id",
-        label: "Профиль",
-        options: [
-          ...[...this.profileList].map((profile) => ({
-            label: profile.prof_name,
-            value: profile.prof_id,
-          })),
-        ],
-        validation: [requiredRule],
-      }),
-      new TextInput({
-        key: "course",
-        label: "Курс",
-        placeholder: "Курс",
-        icon: "pi pi-graduation-cap",
-        validation: [requiredRule],
-      }),
-    ]);
   },
   computed: {
     ...mapState(useDirectionStore, ["directionList"]),
     ...mapState(useProfileStore, ["profileList"]),
     ...mapState(useGroupStore, ["groupList"]),
+
+    scheme() {
+      return new FormScheme([
+        new TextInput({
+          key: "group_number",
+          label: "Номер группы",
+          placeholder: "Номер группы",
+          icon: "pi pi-hashtag",
+          validation: [requiredRule],
+          types: "text",
+        }),
+        new ComboboxInput({
+          key: "group_dir_id",
+          label: "Направление",
+          options: this.directionList.map((direction) => ({
+            label: direction.dir_name,
+            value: direction.dir_id,
+          })),
+          validation: [requiredRule],
+        }),
+        new ComboboxInput({
+          key: "group_prof_id",
+          label: "Профиль",
+          options: this.profileList
+            .filter(
+              (profile) => profile.prof_dir_id === this.group.group_dir_id
+            )
+            .map((profile) => ({
+              label: profile.prof_name,
+              value: profile.prof_id,
+            })),
+          validation: [requiredRule],
+        }),
+        new TextInput({
+          key: "course",
+          label: "Курс",
+          placeholder: "Курс",
+          icon: "pi pi-graduation-cap",
+          validation: [requiredRule],
+          types: "number",
+        }),
+      ]);
+    },
   },
   methods: {
     ...mapActions(useDirectionStore, ["getDirectionList"]),
@@ -308,7 +312,7 @@ export default {
       let isValid = true;
       const errors = {};
 
-      for (const item of this.scheme.items) {
+      for (const item of this.scheme?.items || []) {
         const result = item.validate(this.group[item.key]);
 
         if (result !== true) {
@@ -451,6 +455,7 @@ export default {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -461,6 +466,7 @@ export default {
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
@@ -481,16 +487,19 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .page-link {
   height: 40px;
   width: 40px;
@@ -499,6 +508,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .active {
   .page-link {
     background-color: rgb(68, 99, 52);
@@ -507,6 +517,7 @@ export default {
     --bs-btn-hover-border-color: rgb(6 215 29);
   }
 }
+
 .disabled {
   .page-link {
     background-color: rgb(57, 79, 46);

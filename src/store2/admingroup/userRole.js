@@ -31,9 +31,6 @@ export const useUserRoleStore = defineStore('userRole', {
         async postUserRole(userRole) {
             const response = await api.postUserRole(userRole);
 
-            if (response.success === true) {
-                await this.getUserRoleList();
-            }
         },
 
         async putUserRole(userRole) {

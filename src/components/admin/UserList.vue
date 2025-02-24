@@ -82,11 +82,17 @@
         >
         </auto-form>
         <div class="form__item">
+          <button class="btn btn-primary" @click="deauthUserWithId(user.id)">
+            Отозвать токен
+          </button>
+        </div>
+        <div class="form__item">
           <h3>Роли</h3>
           <div v-for="role in roleList" :key="role.roleid">
             <label>
               <input
                 type="checkbox"
+                class="form-check-input"
                 :value="role.roleid"
                 v-model="selectedRoles"
               />
@@ -386,11 +392,12 @@ export default {
       "putUser",
       "deleteUser",
       "uploadGeneratedFile",
+      "deauthUser",
     ]),
     ...mapActions(useUserRoleStore, [
       "getUserRoleList",
       "postUserRole",
-      ,
+      "getUserRoleList",
       "putUserRole",
       "deleteUserRole",
       "uploadGeneratedFile",
@@ -405,6 +412,9 @@ export default {
       "uploadGeneratedFile",
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
+    async deauthUserWithId(userId) {
+      await this.deauthUser(userId);
+    },
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "Действия") {
         this.edit(event);
@@ -469,6 +479,8 @@ export default {
       for (const userRole of userRolesToSave) {
         await this.postUserRole(userRole);
       }
+
+      await this.getUserRoleList();
 
       this.formVisible = false;
       this.resetUser();

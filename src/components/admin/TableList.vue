@@ -80,9 +80,13 @@
         ></Textarea>
       </div>
     </div>
-    <div class="form__item">
+    <div v-if="tableUser.id" class="form__item">
       <h3>Выберите роль</h3>
-      <select v-model="selectedRoleId" @change="loadPermissions">
+      <select
+        class="form-select"
+        v-model="selectedRoleId"
+        @change="loadPermissions"
+      >
         <option
           v-for="role in roleList"
           :key="role.roleid"
@@ -94,9 +98,9 @@
     </div>
 
     <!-- Таблица с разрешениями -->
-    <div class="form__item">
+    <div v-if="tableUser.id" class="form__item">
       <h3>Разрешения для {{ getSelectedRoleName }}</h3>
-      <div v-if="permissionList.length">
+      <div v-if="permissionList.length && selectedRoleId">
         <table class="table table-striped">
           <thead>
             <tr>
@@ -109,6 +113,7 @@
               <td>{{ perm.label }}</td>
               <td>
                 <input
+                  class="form-check-input"
                   type="checkbox"
                   :value="perm.value"
                   v-model="selectedPermissions"
@@ -122,7 +127,7 @@
         <p>Выберите роль для настройки разрешений.</p>
       </div>
     </div>
-    <Button class="btn btn-primary float-start" @click="submitPermissions">
+    <Button v-if="tableUser.id" class="btn btn-primary float-start" @click="submitPermissions">
       Сохранить роли
     </Button>
     <Button class="btn btn-primary float-start" @click="submit">
@@ -394,6 +399,7 @@ export default {
         { label: "ALL PRIVILEGES", value: 10 },
       ],
       selectedPermissions: [],
+      selectedRoleId: null,
     };
   },
   async mounted() {
@@ -491,6 +497,7 @@ export default {
     resetTableUser() {
       this.role = new Role();
       this.tableUser = new TableUser();
+      this.selectedRoleId = null;
     },
     edit(event) {
       this.resetTableUser();
@@ -677,7 +684,7 @@ export default {
     ...mapState(useGroupStore, ["groupList"]),
     getSelectedRoleName() {
       const role = this.roleList.find((r) => r.roleid === this.selectedRoleId);
-      return role ? role.rolename : "";
+      return role ? role.rolename : null;
     },
   },
   async created() {},
