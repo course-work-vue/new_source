@@ -30,4 +30,5 @@ export default Object.freeze({
     program: prefix + 'programs',
 
     uploaded_file: prefix+'uploaded_files',
+    import_program: prefix+'import_programs',
 });

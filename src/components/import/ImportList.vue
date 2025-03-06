@@ -88,23 +88,22 @@
 
   <div style="height: 50vh">
        <div class="h-100 pt-5">
-         <ag-grid-vue
-     class="ag-theme-alpine"
-     style="width: 100%; height: 100%;"
-     :columnDefs="compareColumnDefs.value"
-     :rowData="compareRowData"
-     :defaultColDef="defaultColDef"
-     :localeText="localeText"
-     rowSelection="multiple"
-     animateRows="true"
-     @cell-clicked="cellWasClicked"
-     @grid-ready="onGridReady"
-     @firstDataRendered="onFirstDataRendered"
-     @filter-changed="onFilterChanged"
-     :pagination="true"            
-     :paginationPageSize="paginationPageSize"  
-   >
-   </ag-grid-vue>
+        <ag-grid-vue
+  class="ag-theme-alpine"
+  style="width: 100%; height: 100%;"
+  :columnDefs="dynamicColumnDefs"
+  :rowData="filteredRowDataCompare"
+  :defaultColDef="defaultColDef"
+  :localeText="localeText"
+  rowSelection="multiple"
+  animateRows="true"
+  @cell-clicked="cellWasClicked"
+  @grid-ready="onGridReady"
+  @firstDataRendered="onFirstDataRendered"
+  @filter-changed="onFilterChanged"
+  :pagination="true"            
+  :paginationPageSize="paginationPageSize">
+</ag-grid-vue>
        </div>
      </div>
 
@@ -197,11 +196,13 @@
  import { useRoute } from "vue-router";
  import { mapState, mapActions } from "pinia";
  import { useUploaded_FileStore } from "@/store2/uploadedfilegroup/uploaded_file";
+ import { useImport_ProgramStore } from "@/store2/importgroup/import_program";
  import AutoForm from "@/components/form/AutoForm.vue";
  import { FormScheme } from "@/model/form/FormScheme";
 
  import { TextInput } from "@/model/form/inputs/TextInput";
  import Uploaded_File from "@/model/uploaded_file-group/Uploaded_File";
+ import Import_Program from "@/model/import-group/Import_Program";
  import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
  
  import * as XLSX from 'xlsx';
@@ -253,17 +254,12 @@
             { 
              field: "direction_code", 
              headerName: 'Код направления', 
-             maxWidth: 200
+             maxWidth: 180
            }, 
            { 
              field: "direction_name", 
-             headerName: 'Направление', 
-             minWidth: 500, 
-           }, 
-           { 
-             field: "qualification", 
-             headerName: 'Квалификация', 
-             maxWidth: 200, 
+             headerName: 'Профиль', 
+             minWidth: 470, 
            }, 
            { 
              field: "academic_year", 
@@ -565,6 +561,7 @@
        quickFilterValue: '',
        filters:false,
        uploaded_file: new Uploaded_File(),
+       import_program: new Import_Program(),
        errors: {},
  
        selectedCourse: '', 
@@ -582,6 +579,7 @@
    async mounted() {
      try {
      await this.getUploaded_FileList();
+     await this.getImport_ProgramList();
      this.loadUploadedFiles();
    } catch (error) {
      console.error("Ошибка при загрузке данных слушателей:", error);
@@ -606,6 +604,9 @@
        ,
        "putUploaded_File",
        "deleteUploaded_File",
+     ]),
+     ...mapActions(useImport_ProgramStore, [
+       "getImport_ProgramList",
      ]),
      cellWasClicked(event) {
        if (event.colDef && event.colDef.headerName === "Действия") {
@@ -748,6 +749,7 @@
 
     await this.getUploaded_FileList();
     await this.loadUploadedFiles();
+
   } catch (error) {
     console.error("Ошибка при загрузке файлов:", error);
   }
@@ -1658,7 +1660,7 @@
  async loadUploadedFiles() { 
   try {
     if (Array.isArray(this.uploaded_fileList)) {
-      // Фильтруем удаленные файлы
+
       const allFiles = this.uploaded_fileList.filter(uploaded_file => uploaded_file.deleted_at === null);
 
       this.detailRowData = allFiles;
@@ -1697,12 +1699,35 @@
     this.detailRowData = [];
   }
 },
+
+async loadImportPrograms() { 
+  try {
+    if (Array.isArray(this.import_programList)) {
+
+      const allFiles = this.import_programList.filter(import_program => import_program.deleted_at === null);
+
+      console.log(allFiles);
+
+    } else if (this.import_programList && this.import_programList.deleted_at === null) {
+      this.rowData.value = [this.import_programList];
+      this.detailRowData = [this.import_programList];
+    } else {
+      this.rowData.value = [];
+      this.detailRowData = [];
+    }
+  } catch (error) {
+    console.error("Ошибка при загрузке данных файлов:", error);
+    this.rowData.value = [];  // Очистка в случае ошибки
+    this.detailRowData = [];
+  }
+},
  
  resetList() {
     this.uploaded_file = new Uploaded_File();
   },
 
   openCompareForm() {
+    console.log("Filtered data:", this.filteredRowDataCompare);
     this.showCompare = true;
   },
   openArchiveForm() {
@@ -1867,6 +1892,7 @@
    
  computed: {
      ...mapState(useUploaded_FileStore, ["uploaded_fileList"]),
+     ...mapState(useImport_ProgramStore, ["import_programList"]),
      currentUser() {
        return this.$store.state.auth.user;
      },
@@ -1879,6 +1905,94 @@
   if (!this.selectedYear) return data;
   return data.filter(file => file.academic_year === this.selectedYear);
 },
+filteredRowDataCompare() {
+
+  const selectedRows = (this.rowData.value || []).filter(row => row.selected === true);
+  console.log("Выбранные строки:", selectedRows);
+  console.log("С чем сравниваем:", this.compareRowData);
+  if (!selectedRows.length) return [];
+
+  const frequency = {};
+  selectedRows.forEach(row => {
+    const name = row.disciple_name;
+    if (name) {
+      frequency[name] = (frequency[name] || 0) + 1;
+    }
+  });
+  console.log("Частота discipline name в выбранных строках:", frequency);
+
+  const filteredData = (this.compareRowData || []).filter(compareRow => {
+    return selectedRows.some(mainRow => {
+
+      const isEqual =
+        mainRow.direction_code === compareRow.direction_code &&
+        mainRow.direction_name === compareRow.direction_name &&
+        mainRow.qualification === compareRow.qualification &&
+        mainRow.academic_year === compareRow.academic_year;
+
+      const sameDisciple = mainRow.disciple_name === compareRow.disciple_name;
+      const isCommon = sameDisciple && (frequency[compareRow.disciple_name] || 0) >= 2;
+      console.log("Сравниваем:");
+      console.log(" mainRow:", mainRow);
+      console.log(" compareRow:", compareRow);
+      console.log(" Результат сравнения:", isEqual, "и общая дисциплина:", isCommon);
+      return isEqual && isCommon;
+    });
+  });
+  console.log("Отфильтрованные данные:", filteredData);
+  return filteredData;
+},
+
+dynamicColumnDefs() {
+    // Получаем данные для сравнения (например, отфильтрованные данные)
+    const data = this.filteredRowDataCompare || [];
+    
+    // Собираем уникальные дисциплины и направления
+    const groups = {};
+    data.forEach(row => {
+      const discipline = row.disciple_name;
+      const directionKey = `${row.direction_name} ${row.academic_year}`;
+      if (discipline) {
+        if (!groups[discipline]) {
+          groups[discipline] = new Set();
+        }
+        groups[discipline].add(directionKey);
+      }
+    });
+
+    const columnDefs = Object.keys(groups).map(discipline => {
+      const children = Array.from(groups[discipline]).map(directionKey => {
+        return {
+          headerName: directionKey,
+          // Здесь можно использовать valueGetter, чтобы выбрать часы для соответствующей комбинации.
+          // Например, если в строке часы хранятся в поле total_hours:
+          valueGetter: params => {
+            // Допустим, для текущей строки (params.data) нужно вернуть часы, если 
+            // направление и год соответствуют столбцу, иначе пусто.
+            if (
+              `${params.data.direction_name} ${params.data.academic_year}` === directionKey &&
+              params.data.disciple_name === discipline
+            ) {
+              return params.data.total_hours;
+            }
+            return "";
+          },
+          // Можно добавить cellRenderer, форматирование и другие опции.
+          minWidth: 100
+        };
+      });
+      return {
+        headerName: discipline,
+        children: children
+      };
+    });
+    
+    // Дополнительно можно добавить "фиксированные" столбцы, например, если нужно вывести сам discipline_name отдельно.
+    return [
+      { field: 'disciple_name', headerName: 'Дисциплина', pinned: 'left', minWidth: 150 },
+      ...columnDefs
+    ];
+  },
      uniqueDepartments() {
        // Собираем все департаменты из списка файлов
        const departments = this.uploaded_fileList.map((file) => file.department);

@@ -237,14 +237,14 @@ export default {
       new ComboboxInput({
         key: "listener_id",
         label: "Слушатель",
-        options: [],
-        validation: [requiredRule],
+        placeholder: "Выберите слушателя",
+        options: this.listenerOptions,
       }),
       new ComboboxInput({
         key: "payer_id",
         label: "Законный представитель",
-        options: [],
-        validation: [requiredRule],
+        placeholder: "Выберите представителя",
+        options: this.payerOptions,
       }),
       new TextInput({
         key: "contr_number",
@@ -419,6 +419,20 @@ export default {
       return Object.values(programStore.programMap || {}).map((item) => ({
         value: item.id,
         label: item.program_name,
+      }));
+    },
+    listenerOptions() {
+      const listenerStore = useListenerStore();
+      return Object.values(listenerStore.listenerMap || {}).map((item) => ({
+        value: item.id,
+        label: item.name,
+      }));
+    },
+    payerOptions() {
+      const payerStore = usePayerStore();
+      return Object.values(payerStore.payerMap || {}).map((item) => ({
+        value: item.id,
+        label: item.name,
       }));
     },
   },

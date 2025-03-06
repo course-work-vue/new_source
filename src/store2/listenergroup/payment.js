@@ -18,9 +18,8 @@ export const usePaymentStore = defineStore('payment', {
         async getPaymentList() {
             console.log("Я в платежах")
             const responseData = await api.getPaymentList();
-            console.log(responseData)
-            this.paymentList = responseData.map((pay_graph) => {
-                return new Payment(pay_graph);
+            this.paymentList = responseData.map((payment) => {
+                return new Payment(payment);
             });
         },
 

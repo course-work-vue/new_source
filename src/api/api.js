@@ -85,7 +85,7 @@ export default {
   putPayment: (id, pay_graph) =>
     ReqExec.put(endpoints.rest.pay_graph, id, pay_graph),
   deletePayment: (pay_graph) =>
-    ReqExec.put(endpoints.procedure.pay_graph, payment.id, pay_graph),
+    ReqExec.put(endpoints.procedure.pay_graph, pay_graph.id, pay_graph),
   //program
   getProgramList: () => ReqExec.get(endpoints.rest.program, null, true),
   postProgram: (program) => ReqExec.post(endpoints.rest.program, program),
@@ -93,7 +93,9 @@ export default {
     ReqExec.put(endpoints.rest.program, id, program),
   deleteProgram: (program) =>
     ReqExec.put(endpoints.procedure.program, program.id, program),
-  //uploaded_files
+  //import_files
+
+  getImport_ProgramList: () => ReqExec.get(endpoints.rest.import_program, null, true),
 
   getUploaded_FileList: () => ReqExec.get(endpoints.rest.uploaded_file, null, true),
   postUploaded_File: (uploaded_file) => ReqExec.post(endpoints.rest.uploaded_file, uploaded_file),

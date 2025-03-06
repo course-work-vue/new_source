@@ -89,16 +89,12 @@
 </template>
 
 <script>
-/**
- * ВАЖНО: Проверьте пути import'ов и названия store/моделей.
- * Здесь даны примеры. Нужно подкорректировать под вашу структуру.
- */
 
 import { AgGridVue } from "ag-grid-vue3";
 import { reactive, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
-import { usePaymentStore } from "@/store2/listenergroup/payment"; // по аналогии с usePayerStore
+import { usePaymentStore } from "@/store2/listenergroup/payment";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -115,7 +111,6 @@ import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 
-// Модель Payment (примерно как Payer)
 import Payment from "@/model/listener-group/Payment"; 
 
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
@@ -143,10 +138,8 @@ export default {
       gridColumnApi.value = params.columnApi;
     };
 
-    // Данные таблицы
     const rowData = reactive({});
 
-    // Определение колонок
     const columnDefs = reactive({
       value: [
         {
@@ -155,8 +148,6 @@ export default {
           headerName: "Действия",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
-            // при клике на кнопку в ячейке
-            onClick: () => {},
             label: "View Details",
           },
           maxWidth: 120,
@@ -196,7 +187,6 @@ export default {
       ],
     });
 
-    // Общие настройки столбцов
     const defaultColDef = {
       sortable: true,
       filter: true,
@@ -205,7 +195,6 @@ export default {
       minWidth: 300,
     };
 
-    // Поиск (quick filter)
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
         document.getElementById("filter-text-box").value
@@ -217,15 +206,6 @@ export default {
       columnDefs,
       defaultColDef,
       onGridReady,
-      cellWasClicked: (event) => {
-        // Клик по ячейке
-        if (event.colDef && event.colDef.headerName === "Действия") {
-          // Редактирование
-          // Для примера - вызываем метод edit
-          // или обрабатываем как нужно
-          edit(event);
-        }
-      },
       onFilterTextBoxChanged,
       paginationPageSize,
     };
@@ -235,14 +215,8 @@ export default {
       showSidebar: false,
       quickFilterValue: "",
       filters: false,
-
-      // Модель текущего платёжного объекта для создания/редактирования
       payment: new Payment(),
-
-      // Ошибки валидации AutoForm
       errors: {},
-
-      // Схема формы (аналогично Payer)
       scheme: null,
     };
   },
@@ -250,6 +224,7 @@ export default {
     // Загрузка списка платежей
     try {
       await this.getPaymentList();
+      console.log(this.paymentList)
       this.loadPaymentsData();
     } catch (error) {
       console.error("Ошибка при загрузке данных платежей:", error);
@@ -300,48 +275,45 @@ export default {
     ]);
   },
   methods: {
-    // Подключаем методы из Pinia-store (по аналогии с Payer)
     ...mapActions(usePaymentStore, [
-      "getPaymentList",    // получить список платежей
-      "postPayment",       // добавить платёж
-      "putPayment",        // обновить платёж
-      "deletePayment",     // удалить платёж
+      "getPaymentList",
+      "postPayment",
+      "putPayment",
+      "deletePayment",
     ]),
 
-    // Способ получить state из Pinia (при желании)
-    ...mapState(usePaymentStore, ["paymentList"]),
+    cellWasClicked(event) {
+        if (event.colDef && event.colDef.headerName === "Действия") {
+          this.edit(event);
+        }
+      },
 
-    // Сброс текущего объекта платежа
+      edit(event) {
+      this.resetPayment();
+      this.payment = event.data; 
+      this.showSidebar = true;
+    },
+
     resetPayment() {
       this.payment = new Payment();
     },
 
-    // Клик по кнопке "Добавить платёж"
     openSidebar() {
       this.resetPayment();
       this.showSidebar = true;
     },
 
-    // Закрыть sidebar
     closeSidebar() {
       this.showSidebar = false;
     },
 
-    // Редактирование при клике на ячейку "Действия"
-    edit(event) {
-      this.resetPayment();
-      this.payment = event.data; // загружаем текущие данные в форму
-      this.showSidebar = true;
-    },
-
-    // Загрузка данных в таблицу
     async loadPaymentsData() {
       try {
         if (Array.isArray(this.paymentList)) {
-          // Показываем только не удалённые, если есть логика deleted_at
           this.rowData.value = this.paymentList.filter(
             (pay) => pay.deleted_at === null
           );
+          console.log("ТУТ!",this.rowData.value)
         } else if (this.paymentList && this.paymentList.deleted_at === null) {
           this.rowData.value = [this.paymentList];
         } else {
@@ -426,6 +398,9 @@ export default {
   created() {
     // При создании сразу грузим данные
     this.loadPaymentsData();
+  },
+  computed: {
+    ...mapState(usePaymentStore, ["paymentList"]),
   },
 };
 </script>
