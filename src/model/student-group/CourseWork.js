@@ -10,6 +10,7 @@ export default class CourseWork {
     course_work_ocenka;
     course_work_year;
     course_work_vipysk;
+    semester;
     deleted_at;
 
     constructor(courseWork) {
@@ -22,6 +23,7 @@ export default class CourseWork {
         this.course_work_year = courseWork?.course_work_year ?? null;
         this.course_work_vipysk = courseWork?.course_work_vipysk ?? null;
         this.deleted_at = courseWork?.deleted_at ?? null;
+        this.semester = courseWork?.semester ?? null;
     }
 
     get teacher_name() {

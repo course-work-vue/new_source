@@ -51,7 +51,7 @@ export default {
             link: "/groups",
           },
           {
-            label: "Курсовые",
+            label: "Квал. работы",
             link: "/courseworks",
           },
         ],

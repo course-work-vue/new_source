@@ -14,7 +14,7 @@
             class="btn btn-primary float-start"
             type="button"
           >
-            <i class="material-icons-outlined">add</i>Добавить курсовую работу
+            <i class="material-icons-outlined">add</i>Добавить квал. работу
           </button>
           <button
             @click="previewDocx"
@@ -269,8 +269,8 @@ export default {
     this.scheme = new FormScheme([
       new TextInput({
         key: "course_work_theme",
-        label: "Тема курсовой",
-        placeholder: "Введите тему курсовой работы",
+        label: "Тема квал. работы",
+        placeholder: "Введите тему квал. работы",
         icon: "pi pi-book",
         validation: [requiredRule],
       }),
@@ -309,8 +309,15 @@ export default {
       }),
       new TextInput({
         key: "course_work_year",
-        label: "Год курсовой работы",
+        label: "Год квал. работы",
         placeholder: "Введите год",
+        icon: "pi pi-calendar",
+        validation: [requiredRule],
+      }),
+      new TextInput({
+        key: "semester",
+        label: "Семестер",
+        placeholder: "Введите семестер",
         icon: "pi pi-calendar",
         validation: [requiredRule],
       }),
@@ -353,124 +360,140 @@ export default {
       const courseWorkStore = useCourseWorkStore();
       const courseWorks = courseWorkStore.courseWorkList;
 
-      // Group course works by teacher
-      const courseWorksByTeacher = courseWorks.reduce((acc, courseWork) => {
-        const teacherName = courseWork.teacher_name;
-        if (!acc[teacherName]) acc[teacherName] = [];
-        acc[teacherName].push(courseWork);
+      // Группируем работы по преподавателям, затем годам и семестрам
+      const courseWorksByTeacher = courseWorks.reduce((acc, cw) => {
+        const teacherName = cw.teacher_name;
+        const year = cw.course_work_year;
+        const semester = cw.semester;
+
+        if (!acc[teacherName]) acc[teacherName] = {};
+        if (!acc[teacherName][year]) acc[teacherName][year] = {};
+        if (!acc[teacherName][year][semester])
+          acc[teacherName][year][semester] = [];
+
+        acc[teacherName][year][semester].push(cw);
         return acc;
       }, {});
 
-      // Create the DOCX document with the provided header
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
+      const docContent = [
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({
+              text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+              size: 22,
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({
+              text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
+              size: 24,
+            }),
+            new TextRun({
+              text: "«Кубанский государственный университет»",
+              size: 28,
+              bold: true,
+              break: 1,
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({ text: "(ФГБОУ ВО «КубГУ»)", bold: true, size: 24 }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+          children: [
+            new TextRun({
+              text: "Факультет компьютерных технологий и прикладной математики",
+              size: 28,
+              break: 1,
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 300 },
+          children: [
+            new TextRun({
+              text: "Отчёт по научным руководителям",
+              size: 28,
+              break: 1,
+            }),
+          ],
+        }),
+      ];
+
+      // Формируем основной отчет
+      Object.entries(courseWorksByTeacher).forEach(([teacherName, years]) => {
+        docContent.push(
+          new Paragraph({
             children: [
-              // Заголовок
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 0 },
-                children: [
-                  new TextRun({
-                    text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
-                    size: 22,
-                    bold: false,
-                  }),
-                ],
-              }),
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 0 },
-                children: [
-                  new TextRun({
-                    text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
-                    size: 24,
-                  }),
-                  new TextRun({
-                    text: "«Кубанский государственный университет»",
-                    size: 28,
-                    bold: true,
-                    break: 1,
-                  }),
-                ],
-              }),
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 0 }, // No space after this paragraph
-                children: [
-                  new TextRun({
-                    text: "(ФГБОУ ВО «КубГУ»)",
-                    bold: true,
-                    size: 24,
-                  }),
-                ],
-              }),
-              // Fifth line - Regular alignment and spacing
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-                children: [
-                  new TextRun({
-                    text: "Факультет компьютерных технологий и прикладной математики",
-                    size: 28,
-                    break: 1,
-                  }),
-                ],
-              }),
-
-              // Space before the teacher report
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 300 },
-                children: [
-                  new TextRun({
-                    text: "Отчёт по научным руководителям",
-                    size: 28,
-                    break: 1,
-                  }),
-                ],
-              }),
-
-              // Group by teacher and students
-              ...Object.keys(courseWorksByTeacher)
-                .map((teacherName) => {
-                  // Paragraph for the teacher's name
-                  const teacherHeading = new Paragraph({
-                    alignment: AlignmentType.LEFT,
-                    children: [
-                      new TextRun({
-                        text: `${teacherName}`,
-                        bold: true,
-                        size: 28,
-                      }),
-                    ],
-                  });
-
-                  // List of students under this teacher
-                  const studentParagraphs = courseWorksByTeacher[
-                    teacherName
-                  ].map((courseWork, index) => {
-                    return new Paragraph({
-                      alignment: AlignmentType.LEFT,
-                      children: [
-                        new TextRun({
-                          text: `${index + 1}. ${courseWork.student_name}`,
-                          size: 28,
-                        }),
-                      ],
-                    });
-                  });
-
-                  return [teacherHeading, ...studentParagraphs];
-                })
-                .flat(),
+              new TextRun({ text: teacherName, bold: true, size: 28 }),
             ],
-          },
-        ],
+          })
+        );
+
+        Object.entries(years).forEach(([year, semesters]) => {
+          docContent.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Год: ${year}`,
+                  bold: true,
+                  size: 26,
+                  break: 1,
+                }),
+              ],
+            })
+          );
+
+          Object.entries(semesters).forEach(([semester, courseWorksList]) => {
+            docContent.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Семестр: ${semester}`,
+                    bold: true,
+                    size: 24,
+                    break: 1,
+                  }),
+                ],
+              })
+            );
+
+            courseWorksList.forEach((cw, idx) => {
+              const ocenka = cw.course_work_ocenka
+                ? ` – Оценка: ${cw.course_work_ocenka};`
+                : "";
+              const theme = cw.course_work_theme
+                ? ` ${cw.course_work_theme}`
+                : "";
+              docContent.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `${idx + 1}. ${cw.student_name}${ocenka}${theme}`,
+                      size: 24,
+                    }),
+                  ],
+                })
+              );
+            });
+          });
+        });
       });
 
-      // Generate the DOCX file and save it
+      const doc = new Document({
+        sections: [{ properties: {}, children: docContent }],
+      });
+
       const blob = await Packer.toBlob(doc);
       this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },

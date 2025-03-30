@@ -12,13 +12,25 @@
 
         <div class="col col-12">
           <div class="float-start">
-            <button @click="openCreatingForm" class="btn btn-primary float-start" type="button">
+            <button
+              @click="openCreatingForm"
+              class="btn btn-primary float-start"
+              type="button"
+            >
               <i class="material-icons-outlined">add</i>Добавить студента
             </button>
-            <button @click="previewDocx" class="mx-2 btn btn-primary float-start" type="button">
+            <button
+              @click="previewDocx"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
               Отчёт о формах обучения
             </button>
-            <button @click="contingent" class="mx-2 btn btn-primary float-start" type="button">
+            <button
+              @click="contingent"
+              class="mx-2 btn btn-primary float-start"
+              type="button"
+            >
               Контингент
             </button>
           </div>
@@ -27,32 +39,60 @@
       <div class="col col-12">
         <div class="col col-6 float-start">
           <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="group_id">Фильтр по группе:</label>
+            <label class="bigger form-label" for="group_id"
+              >Фильтр по группе:</label
+            >
 
-            <select class="form-select" id="group_id" v-model="myValue" @change="handleSelectChange(myValue)">
+            <select
+              class="form-select"
+              id="group_id"
+              v-model="myValue"
+              @change="handleSelectChange(myValue)"
+            >
               <option selected="selected" value="">Нет</option>
-              <option v-for="group in this.groupList.sort(
-                (a, b) => a.group_number - b.group_number
-              )" :key="group.group_number" :value="group.group_number">
+              <option
+                v-for="group in this.groupList.sort(
+                  (a, b) => a.group_number - b.group_number
+                )"
+                :key="group.group_number"
+                :value="group.group_number"
+              >
                 {{ group.group_number }}
               </option>
             </select>
           </div>
         </div>
         <div class="col col-6 float-end d-inline-flex align-items-center">
-          <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button">
+          <button
+            @click="clearFilters"
+            :disabled="!filters"
+            class="btn btn-sm btn-primary text-nowrap mx-2"
+            type="button"
+          >
             <i class="material-icons-outlined">close</i>Очистить фильтры
           </button>
-          <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..." />
+          <input
+            class="form-control"
+            type="text"
+            v-model="quickFilterValue"
+            id="filter-text-box"
+            v-on:input="onFilterTextBoxChanged()"
+            placeholder="Поиск..."
+          />
         </div>
       </div>
       <div class="col col-6 float-start">
         <div class="form-group d-inline-flex align-items-center">
-          <label class="bigger form-label" for="subgroup_id">Фильтр по подгруппе:</label>
+          <label class="bigger form-label" for="subgroup_id"
+            >Фильтр по подгруппе:</label
+          >
 
-          <select class="form-select" id="subgroup_id" v-model="myValue4" @change="handleSelectChange2(myValue4)">
+          <select
+            class="form-select"
+            id="subgroup_id"
+            v-model="myValue4"
+            @change="handleSelectChange2(myValue4)"
+          >
             <option selected="selected" value="">Нет</option>
             <option value="1">1</option>
             <option value="2">2</option>
@@ -61,10 +101,21 @@
       </div>
       <div style="height: 90vh">
         <div class="h-100 pt-5">
-          <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%" :columnDefs="columnDefs.value"
-            :rowData="rowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-            animateRows="true" includeHiddenColumnsInQuickFilter="true" @cell-clicked="cellWasClicked"
-            @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            style="width: 100%; height: 100%"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            includeHiddenColumnsInQuickFilter="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+          >
           </ag-grid-vue>
         </div>
       </div>
@@ -94,24 +145,48 @@
   <Dialog v-model:visible="formVisible" modal header="Форма студента">
     <div class="card flex flex-row">
       <div class="form card__form">
-        <auto-form v-model="student" v-model:valid="valid" v-model:errors="errors" item-class="form__item"
-          :scheme="scheme">
+        <auto-form
+          v-model="student"
+          v-model:valid="valid"
+          v-model:errors="errors"
+          item-class="form__item"
+          :scheme="scheme"
+        >
         </auto-form>
       </div>
     </div>
 
-    <Button class="btn btn-primary float-start" :disabled="!valid" @click="submit">
+    <Button
+      class="btn btn-primary float-start"
+      :disabled="!valid"
+      @click="submit"
+    >
       Сохранить
     </Button>
-    <Button class="btn btn-primary float-end" v-if="this.student.student_id" @click="deleteStd">
+    <Button
+      class="btn btn-primary float-end"
+      v-if="this.student.student_id"
+      @click="deleteStd"
+    >
       Удалить
     </Button>
   </Dialog>
 
-  <Dialog v-model:visible="docPreview" header="Предпросмотр документа отчёт по студентам" maximizable ref="maxDialog"
-    @show="biggifyDialog" :header="props.name" class="w-full h-full md:w-5/6">
-    <OnlyDocumentEditor v-if="filePath" :documentUrl="filePath" :documentTitle="documentTitle"
-      :objectType="objectType" />
+  <Dialog
+    v-model:visible="docPreview"
+    header="Предпросмотр документа отчёт по студентам"
+    maximizable
+    ref="maxDialog"
+    @show="biggifyDialog"
+    :header="props.name"
+    class="w-full h-full md:w-5/6"
+  >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      :documentTitle="documentTitle"
+      :objectType="objectType"
+    />
   </Dialog>
 </template>
 
@@ -193,7 +268,7 @@ export default {
       gridApi.value = params.api;
       gridColumnApi.value = params.columnApi;
     };
-    const navigateToStudent = () => { };
+    const navigateToStudent = () => {};
 
     const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
     const maxDialog = ref();
@@ -224,8 +299,18 @@ export default {
           minWidth: 250,
           cellRenderer: "StudentHref2",
         },
-        { field: "group_number", headerName: "Группа", maxWidth: 129 },
-        { field: "subgroup", headerName: "Подгруппа", maxWidth: 129 },
+        {
+          field: "group_number",
+          suppressMenu: true,
+          headerName: "Группа",
+          maxWidth: 129,
+        },
+        {
+          field: "subgroup",
+          headerName: "Подгруппа",
+          suppressMenu: true,
+          maxWidth: 129,
+        },
         {
           field: "enrollment_order",
           headerName: "Приказ о зачислении",
@@ -342,7 +427,7 @@ export default {
     };
 
     // Example load data from server
-    onMounted(() => { });
+    onMounted(() => {});
 
     const onFilterTextBoxChanged = () => {
       gridApi.value.setQuickFilter(
@@ -660,43 +745,20 @@ export default {
     formatDataForExcel(data) {
       const result = [];
 
-      // Группировка и форматирование данных
-      const groupedData = {};
-
-      data.forEach((item) => {
-        const key = `${item.dir_code} ${item.direction_name} (бакалавриат)`;
-        if (!groupedData[key]) {
-          groupedData[key] = {
-            code: item.dir_code,
-            direction: item.direction_name,
-            course: item.course,
-            total_budget: 0,
-            total_contract: 0,
-            lecture_streams: item.lecture_streams,
-            total_groups: item.total_groups,
-            total_subgroups: item.total_subgroups,
-            total_profiles: item.total_profiles,
-            practical_groups: item.practical_groups,
-          };
-        }
-        groupedData[key].total_budget += item.total_students_budget;
-        groupedData[key].total_contract += item.total_students_contract;
-      });
-
       // Преобразование в массив
-      for (const key in groupedData) {
+      data.forEach((item) => {
         result.push({
-          "Специальность/направление": key,
-          Курс: groupedData[key].course,
-          "Контингент студентов б": groupedData[key].total_budget,
-          "Контингент студентов д": groupedData[key].total_contract,
-          "Количество лекционных потоков": groupedData[key].lecture_streams,
-          "Количество групп": groupedData[key].total_groups,
-          "Количество подгрупп": groupedData[key].total_subgroups,
-          "Количество профилей": groupedData[key].total_profiles,
-          "Количество групп для практики": groupedData[key].practical_groups,
+          "Специальность/направление": `${item.dir_code} ${item.direction_name} (бакалавриат)`,
+          Курс: item.course,
+          "Контингент студентов б": item.total_students_budget,
+          "Контингент студентов д": item.total_students_contract,
+          "Количество лекционных потоков": item.lecture_streams,
+          "Количество групп": item.total_groups,
+          "Количество подгрупп": item.total_subgroups,
+          "Количество профилей": item.total_profiles,
+          "Количество групп для практики": item.practical_groups,
         });
-      }
+      });
 
       return result;
     },
@@ -905,7 +967,7 @@ export default {
 
       const std = this.studentMap[student_id];
 
-      // 2. Вычисляем год окончания обучения  
+      // 2. Вычисляем год окончания обучения
       // Используем текущий календарный год и текущий курс обучения.
       // Предполагается, что для первого курса this.currentCourse = 0, тогда окончание обучения = currentYear + 4.
       const enrollmentInfo = std.enrollment_order; // пример строки; на практике получаем из БД или другого источника
@@ -918,7 +980,6 @@ export default {
 
       // Фиксированные день и месяц для начала обучения
       const startEducationString = `«01» сентября ${enrollmentYear} г.`;
-
 
       const currentYear = new Date().getFullYear();
       const currentCourse = this.groupMap[std.group_id].course || 0; // если не определён, то по умолчанию 0
@@ -1148,13 +1209,15 @@ export default {
                     size: 28,
                   }),
                   new TextRun({
-                    text: `по направлению подготовки ${this.directionMap[
-                      this.groupMap[std.group_id].group_dir_id
-                    ].dir_code
-                      } ${this.directionMap[
+                    text: `по направлению подготовки ${
+                      this.directionMap[
+                        this.groupMap[std.group_id].group_dir_id
+                      ].dir_code
+                    } ${
+                      this.directionMap[
                         this.groupMap[std.group_id].group_dir_id
                       ].dir_name
-                      },`,
+                    },`,
                     size: 28,
                   }),
                 ],
@@ -1511,7 +1574,7 @@ export default {
     ...mapState(useGroupStore, ["groupList", "groupMap"]),
     ...mapState(useDirectionStore, ["directionMap"]),
   },
-  async created() { },
+  async created() {},
 };
 var filterParams = {
   comparator: (filterLocalDateAtMidnight, cellValue) => {
@@ -1553,10 +1616,12 @@ var filterParams = {
 .skeleton {
   width: 100%;
   height: 1.2em;
-  background-image: linear-gradient(125deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%);
+  background-image: linear-gradient(
+    125deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
   background-size: 200% 100%;
   animation: skeletonShimmer 3.5s infinite linear;
   border-radius: 4px;
@@ -1579,7 +1644,6 @@ var filterParams = {
 }
 
 @keyframes skeletonFade {
-
   0%,
   100% {
     opacity: 0.5;

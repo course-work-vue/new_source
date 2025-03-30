@@ -40,7 +40,7 @@ const model = ref([
           },
           { label: "Профили", icon: "pi pi-fw pi-id-card", to: "/profiles" },
           { label: "Группы", icon: "pi pi-fw pi-users", to: "/groups" },
-          { label: "Курсовые", icon: "pi pi-fw pi-book", to: "/courseworks" },
+          { label: "Квал. работы", icon: "pi pi-fw pi-book", to: "/courseworks" },
         ],
       },
       {

@@ -1,5 +1,10 @@
 <template>
   <div class="col col-xs-9 col-lg-12 mt-4 list">
+    <div class="d-inline-flex">
+      <div>
+        <h1>{{ directionText }}</h1>
+      </div>
+    </div>
     <div class="col col-12">
       <div class="mb-3 col col-12">
         <button
@@ -29,7 +34,48 @@
         </div>
       </div>
     </div>
+    <div class="col col-6 float-start">
+      <div class="form-group d-inline-flex align-items-center">
+        <label class="bigger form-label" for="subgroup_id"
+          >Фильтр по магистратуре:</label
+        >
 
+        <select
+          class="form-select"
+          id="subgroup_id"
+          v-model="isMag"
+          @change="handleSelectChange2(isMag)"
+        >
+          <option value="true">Да</option>
+          <option value="false">Нет</option>
+        </select>
+      </div>
+    </div>
+    <div class="col col-6 float-start">
+      <div class="form-group d-inline-flex align-items-center">
+        <label class="bigger form-label" for="dir_id"
+          >Фильтр по коду направления:</label
+        >
+
+        <select
+          class="form-select"
+          id="dir_id"
+          v-model="dirValue"
+          @change="handleSelectChange(dirValue)"
+        >
+          <option selected="selected" value="">Нет</option>
+          <option
+            v-for="dir in this.directionList.sort(
+              (a, b) => a.dir_code - b.dir_code
+            )"
+            :key="dir.dir_code"
+            :value="dir.dir_code"
+          >
+            {{ dir.dir_code }}
+          </option>
+        </select>
+      </div>
+    </div>
     <div style="height: 90vh">
       <div class="h-100 pt-5">
         <ag-grid-vue
@@ -127,6 +173,7 @@ import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
+import { useRoute } from "vue-router";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -141,7 +188,7 @@ export default {
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
     // Obtain API from grid's onGridReady event
-
+    const route = useRoute();
     const paginationPageSize = 60;
 
     const onGridReady = (params) => {
@@ -180,7 +227,67 @@ export default {
         },
       ],
     });
+    const handleSelectChange = async (dir_code) => {
+      restoreFromHardCoded(dir_code);
+    };
 
+    const restoreFromHardCoded = (dir_code) => {
+      const filterModelQuery = route.query.filterModel;
+      if (filterModelQuery) {
+        // Parse the filterModel from the query parameter
+        const filterModel = JSON.parse(filterModelQuery);
+
+        // Your hardcoded filter
+        const hardcodedFilter = {
+          dir_code: { type: "equals", filter: dir_code },
+        };
+
+        // Merge the filterModel and hardcodedFilter using the spread operator
+        const mergedFilter = {
+          ...filterModel,
+          ...hardcodedFilter,
+        };
+
+        // Now 'mergedFilter' contains the combined filters
+        gridApi.value.setFilterModel(mergedFilter);
+      } else {
+        const hardcodedFilter = {
+          dir_code: { type: "equals", filter: dir_code },
+        };
+        gridApi.value.setFilterModel(hardcodedFilter);
+      }
+    };
+
+    const handleSelectChange2 = async (isMag) => {
+      restoreFromHardCoded2(isMag);
+    };
+
+    const restoreFromHardCoded2 = (isMag) => {
+      const filterModelQuery = route.query.filterModel;
+      if (filterModelQuery) {
+        // Parse the filterModel from the query parameter
+        const filterModel = JSON.parse(filterModelQuery);
+
+        // Your hardcoded filter
+        const hardcodedFilter = {
+          magister: { filterType: "text", type: isMag },
+        };
+
+        // Merge the filterModel and hardcodedFilter using the spread operator
+        const mergedFilter = {
+          ...filterModel,
+          ...hardcodedFilter,
+        };
+
+        // Now 'mergedFilter' contains the combined filters
+        gridApi.value.setFilterModel(mergedFilter);
+      } else {
+        const hardcodedFilter = {
+          magister: { filterType: "text", type: isMag },
+        };
+        gridApi.value.setFilterModel(hardcodedFilter);
+      }
+    };
     // DefaultColDef sets props common to all Columns
     const defaultColDef = {
       sortable: true,
@@ -212,6 +319,8 @@ export default {
       onFilterTextBoxChanged,
       paginationPageSize,
       navigateToDirection,
+      handleSelectChange,
+      handleSelectChange2,
     };
   },
   data() {
@@ -225,10 +334,24 @@ export default {
       valid: false,
       scheme: null,
       formVisible: false,
+      dirValue: null,
+      isMag: null,
     };
   },
   computed: {
     ...mapState(useDirectionStore, ["directionList"]),
+    directionText() {
+      let baseText =
+        this.isMag === "true" && this.isMag !== null
+          ? "Список всех направлений магистратуры"
+          : "Список всех направлений бакалавриата";
+
+      if (this.dirValue !== null && this.dirValue !== "") {
+        baseText += ` (код направления: ${this.dirValue})`;
+      }
+
+      return baseText;
+    },
   },
   async mounted() {
     await this.getDirectionList(); // Fetch the list of directions
@@ -361,6 +484,12 @@ export default {
         const filterModel = JSON.parse(filterModelQuery);
         this.gridApi.setFilterModel(filterModel);
         this.filters = true;
+        if (filterModel.dir_code) {
+          this.dirValue = filterModel.dir_code.filter;
+        }
+        if (filterModel.magister) {
+          this.isMag = filterModel.magister.type;
+        }
       }
 
       const quickFilterQuery = this.$route.query.quickFilter;
@@ -414,14 +543,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.bigger {
+  font-size: 30px;
+  white-space: nowrap;
+}
+
 .ag-row .ag-cell {
   display: flex;
-  justify-content: center; /* align horizontal */
+  justify-content: center;
+  /* align horizontal */
   align-items: center;
 }
-.test {
-  padding-left: 100px;
-}
+
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -446,6 +579,7 @@ export default {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -456,10 +590,12 @@ export default {
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
 }
+
 .nmbr {
   height: 44px;
 }
@@ -475,16 +611,19 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .page-link {
   height: 40px;
   width: 40px;
@@ -493,6 +632,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .active {
   .page-link {
     background-color: rgb(68, 99, 52);
@@ -501,6 +641,7 @@ export default {
     --bs-btn-hover-border-color: rgb(6 215 29);
   }
 }
+
 .disabled {
   .page-link {
     background-color: rgb(57, 79, 46);
@@ -510,9 +651,19 @@ export default {
   }
 }
 
+.card {
+  &__form {
+    margin-right: 30px;
+  }
+
+  &__image {
+    margin-left: auto;
+  }
+}
+
 .form {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 10px;
 
