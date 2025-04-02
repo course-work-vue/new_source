@@ -49,61 +49,79 @@ export default {
     //teacher
     getTeacherList: () => ReqExec.get(endpoints.rest.teacher, null, true),
 
-    //listener
+    // СЛУШАТЕЛИ
+
   getListenerList: () => ReqExec.get(endpoints.rest.listener, null, true),
   postListener: (listener) => ReqExec.post(endpoints.rest.listener, listener),
   putListener: (id, listener) =>
     ReqExec.put(endpoints.rest.listener, id, listener),
   deleteListener: (listener) =>
     ReqExec.put(endpoints.procedure.listener, listener.id, listener),
-  //day
+
   getDayList: () => ReqExec.get(endpoints.rest.day, null, true),
-  //contract
+  getL_Group_StatusList: () => ReqExec.get(endpoints.rest.l_group_status, null, true),
+
+  getReady_ListenerList:() => ReqExec.get(endpoints.rest.ready_listener, null, true),
+  getListener_WishList: () => ReqExec.get(endpoints.rest.listener_wish, null, true),
+  postListener_Wish: (listener_wish) => ReqExec.post(endpoints.rest.listener_wish, listener_wish),
+  putListener_Wish: (id, listener_wish) =>
+      ReqExec.put(endpoints.rest.listener_wish, id, listener_wish),
+
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),
   putContract: (id, contract) =>
     ReqExec.put(endpoints.rest.contract, id, contract),
   deleteContract: (contract) =>
     ReqExec.put(endpoints.procedure.contract, contract.id, contract),
-  //l_group
+
   getListenergroupList: () => ReqExec.get(endpoints.rest.l_group, null, true),
   postListenergroup: (l_group) => ReqExec.post(endpoints.rest.l_group, l_group),
   putListenergroup: (id, l_group) =>
     ReqExec.put(endpoints.rest.l_group, id, l_group),
   deleteListenergroup: (l_group) =>
     ReqExec.put(endpoints.procedure.l_group, l_group.id, l_group),
-  //payer
+
   getPayerList: () => ReqExec.get(endpoints.rest.payer, null, true),
   postPayer: (payer) => ReqExec.post(endpoints.rest.payer, payer),
   putPayer: (id, payer) =>
     ReqExec.put(endpoints.rest.payer, id, payer),
   deletePayer: (payer) =>
     ReqExec.put(endpoints.procedure.payer, payer.id, payer),
-  //pay_graph
+
   getPaymentList: () => ReqExec.get(endpoints.rest.pay_graph, null, true),
   postPayment: (pay_graph) => ReqExec.post(endpoints.rest.pay_graph, pay_graph),
   putPayment: (id, pay_graph) =>
     ReqExec.put(endpoints.rest.pay_graph, id, pay_graph),
   deletePayment: (pay_graph) =>
     ReqExec.put(endpoints.procedure.pay_graph, pay_graph.id, pay_graph),
-  //program
+
   getProgramList: () => ReqExec.get(endpoints.rest.program, null, true),
   postProgram: (program) => ReqExec.post(endpoints.rest.program, program),
   putProgram: (id, program) =>
     ReqExec.put(endpoints.rest.program, id, program),
   deleteProgram: (program) =>
     ReqExec.put(endpoints.procedure.program, program.id, program),
-  //import_files
+  
+  //ИМПОРТ
 
   getImport_ProgramList: () => ReqExec.get(endpoints.rest.import_program, null, true),
+  getImport_ProgramYearsList: () => ReqExec.get(endpoints.rest.import_program_years, null, true),
+  getImport_ProgramCodesList: () => ReqExec.get(endpoints.rest.import_program_codes, null, true),
+  postImport_Program: (import_program) => ReqExec.post(endpoints.rest.import_program, import_program),
+  postImport_Programs: (import_programs) => ReqExec.post(endpoints.rest.import_programs, import_programs),
 
-  getUploaded_FileList: () => ReqExec.get(endpoints.rest.uploaded_file, null, true),
-  postUploaded_File: (uploaded_file) => ReqExec.post(endpoints.rest.uploaded_file, uploaded_file),
-  putUploaded_File: (direction_code, uploaded_file) =>
-    ReqExec.put(endpoints.rest.uploaded_file, direction_code, uploaded_file),
-  deleteUploaded_File: (uploaded_file) =>
-    ReqExec.put(endpoints.procedure.uploaded_file, uploaded_file.id, uploaded_file),
+  //direction code?
+  putImport_Program: (direction_code, import_program) =>
+    ReqExec.put(endpoints.rest.import_program, direction_code, import_program),
+  deleteImport_Program: (import_program) =>
+    ReqExec.put(endpoints.procedure.import_program, import_program.id, import_program),
 
+  getImport_DiscipleList: () => ReqExec.get(endpoints.rest.import_disciple, null, true),
+  postImport_Disciple: (import_disciple) => ReqExec.post(endpoints.rest.import_disciple, import_disciple),
+  putImport_Disciple: (direction_code, import_disciple) =>
+    ReqExec.put(endpoints.rest.import_disciple, direction_code, import_disciple),
+  deleteImport_Disciple: (import_disciple) =>
+    ReqExec.put(endpoints.procedure.import_disciple, import_disciple.id, import_disciple),
 
   //role
   getRoleList: () => ReqExec.get(endpoints.rest.role, null, true),

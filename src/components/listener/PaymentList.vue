@@ -39,6 +39,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -116,6 +117,7 @@ import Payment from "@/model/listener-group/Payment";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 export default {
   name: "PaymentList",
@@ -125,6 +127,8 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
+
     const route = useRoute();
 
     // Ссылки на Grid API
@@ -145,12 +149,12 @@ export default {
         {
           sortable: false,
           filter: false,
-          headerName: "Действия",
+          headerName: "",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
             label: "View Details",
           },
-          maxWidth: 120,
+          maxWidth: 50,
           resizable: false,
         },
         {
@@ -205,6 +209,7 @@ export default {
       rowData,
       columnDefs,
       defaultColDef,
+      localeText,
       onGridReady,
       onFilterTextBoxChanged,
       paginationPageSize,
@@ -283,7 +288,7 @@ export default {
     ]),
 
     cellWasClicked(event) {
-        if (event.colDef && event.colDef.headerName === "Действия") {
+        if (event.colDef && event.colDef.headerName === "") {
           this.edit(event);
         }
       },
@@ -325,15 +330,12 @@ export default {
       }
     },
 
-    // Сохранение (новый или существующий)
     async submit() {
-      // Определяем, есть ли id
       if (this.payment.id) {
         await this.putPayment({ ...this.payment });
       } else {
         await this.postPayment({ ...this.payment });
       }
-      // Закрываем сайдбар и обновляем список
       this.showSidebar = false;
       this.resetPayment();
       this.loadPaymentsData();

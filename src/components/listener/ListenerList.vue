@@ -40,8 +40,10 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
+          :rowHeight="40"
           @cell-clicked="cellWasClicked"
           @grid-ready="onGridReady"
           @firstDataRendered="onFirstDataRendered"
@@ -138,7 +140,7 @@
       <div>
         <div class="form2 card__form">
         <auto-form
-          v-model="listener"
+          v-model="listener_wish"
           v-model:errors="errors"
           :scheme="secondScheme"
           class="custom-form"
@@ -146,7 +148,7 @@
       </div>
       <div class="form3">
         <auto-form
-          v-model="listener"
+          v-model="listener_wish"
           v-model:errors="errors"
           :scheme="thirdScheme"
           class="custom-form"
@@ -173,7 +175,9 @@ import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useListenerStore } from "@/store2/listenergroup/listener";
 import { useListenergroupStore } from "@/store2/listenergroup/listenergroup";
+import { useProgramStore } from "@/store2/listenergroup/program";
 import { useDayStore } from "@/store2/listenergroup/day";
+import { useListener_WishStore } from "@/store2/listenergroup/listenerwish";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -184,6 +188,7 @@ import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Listener from "@/model/listener-group/Listener";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 export default {
   name: "App",
@@ -195,6 +200,7 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const tableData = ref([]);
     
 
@@ -225,13 +231,13 @@ export default {
         {
           sortable: false,
           filter: false,
-          headerName: "Действия",
+          headerName: "",
           headerClass: "text-center",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
             label: "View Details",
           },
-          maxWidth: 120,
+          maxWidth: 50,
           resizable: false,
         },
         {
@@ -294,6 +300,7 @@ export default {
       rowData,
       days,
       defaultColDef,
+      localeText,
       paginationPageSize,
       onFilterTextBoxChanged,
       tableData,
@@ -312,15 +319,19 @@ export default {
       scheme: null,
       secondScheme: null,
       thirdScheme: null,
+      listener_wish: null,
     };
   },
   async mounted() {
     try {
       await this.getListenerList();
       await this.getListenergroupList();
+      await this.getListener_WishList();
       await this.getDayList();
+      await this.getProgramList();
       this.loadListenersData();
       this.loadDaysData();
+      this.loadListenerWishesData();
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
@@ -346,15 +357,10 @@ export default {
         validation: [requiredRule],
       }),
       new ComboboxInput({
-        key: "group_id",
-        label: "Номер группы",
-        options: [
-          ...[...this.listenergroupList].map((listenergroup) => ({
-            label: listenergroup.group_number,
-            value: listenergroup.id,
-          })),
-        ],
-        validation: [requiredRule],
+        key: "program_id",
+        label: "Программа",
+        placeholder: "Выберите программу",
+        options: this.programOptions,
       }),
       new TextInput({
         key: "passport",
@@ -403,12 +409,13 @@ export default {
         placeholder: "Электронная почта",
         validation: [emailRule],
       }),
+
     ]);
 
     // Вторая схема формы (пожелания)
     this.secondScheme = new FormScheme([
       new TextInput({
-        key: "people_count",
+        key: "group_size",
         label: "Количество человек",
         placeholder: "Количество человек",
         validation: [requiredRule],
@@ -436,7 +443,7 @@ export default {
     ]);
     this.thirdScheme = new FormScheme([
   new TextInput({
-    key: "wish_description",
+    key: "listener_comment",
     label: "Комментарий:",
     validation: [requiredRule],
     className: "wish_description",
@@ -451,10 +458,16 @@ export default {
       "deleteListener",
     ]),
     ...mapActions(useListenergroupStore, ["getListenergroupList"]),
+    ...mapActions(useListener_WishStore, [
+      "getListener_WishList",
+      "postListener_Wish",
+      "putListener_Wish",
+    ]),
     ...mapActions(useDayStore, ["getDayList"]),
+    ...mapActions(useProgramStore, ["getProgramList"]),
 
     cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
+      if (event.colDef && event.colDef.headerName === "") {
         this.edit(event);
       }
     },
@@ -464,10 +477,12 @@ export default {
     edit(event) {
       this.resetLst();
       this.listener = event.data;
+      console.log(event.data);
       this.showSidebar = true;
     },
     async submit() {
       let listener = { ...this.listener };
+      console.log(listener)
       if (listener.id) {
         await this.putListener(listener);
       } else {
@@ -495,6 +510,19 @@ export default {
       } catch (error) {
         console.error("Ошибка при загрузке данных дней:", error);
         this.days.value = [];
+      }
+    },
+    async loadListenerWishesData(){
+      try {
+        if (Array.isArray(this.listener_wishList)) {
+          this.listener_wishes = this.listener_wishList
+          console.log("Желания",this.listener_wishes)
+        } else {
+          this.listener_wishes.value = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных дней:", error);
+        this.listener_wishes.value = [];
       }
     },
     async loadListenersData() {
@@ -556,19 +584,42 @@ export default {
       this.showSidebar = true;
     },
     openWishesForm() {
+      this.listener_wish = this.listener_wishList.find(
+    (wish) => wish.listener_id === this.listener.id
+  ) || {};
+  console.log("Пожелание для слушателя", this.listener.id, ":", this.listener_wish);
       this.showWishes = true;
     },
     closeSidebar() {
       this.showSidebar = false;
     },
-    submitWishes() {
+    async submitWishes() {
+      let listener_wish = { ...this.listener_wish };
+      listener_wish.listener_id=this.listener.id;
+      console.log(listener_wish)
+      if (listener_wish.id) {
+        console.log("Меняю");
+        await this.putListener_Wish(listener_wish);
+      } else {
+        console.log("Добавляю");
+        await this.postListener_Wish(listener_wish);
+      }
+      
       this.showWishes = false;
     },
   },
   computed: {
     ...mapState(useListenerStore, ["listenerList"]),
     ...mapState(useListenergroupStore, ["listenergroupList"]),
+    ...mapState(useListener_WishStore, ["listener_wishList"]),
     ...mapState(useDayStore, ["dayList"]),
+    programOptions() {
+      const programStore = useProgramStore();
+      return Object.values(programStore.programMap || {}).map((item) => ({
+        value: item.id,
+        label: item.program_name,
+      }));
+    },
   },
 };
 </script>

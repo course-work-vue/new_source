@@ -16,10 +16,7 @@ export const useDayStore = defineStore('day', {
     },
     actions: {
         async getDayList() {
-            console.log("Запрос списка дней...");
             const responseData = await api.getDayList();
-            //console.log("URL запроса:", api.getDayList); // Проверьте, что URL корректный
-            console.log("Ответ API:", responseData);
             this.dayList = responseData.map((day) => {
                 return new Day(day);
             });

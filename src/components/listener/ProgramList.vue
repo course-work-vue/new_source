@@ -42,6 +42,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -99,12 +100,17 @@ import ProgramHref from "@/components/ProgramHrefCellRenderer.vue";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { useRoute, useRouter } from "vue-router";
+import { useProgramStore } from "@/store2/listenergroup/program";
+
 import UserService from "@/services/user.service";
+
+import { mapActions, mapState } from "pinia";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import { requiredRule } from "@/model/form/validation/rules";
 import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 const Program = function () {
   this.id = null;
@@ -124,6 +130,8 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
+
     const gridApi = ref(null);
     const gridColumnApi = ref(null);
     const paginationPageSize = 60;
@@ -147,14 +155,14 @@ export default {
         {
           sortable: false,
           filter: false,
-          headerName: "Действия",
+          headerName: "",
           headerClass: "text-center",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
             onClick: navigateToProgram,
             label: "View Details",
           },
-          maxWidth: 120,
+          maxWidth: 50,
           resizable: false,
         },
         { field: "required_amount", headerName: "Цена обучения", hide: true },
@@ -236,6 +244,7 @@ export default {
       rowData,
       columnDefs,
       defaultColDef,
+      localeText,
       quickFilterValue,
       filters,
       onGridReady,
@@ -295,6 +304,12 @@ export default {
     ]);
   },
   methods: {
+    ...mapActions(useProgramStore, [
+      "getProgramList",
+      "postProgram",
+      "putProgram",
+      "deleteProgram",
+    ]),
     async loadProgramsData() {
       try {
         const response = await UserService.getAllPrograms();
@@ -311,7 +326,7 @@ export default {
       }
     },
     cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
+      if (event.colDef && event.colDef.headerName === "") {
         this.edit(event);
       }
     },
@@ -337,13 +352,7 @@ export default {
             program.end_date
           );
         } else {
-          await UserService.addProgram(
-            program.required_amount,
-            program.program_name,
-            program.hours,
-            program.start_date,
-            program.end_date
-          );
+          await this.postProgram(program);
         }
       } catch (error) {
         console.error("Ошибка при сохранении программы:", error);

@@ -9,8 +9,8 @@
   >
     <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
     Очистить фильтры
+    
   </button>
-
           <input
             class="form-control"
             type="text"
@@ -30,17 +30,22 @@
          <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
            <input type="file" @change="onFileChange" multiple accept=".xlsx, .xls, .plx" >
          </div>
- 
          
          <div class="col col-6 float-end d-inline-flex align-items-center gap-2">
-          <button @click="clearData" type="button" class="btn btn-danger btn-sm d-flex align-items-center">
-        <i class="material-icons-outlined me-2">close</i>Удалить
-    </button>
-
+          <button
+            @click="selectedCount === 0 ? clearData() : deleteSelected()"
+            type="button"
+            class="btn btn-danger btn-sm d-flex align-items-center"
+          >
+            <i class="material-icons-outlined me-2">close</i>
+            {{ selectedCount === 0 ? 'Очистить' : 'Удалить выбранное' }}
+          </button>
+    
+<!--
     <button @click="" type="button" class="btn btn-success btn-sm d-flex align-items-center">
         <i class="material-icons-outlined me-2">save</i>Сохранить
     </button>
-
+-->
     <button @click="openCompareForm" type="button" class="btn btn-warning btn-sm d-flex align-items-center">
         <i class="material-icons-outlined me-2">compare_arrows</i>Пересечение
     </button>
@@ -55,23 +60,25 @@
  
      <div style="height: 50vh">
        <div class="h-100 pt-5">
-         <ag-grid-vue
-     class="ag-theme-alpine"
-     style="width: 100%; height: 100%;"
-     :columnDefs="columnDefs.value"
-     :rowData="rowData.value"
-     :defaultColDef="defaultColDef"
-     :localeText="localeText"
-     rowSelection="multiple"
-     animateRows="true"
-     @cell-clicked="cellWasClicked"
-     @grid-ready="onGridReady"
-     @firstDataRendered="onFirstDataRendered"
-     @filter-changed="onFilterChanged"
-     :pagination="true"            
-     :paginationPageSize="paginationPageSize"  
-   >
-   </ag-grid-vue>
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            style="width: 100%; height: 100%;"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            :rowHeight="40"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            domLayout="normal"
+            :pagination="true"            
+            :paginationPageSize="paginationPageSize"  
+          >
+          </ag-grid-vue>
        </div>
      </div>
  
@@ -92,11 +99,12 @@
   class="ag-theme-alpine"
   style="width: 100%; height: 100%;"
   :columnDefs="dynamicColumnDefs"
-  :rowData="filteredRowDataCompare"
+  :rowData="rowDataForComparison"
   :defaultColDef="defaultColDef"
   :localeText="localeText"
   rowSelection="multiple"
   animateRows="true"
+  :rowHeight="40"
   @cell-clicked="cellWasClicked"
   @grid-ready="onGridReady"
   @firstDataRendered="onFirstDataRendered"
@@ -119,12 +127,15 @@
   >
 
   <div class="year-selector-container">
-    <label for="yearSelect">Выберите год:</label>
-    <select id="yearSelect" class="form-select" v-model="selectedYear">
-      <option v-for="year in years" :key="year" :value="year">
-        {{ year }}
-      </option>
-    </select>
+    
+    <auto-form
+            v-model="formValues"
+            v-model:errors="errors"
+            :scheme="archiveScheme"
+            class="custom-form"
+          >
+          </auto-form>
+    
   </div>
 
   <div style="height: 50vh">
@@ -138,6 +149,7 @@
      :localeText="localeText"
      rowSelection="multiple"
      animateRows="true"
+     :rowHeight="40"
      @cell-clicked="cellWasClicked"
      @grid-ready="onGridReady"
      @firstDataRendered="onFirstDataRendered"
@@ -154,7 +166,7 @@
     v-model:visible="showDetails"
     position="bottom"
     modal
-    header="Детали"
+    :header="`Программа ${selectedDisciplineCode}`"
     class="custom-sidebar h-auto"
     :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
   >
@@ -170,6 +182,7 @@
      :localeText="localeText"
      rowSelection="multiple"
      animateRows="true"
+     :rowHeight="40"
      @cell-clicked="cellWasClicked"
      @grid-ready="onGridReady"
      @firstDataRendered="onFirstDataRendered"
@@ -188,7 +201,7 @@
  <script>
  
  import { AgGridVue } from "ag-grid-vue3"; 
- import { reactive, onMounted, ref } from "vue";
+ import { computed, reactive, onMounted, ref } from "vue";
  import ButtonCell from "@/components/import/ImportButtonCell.vue";
  import "ag-grid-community/styles/ag-grid.css"; 
  import "ag-grid-community/styles/ag-theme-alpine.css"; 
@@ -197,16 +210,40 @@
  import { mapState, mapActions } from "pinia";
  import { useUploaded_FileStore } from "@/store2/uploadedfilegroup/uploaded_file";
  import { useImport_ProgramStore } from "@/store2/importgroup/import_program";
+ import { useImport_DiscipleStore } from "@/store2/importgroup/import_disciple";
  import AutoForm from "@/components/form/AutoForm.vue";
  import { FormScheme } from "@/model/form/FormScheme";
 
  import { TextInput } from "@/model/form/inputs/TextInput";
+ import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
  import Uploaded_File from "@/model/uploaded_file-group/Uploaded_File";
  import Import_Program from "@/model/import-group/Import_Program";
+ 
+ import Import_Disciple from "@/model/import-group/Import_Disciple";
  import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
  
  import * as XLSX from 'xlsx';
- 
+import Import_Program_Year from "../../model/import-group/Import_Program_Year";
+import Import_Program_Code from "../../model/import-group/Import_Program_Code";
+
+function transformDisciples(discipleList) {
+  const grouped = {};
+
+  discipleList.forEach((item) => {
+    const { disciple_name, program_id, hours } = item;
+    if (!grouped[disciple_name]) {
+      grouped[disciple_name] = {
+        disciple_name,
+        hoursByProgram: {}
+      };
+    }
+    grouped[disciple_name].hoursByProgram[program_id] = hours;
+  });
+
+  // Превращаем объект grouped в массив
+  return Object.values(grouped);
+}
+
  export default {
    name: 'import',
    components: {
@@ -217,25 +254,37 @@
    setup() {
  
     const localeText = AG_GRID_LOCALE_RU;
-     const gridApi = ref(null);
-     const gridColumnApi = ref();
+    const gridApi = ref(null);
+    const gridColumnApi = ref();
      
-     const dataFromApi = ref(null); 
-     const dataLoaded = ref(false);
+    const dataFromApi = ref(null); 
+    const dataLoaded = ref(false);
  
-     const route = useRoute();
+    const route = useRoute();
  
-     const paginationPageSize = 60;
+    const paginationPageSize = 60;
  
-     const onGridReady = (params) => {
+    const onGridReady = (params) => {
        gridApi.value = params.api;
        gridColumnApi.value = params.columnApi;
      };
      const navigateToListener = () => {};
  
      const rowData = reactive({}); 
+
+     const selectedCount = computed(() => {
+      return Array.isArray(rowData.value)
+        ? rowData.value.filter(item => item.selected === true).length
+        : 0;
+      });
+
+      const lastId = computed(() => {
+        return rowData.value?.length+1 ?? 0;
+    });
+
      const detailRowData = ref({});
      const compareRowData = ref({});
+     const codes = reactive([]);
      const years = reactive([]);
  
      const columnDefs = reactive({
@@ -243,37 +292,37 @@
        {
        sortable: false,
        filter: false,
-       headerName: 'Действия',
+       headerName: '',
+       headerClass: "text-center",
        cellRenderer: 'ButtonCell',
        cellRendererParams: {
-         label: 'View Details', // Button label
+         label: 'View Details',
        },
-       maxWidth: 120, 
+       maxWidth: 50, 
        resizable: false
      },
             { 
-             field: "direction_code", 
+             field: "code", 
              headerName: 'Код направления', 
              maxWidth: 180
            }, 
            { 
-             field: "direction_name", 
+             field: "profile", 
              headerName: 'Профиль', 
-             minWidth: 470, 
+             minWidth: 880, 
            }, 
            { 
-             field: "academic_year", 
+             field: "years", 
              headerName: 'Учебный год', 
              maxWidth: 150, 
            }, 
            {
-  headerName: 'Выбрать', 
+  headerName: '', 
   field: "selected", 
   cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   cellRenderer: (params) => {
     const isSelected = params.value || false;
 
-    // Создаём div-контейнер для иконки
     const container = document.createElement('div');
     container.style.width = '100%';
     container.style.height = '100%';
@@ -296,74 +345,29 @@
       container.innerHTML = newValue ? '✔' : '';
       container.style.color = newValue ? 'green' : 'gray';
 
-      console.log(`Статус изменён: ${newValue ? 'Выбрано' : 'Снято'}`);
-      console.log('Данные строки:', params.data);
+      //console.log(`Статус изменён: ${newValue ? 'Выбрано' : 'Снято'}`);
+      console.log('Данные строки:', params.data.code);
     });
 
     return container;
   },
-  maxWidth: 120 // Ограничиваем ширину
+  maxWidth: 120
 }
        ],
      });
  
      const detailColumnDefs = reactive({
        value: [ 
-            { 
-             field: "index_code", 
-             headerName: 'Индекс', 
-             maxWidth: 200
-           }, 
            { 
              field: "disciple_name", 
              headerName: 'Наименование', 
              minWidth: 500, 
            }, 
            { 
-             field: "total_hours", 
+             field: "hours", 
              headerName: 'Всего часов', 
              maxWidth: 200, 
            }, 
-           { 
-             field: "contact_hours", 
-             headerName: 'Кон Такт.', 
-           }, 
-           { 
-             field: "lecture_hours", 
-             headerName: 'Лек', 
-           },
-           { 
-             field: "lab_hours", 
-             headerName: 'Лаб', 
-           },
-           { 
-             field: "practice_hours", 
-             headerName: 'Пр', 
-           },
-           { 
-             field: "ksr_hours", 
-             headerName: 'КСР', 
-           },
-           { 
-             field: "ikr_hours", 
-             headerName: 'ИКР', 
-           },
-           { 
-             field: "sr_hours", 
-             headerName: 'СР', 
-           },
-           { 
-             field: "control_type", 
-             headerName: 'Контроль', 
-           },
-           { 
-             field: "z_e", 
-             headerName: 'з.е', 
-           },
-           { 
-             field: "weeks", 
-             headerName: 'Недель', 
-           },
        ],
      });
 
@@ -380,7 +384,7 @@
              minWidth: 500, 
            }, 
            { 
-             field: "total_hours", 
+             field: "hours", 
              headerName: 'Всего часов', 
              maxWidth: 200, 
            }, 
@@ -458,14 +462,69 @@
        resizable: true,
        minWidth: 300
      };
- 
-     onMounted(() => {});
- 
+
+     const importProgramStore = useImport_ProgramStore();
+     const importDiscipleStore = useImport_DiscipleStore();
+
+    const rowDataForComparison = computed(() => {
+      // transformDisciples – функция, которая собирает данные в нужный вид
+      return transformDisciples(importDiscipleStore.import_discipleList);
+    });
+
+    onMounted(async () => {
+      await importProgramStore.getImport_ProgramCodesList(); 
+  // или как у вас называется экшен/метод
+
+  // Посмотрим, что там внутри
+  console.log("Содержимое import_program_codesList:", importProgramStore.import_program_codesList);
+});
+
+    const programsOptions = computed(() => {
+  return importProgramStore.import_program_codesList.map(item => {
+    return {
+      label: item.codes, 
+      value: item.codes  
+    };
+  });
+});
+    const yearsOptions = computed(() => {
+  return importProgramStore.import_program_yearsList.map(item => {
+    return {
+      label: item.years, // то, что увидит пользователь
+      value: item.years  // внутреннее значение (v-model)
+    };
+  });
+});
+     
      const onFilterTextBoxChanged = () => {
        gridApi.value.setQuickFilter(
          document.getElementById('filter-text-box').value
        );
      };
+
+     const dynamicColumnDefs = computed(() => {
+      const columns = [
+        {
+          headerName: 'Дисциплина',
+          field: 'disciple_name',
+          pinned: 'left',
+          lockPinned: true,
+          width: 200,
+        }
+      ];
+
+      importProgramStore.import_programList.forEach(program => {
+        columns.push({
+          headerName: program.code,
+          valueGetter: (params) => {
+            return params.data.hoursByProgram?.[program.id] || 0;
+          },
+          width: 100,
+        });
+      });
+
+      return columns;
+    });
  
      return {
  
@@ -475,9 +534,16 @@
        compareColumnDefs,
        columnDefs2,
        rowData,
+       selectedCount,
+       lastId,
        detailRowData,
        compareRowData,
+       rowDataForComparison,
+       dynamicColumnDefs,
        years,
+       codes,
+       yearsOptions,
+       programsOptions,
        defaultColDef,
        localeText,
 
@@ -504,7 +570,7 @@
          "Итого ВО": [
            { field: "index_code", headerName: "Год", maxWidth: 200 },
            { 
-             field: "total_hours", 
+             field: "hours", 
              headerName: 'Всего часов', 
              maxWidth: 200, 
            }, 
@@ -558,29 +624,34 @@
        },
  
        firstScheme: null,
+       archiveScheme:null,
        quickFilterValue: '',
        filters:false,
        uploaded_file: new Uploaded_File(),
        import_program: new Import_Program(),
+       import_program_year: new Import_Program_Year(),
+       import_program_code: new Import_Program_Code(),
+       import_disciple: new Import_Disciple(),
        errors: {},
  
        selectedCourse: '', 
- 
-       columnDefs2:[],
-       rowDataAll: {
-         'Итого ВО': [ /* Данные для опции "Итого ВО" */ ],
-         'Все дисциплины': [ /* Данные для опции "Все дисциплины" */ ]
-       },
-       
- 
-     filteredRowData1: [],
+       filteredRowData1: [],
+
+        formValues: {
+          codes: null, // выбранная программа
+          years: null, // выбранный год
+        },
      };
    },
    async mounted() {
      try {
-     await this.getUploaded_FileList();
      await this.getImport_ProgramList();
-     this.loadUploadedFiles();
+     await this.getImport_ProgramYearsList();
+     await this.getImport_ProgramCodesList();
+
+     await this.getImport_DiscipleList();
+     this.loadImportPrograms();
+     this.loadImportDisciples();
    } catch (error) {
      console.error("Ошибка при загрузке данных слушателей:", error);
    }
@@ -593,23 +664,47 @@
          disabled: true,  // Поле будет неактивным для редактирования
        }),
      ])
+
+     this.archiveScheme = new FormScheme([
+     new ComboboxInput({
+        key: "codes",
+        label: "Программа",
+        placeholder: "Выберите программу",
+        options: this.programsOptions,
+      }),
+      new ComboboxInput({
+        key: "years",
+        label: "Год",
+        placeholder: "Выберите Год",
+        options: this.yearsOptions,
+      }),
+     ])
    },
  
- 
+   
+   
    
    methods: {
      ...mapActions(useUploaded_FileStore, [
-       "getUploaded_FileList",
-       "postUploaded_File",
-       ,
        "putUploaded_File",
        "deleteUploaded_File",
      ]),
      ...mapActions(useImport_ProgramStore, [
        "getImport_ProgramList",
+       "getImport_ProgramYearsList",
+       "getImport_ProgramCodesList",
+       "postImport_Program",
+       "putImport_Program",
+       "deleteImport_Program",
+     ]),
+     ...mapActions(useImport_DiscipleStore, [
+       "getImport_DiscipleList",
+       "postImport_Disciple",
+       "putImport_Disciple",
+       "deleteImport_Disciple",
      ]),
      cellWasClicked(event) {
-       if (event.colDef && event.colDef.headerName === "Действия") {
+       if (event.colDef && event.colDef.headerName === "") {
          this.edit(event);
        }
      },
@@ -618,1087 +713,206 @@
      },
      edit(event) {
        this.resetUpd();
-       this.uploaded_file = event.data;
+       this.selectedDisciplineCode = event.data.code;
+       console.log(event.data);
        this.openDetailsForm();
-       console.log(this.uploaded_fileList)
-       console.log(this.uploaded_file);
      },
  
-     async onFileChange(event) {
+async onFileChange(event) {
   const files = event.target.files;
+  const programsData = [];
 
-  const readFile = (file) => {
-    console.log(`Прочитали файл: ${file.name}`);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: "array" });
-
-          this.findCell(workbook);
-
-          await this.findAndPostKursData11(workbook);
-          await this.findAndPostKursData12(workbook);
-          await this.findAndPostKursData21(workbook);
-          await this.findAndPostKursData22(workbook);
-          await this.findAndPostKursData31(workbook);
-          await this.findAndPostKursData32(workbook);
-          await this.findAndPostKursData41(workbook);
-          await this.findAndPostKursData42(workbook);
-
-          resolve();
-        } catch (error) {
-          console.error(`Ошибка при обработке файла ${file.name}:`, error);
-          reject(error);
-        }
-      };
-      reader.onerror = (error) => {
-        console.error(`Ошибка при чтении файла ${file.name}:`, error);
-        reject(error);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const readPLXFile = (file) => {
-  console.log(`Обрабатываем .plx файл: ${file.name}`);
-
+  const readFile = (file) => { 
+  console.log(`Прочитали файл: ${file.name}`);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const textContent = e.target.result;
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
 
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(textContent, "text/xml");
+        // Читаем данные с листа "Титул"
+        const sheetName = "Титул";
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) {
+          throw new Error(`Лист "${sheetName}" не найден`);
+        }
 
         let extractedData = {
           code: "Не найден",
-          direction: "Не найден",
-          qualification: "Не найден",
-          academicYear: "Не найден",
-          faculty: "Не найден",
-          duration_of_study: "Не найден"
+          profile: "Не найден",
+          years: "Не найден",
         };
 
-        // Получаем все теги в документе
-        const allElements = xmlDoc.getElementsByTagName("*");
+        extractedData.code = "04.04.04";
+        extractedData.profile = sheet["D30"] ? sheet["D30"].v : null;
+        extractedData.years = sheet["W41"] ? sheet["W41"].v : null; 
 
-        for (let i = 0; i < allElements.length; i++) {
-          let element = allElements[i];
+        // Создаем программу
+        await this.postImport_Program(extractedData);
+        await this.getImport_ProgramList();
+        
+        // Предполагается, что после обновления this.lastId содержит ID новой программы
 
-          if (extractedData.code === "Не найден" && element.hasAttribute("Шифр")) {
-            extractedData.code = element.getAttribute("Шифр");
-          }
-          if (extractedData.direction === "Не найден" && element.hasAttribute("Название")) {
-            extractedData.direction = element.getAttribute("Название");
-          }
-          if (element.hasAttribute("Квалификация")) {
-            extractedData.qualification = element.getAttribute("Квалификация");
-          }
-          if (element.hasAttribute("УчебныйГод")) {
-            extractedData.academicYear = element.getAttribute("УчебныйГод");
-          }
-          if (extractedData.faculty === "Не найден" && element.hasAttribute("Факультет")) {
-            extractedData.faculty = element.getAttribute("Факультет");
-          }
-          if (extractedData.duration_of_study === "Не найден" && element.hasAttribute("СрокОбучения")) {
-            extractedData.duration_of_study = element.getAttribute("СрокОбучения");
-          }
-          if (
-            extractedData.code !== "Не найден" &&
-            extractedData.direction !== "Не найден" &&
-            extractedData.qualification !== "Не найден" &&
-            extractedData.academicYear !== "Не найден" &&
-            extractedData.faculty !== "Не найден" &&
-            extractedData.duration_of_study !== "Не найден"
-          ) {
-            break;
+        // Обработка листа "Курс 1" - для каждого ряда читаем ячейку E и создаем дисциплину
+        const courseSheets = ["Курс 1"];
+        for (const courseSheetName of courseSheets) {
+          const courseSheet = workbook.Sheets[courseSheetName];
+          if (courseSheet) {
+            // Проходим по рядам с 17 по 105
+            for (let row = 17; row <= 105; row++) {
+
+              const cellAddress = `E${row}`;
+              const cell = courseSheet[cellAddress];
+
+              const hoursCellAddress = `AG${row}`;
+              const hoursCell = courseSheet[hoursCellAddress];
+
+              console.log(this.lastId)
+              if (cell && cell.v) {
+                // Формируем объект дисциплины с нужными полями
+                const import_disciple = {
+                  program_id: this.lastId,      // Здесь используем последний ID программы
+                  disciple_name: cell.v,  
+                  hours: hoursCell.v,        
+                  // можно добавить и другие поля, если необходимо
+                };
+
+                await this.postImport_Disciple(import_disciple);
+              }
+            }
+          } else {
+            console.warn(`Лист ${courseSheetName} не найден.`);
           }
         }
 
-        console.log("Извлеченные данные из .plx:", extractedData);
-
-        // Отправляем данные на дальнейшую обработку
-        // await this.processPLXData(extractedData);
-
-        resolve();
+        this.loadImportPrograms();
+        resolve(extractedData);
       } catch (error) {
-        console.error(`Ошибка при обработке .plx файла ${file.name}:`, error);
+        console.error(`Ошибка при обработке файла ${file.name}:`, error);
         reject(error);
       }
     };
-
     reader.onerror = (error) => {
-      console.error(`Ошибка при чтении .plx файла ${file.name}:`, error);
+      console.error(`Ошибка при чтении файла ${file.name}:`, error);
       reject(error);
     };
-
-    reader.readAsText(file, "UTF-16");
+    reader.readAsArrayBuffer(file);
   });
 };
 
+  const readPLXFile = (file) => {
+    console.log(`Обрабатываем .plx файл: ${file.name}`);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const textContent = e.target.result;
+
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(textContent, "text/xml");
+
+          const planRows = xmlDoc.getElementsByTagName("ПланыСтроки");
+          const disciplines = [];
+
+          for (let i = 0; i < planRows.length; i++) {
+            const disciplineName = planRows[i].getAttribute("Дисциплина");
+            if (disciplineName) {
+              const import_disciple = {
+                  program_id: this.lastId,      
+                  disciple_name: disciplineName,  
+                  //hours: hoursCell.v,        // Значение ячейки E
+                  
+                };
+
+              await this.postImport_Disciple(import_disciple);
+            }
+          }
+
+          console.log("Список дисциплин:", disciplines);
+
+          let extractedData = {
+            code: "Не найден",
+            profile: "Не найден",
+            years: "Не найден",
+          };
+
+          const allElements = xmlDoc.getElementsByTagName("*");
+          let profileValues = [];
+
+          for (let i = 0; i < allElements.length; i++) {
+            let element = allElements[i];
+
+            if (extractedData.code === "Не найден" && element.hasAttribute("Шифр")) {
+              extractedData.code = element.getAttribute("Шифр");
+            }
+            if (element.hasAttribute("Название")) {
+              profileValues.push(element.getAttribute("Название"));
+            }
+            if (element.hasAttribute("УчебныйГод")) {
+              extractedData.years = element.getAttribute("УчебныйГод");
+            }
+            if (
+              extractedData.code !== "Не найден" &&
+              profileValues.length > 1 &&
+              extractedData.years !== "Не найден"
+            ) {
+              break;
+            }
+          }
+
+          if (profileValues.length > 1) {
+            extractedData.profile = profileValues[1];
+          }
+
+          console.log(this.lastId);
+          await this.postImport_Program(extractedData);
+          await this.getImport_ProgramList();
+          this.loadImportPrograms();
+          console.log(this.lastId);
+          
+          
+          resolve(extractedData);
+        } catch (error) {
+          console.error(`Ошибка при обработке .plx файла ${file.name}:`, error);
+          reject(error);
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error(`Ошибка при чтении .plx файла ${file.name}:`, error);
+        reject(error);
+      };
+
+      reader.readAsText(file, "UTF-16");
+    });
+  };
 
   try {
-    const uploadPromises = Array.from(files).map((file) =>
-      file.name.endsWith(".plx") ? readPLXFile(file) : readFile(file)
-    );
+    for (const file of files) {
+      let programData;
+      if (file.name.endsWith(".plx")) {
+        programData = await readPLXFile(file);
+      } else {
+        programData = await readFile(file);
+      }
+      programsData.push(programData);
+    }
 
-    await Promise.all(uploadPromises);
+    console.log(programsData);
 
-    await this.getUploaded_FileList();
-    await this.loadUploadedFiles();
+    // После фикса сервера
+    //await this.postImport_Program(programsData);
+    //await this.getImport_ProgramList();
+    //this.loadImportPrograms();
 
   } catch (error) {
     console.error("Ошибка при загрузке файлов:", error);
   }
-},
+  },
 
- 
- isUploadedFileValid(uploaded_file) {
-   return uploaded_file.direction_code && 
-          uploaded_file.direction_name && 
-          uploaded_file.qualification && 
-          uploaded_file.academic_year;
- },
- 
- 
-   findCell(workbook) {
-   const searchValue = 'Направление подготовки';
-   const qualificationPrefix = 'Квалификация:';
-   const academicYearLabel = 'Учебный год';
-   const educationTermPrefix = 'Срок получения образования: ';
- 
-   // Получаем первый лист в рабочей книге
-   const firstSheetName = workbook.SheetNames[0];
-   const sheet = workbook.Sheets[firstSheetName];
-   if (!sheet) {
-     console.log('Первый лист не найден');
-     return;
-   }
- 
-   let academicYearCellAddress = null;
- 
-   // Обрабатываем объединенные ячейки
-   if (sheet['!merges']) {
-     sheet['!merges'].forEach(merge => {
-       const start = merge.s; // Начальная ячейка {c: Column, r: Row}
-       const startAddress = XLSX.utils.encode_cell(start);
-       const cell = sheet[startAddress];
- 
-       if (cell && cell.v) {
-         const mergedCellValue = cell.v.toString();
-         if (mergedCellValue.includes(academicYearLabel)) {
-           // Если это объединение содержит "Учебный год"
-           const end = merge.e;   // Конечная ячейка {c: Column, r: Row}
-           academicYearCellAddress = XLSX.utils.encode_cell({c: end.c + 1, r: end.r});
-         }
-       }
-     });
-   }
- 
-   // Перебираем все ячейки первого листа
-   for (const cell in sheet) {
-     if (cell.startsWith('!')) continue;  // Пропускаем служебные ячейки
- 
-     if (sheet[cell] && sheet[cell].v) {
-       const cellValue = sheet[cell].v.toString();
-       if (cellValue.startsWith(searchValue)) {
-         const info = cellValue.slice(searchValue.length).trim();
-         const [directionCode, ...directionName] = info.split(' ');
-         const name = directionName.join(' ');
- 
-         this.uploaded_file.direction_code = directionCode;
-         this.uploaded_file.direction_name = name;
- 
-       } else if (cellValue.startsWith(qualificationPrefix)) {
-         const qualification = cellValue.slice(qualificationPrefix.length).trim();
- 
-         this.uploaded_file.qualification = qualification;
- 
-       } else if (!academicYearCellAddress && cellValue.includes(academicYearLabel)) {
-         // Если ячейка не объединена и содержит "Учебный год"
-         academicYearCellAddress = this.getNextCellAddress(cell);
-       } else if (cellValue.startsWith(educationTermPrefix)) {
-         // блок для поиска "Срок получения образования"
-         const educationTerm = cellValue.slice(educationTermPrefix.length).trim();
-         const termValue = parseInt(educationTerm.match(/\d+/)[0]); // Извлечение числа
-         this.uploaded_file.duration_of_study = termValue;
-       }
-     }
-   }
- 
-   // Получаем ячейку справа от "Учебный год"
-   if (academicYearCellAddress && sheet[academicYearCellAddress]) {
-     const nextCellValue = sheet[academicYearCellAddress].v ? sheet[academicYearCellAddress].v : 'Ячейка отсутствует';
-     this.uploaded_file.academic_year = nextCellValue;
-   } else {
-   }
- 
-   //Загружаю данные с титульника
-   this.findAdjacentCells(sheet);
- },
- 
- findAdjacentCells(sheet) {
-   const keywords = {
-     'Профиль': null,
-     'Кафедра': null,
-     'Факультет': null,
-     'Год начала подготовки (по учебному плану)': null,
-   };
- 
-   // Обрабатываем объединенные ячейки
-   if (sheet['!merges']) {
-     sheet['!merges'].forEach(merge => {
-       const start = merge.s; // Начальная ячейка {c: Column, r: Row}
-       const startAddress = XLSX.utils.encode_cell(start);
-       const cell = sheet[startAddress];
- 
-       if (cell && cell.v) {
-         const mergedCellValue = cell.v.toString();
-         for (const key in keywords) {
-           if (mergedCellValue.includes(key)) {
-             const end = merge.e;   // Конечная ячейка {c: Column, r: Row}
-             const nextCellAddress = XLSX.utils.encode_cell({ c: end.c + 1, r: end.r });
-             keywords[key] = nextCellAddress;
-           }
-         }
-       }
-     });
-   }
- 
-   // Перебираем все ячейки листа для поиска ключевых слов
-   for (const cell in sheet) {
-     if (cell.startsWith('!')) continue;
- 
-     if (sheet[cell] && sheet[cell].v) {
-       const cellValue = sheet[cell].v.toString();
- 
-       for (const key in keywords) {
-         if (!keywords[key] && cellValue.includes(key)) {
-           keywords[key] = this.getNextCellAddress(cell);
-         }
-       }
-     }
-   }
- 
- 
- //Запись полей титульника
- 
-   if (keywords['Кафедра'] && sheet[keywords['Кафедра']]) {
-     const departmentValue = sheet[keywords['Кафедра']].v ? sheet[keywords['Кафедра']].v : 'Значение отсутствует';
-     this.uploaded_file.department = 'Кафедра ' + departmentValue;
-   }
- 
-   if (keywords['Факультет'] && sheet[keywords['Факультет']]) {
-     const facultyValue = sheet[keywords['Факультет']].v ? sheet[keywords['Факультет']].v : 'Значение отсутствует';
-     this.uploaded_file.faculty = 'Факультет ' + facultyValue;
-   }
- 
-   if (keywords['Год начала подготовки (по учебному плану)'] && sheet[keywords['Год начала подготовки (по учебному плану)']]) {
-     const startYearValue = sheet[keywords['Год начала подготовки (по учебному плану)']].v ? sheet[keywords['Год начала подготовки (по учебному плану)']].v : 'Значение отсутствует';
-     this.uploaded_file.start_year = startYearValue;
-   }
- 
-   if (keywords['Профиль'] && sheet[keywords['Профиль']]) {
-     const profileValue = sheet[keywords['Профиль']].v ? sheet[keywords['Профиль']].v : 'Значение отсутствует';
-     this.uploaded_file.specialization = profileValue;
-   }
- 
- },
- 
- // Функция для получения адреса следующей ячейки по горизонтали
- getNextCellAddress(cellAddress) {
-   const match = cellAddress.match(/([A-Z]+)(\d+)/);
-   const col = match[1];
-   const row = match[2];
- 
-   // Получаем следующую колонку в Excel формате
-   let nextCol = String.fromCharCode(col.charCodeAt(0) + 1);
-   return nextCol + row;
- },
- 
- async findAndPostKursData11(workbook) {
-   const kursSheetName = "Курс 1";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `D${row}`;
-       const discipleCellAddress = `E${row}`;
-       const blockPartCellAddress = `G${row}`;
-       const controlTypeCellAddress = `H${row}`;
-       const totalHoursCellAddress = `I${row}`;
-       const contactHoursCellAddress = `J${row}`;
-       const lectureHoursCellAddress = `K${row}`;
-       const labHoursCellAddress = `L${row}`;
-       const practiceHoursCellAddress = `M${row}`;
-       const ksrHoursCellAddress = `N${row}`;
-       const ikrHoursCellAddress = `O${row}`;
-       const srHoursCellAddress = `P${row}`;
-       const controlFormCellAddress = `Q${row}`;
-       const zECellAddress = `R${row}`;
-       const weeksCellAddress = `S${row}`;
-       const atCellAddress = `AT${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 1) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 1;
-         kursData.semester = 1; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData12(workbook) {
-   const kursSheetName = "Курс 1";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `D${row}`;
-       const discipleCellAddress = `E${row}`;
-       const blockPartCellAddress = `G${row}`;
- 
-       const controlTypeCellAddress = `T${row}`;
-       const totalHoursCellAddress = `U${row}`;
-       const contactHoursCellAddress = `V${row}`;
-       const lectureHoursCellAddress = `W${row}`;
-       const labHoursCellAddress = `X${row}`;
-       const practiceHoursCellAddress = `Y${row}`;
-       const ksrHoursCellAddress = `Z${row}`;
-       const ikrHoursCellAddress = `AA${row}`;
-       const srHoursCellAddress = `AB${row}`;
-       const controlFormCellAddress = `AC${row}`;
-       const zECellAddress = `AD${row}`;
-       const weeksCellAddress = `AE${row}`;
-       const atCellAddress = `AT${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 2) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 1;
-         kursData.semester = 2; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData21(workbook) {
-   const kursSheetName = "Курс 2";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `F${row}`;
-       const totalHoursCellAddress = `G${row}`;
-       const contactHoursCellAddress = `H${row}`;
-       const lectureHoursCellAddress = `I${row}`;
-       const labHoursCellAddress = `J${row}`;
-       const practiceHoursCellAddress = `K${row}`;
-       const ksrHoursCellAddress = `L${row}`;
-       const ikrHoursCellAddress = `M${row}`;
-       const srHoursCellAddress = `N${row}`;
-       const controlFormCellAddress = `O${row}`;
-       const zECellAddress = `P${row}`;
-       const weeksCellAddress = `Q${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 3) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 2;
-         kursData.semester = 3; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData22(workbook) {
-   const kursSheetName = "Курс 2";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `R${row}`;
-       const totalHoursCellAddress = `S${row}`;
-       const contactHoursCellAddress = `T${row}`;
-       const lectureHoursCellAddress = `U${row}`;
-       const labHoursCellAddress = `V${row}`;
-       const practiceHoursCellAddress = `W${row}`;
-       const ksrHoursCellAddress = `X${row}`;
-       const ikrHoursCellAddress = `Y${row}`;
-       const srHoursCellAddress = `Z${row}`;
-       const controlFormCellAddress = `AA${row}`;
-       const zECellAddress = `AB${row}`;
-       const weeksCellAddress = `AC${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 4) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 2;
-         kursData.semester = 4; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData31(workbook) {
-   const kursSheetName = "Курс 3";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `F${row}`;
-       const totalHoursCellAddress = `G${row}`;
-       const contactHoursCellAddress = `H${row}`;
-       const lectureHoursCellAddress = `I${row}`;
-       const labHoursCellAddress = `J${row}`;
-       const practiceHoursCellAddress = `K${row}`;
-       const ksrHoursCellAddress = `L${row}`;
-       const ikrHoursCellAddress = `M${row}`;
-       const srHoursCellAddress = `N${row}`;
-       const controlFormCellAddress = `O${row}`;
-       const zECellAddress = `P${row}`;
-       const weeksCellAddress = `Q${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 5) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 3;
-         kursData.semester = 5; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData32(workbook) {
-   const kursSheetName = "Курс 3";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `R${row}`;
-       const totalHoursCellAddress = `S${row}`;
-       const contactHoursCellAddress = `T${row}`;
-       const lectureHoursCellAddress = `U${row}`;
-       const labHoursCellAddress = `V${row}`;
-       const practiceHoursCellAddress = `W${row}`;
-       const ksrHoursCellAddress = `X${row}`;
-       const ikrHoursCellAddress = `Y${row}`;
-       const srHoursCellAddress = `Z${row}`;
-       const controlFormCellAddress = `AA${row}`;
-       const zECellAddress = `AB${row}`;
-       const weeksCellAddress = `AC${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 6) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 3;
-         kursData.semester = 6; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- 
- async findAndPostKursData41(workbook) {
-   const kursSheetName = "Курс 4";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `F${row}`;
-       const totalHoursCellAddress = `G${row}`;
-       const contactHoursCellAddress = `H${row}`;
-       const lectureHoursCellAddress = `I${row}`;
-       const labHoursCellAddress = `J${row}`;
-       const practiceHoursCellAddress = `K${row}`;
-       const ksrHoursCellAddress = `L${row}`;
-       const ikrHoursCellAddress = `M${row}`;
-       const srHoursCellAddress = `N${row}`;
-       const controlFormCellAddress = `O${row}`;
-       const zECellAddress = `P${row}`;
-       const weeksCellAddress = `Q${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 7) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 4;
-         kursData.semester = 7; // Семестр равен 1
-         kursData.disciple_name = discipleCell.v.trim(); // Название дисциплины
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
- 
- async findAndPostKursData42(workbook) {
-   const kursSheetName = "Курс 4";
-   const sheet = workbook.Sheets[kursSheetName];
- 
-   if (sheet) {
-     console.log(`Лист "${kursSheetName}" найден.`);
- 
-     const uploadPromises = [];  // Массив для хранения промисов загрузки
- 
-     for (let row = 17; row <= 108; row++) {
-       // Данные для семестра 1 (столбцы D-S)
-       const indexCoreCellAddress = `B${row}`;
-       const discipleCellAddress = `C${row}`;
-       const blockPartCellAddress = `E${row}`;
- 
-       const controlTypeCellAddress = `R${row}`;
-       const totalHoursCellAddress = `S${row}`;
-       const contactHoursCellAddress = `T${row}`;
-       const lectureHoursCellAddress = `U${row}`;
-       const labHoursCellAddress = `V${row}`;
-       const practiceHoursCellAddress = `W${row}`;
-       const ksrHoursCellAddress = `X${row}`;
-       const ikrHoursCellAddress = `Y${row}`;
-       const srHoursCellAddress = `Z${row}`;
-       const controlFormCellAddress = `AA${row}`;
-       const zECellAddress = `AB${row}`;
-       const weeksCellAddress = `AC${row}`;
-       const atCellAddress = `AR${row}`; // Ячейка для проверки
- 
-       const indexCoreCell = sheet[indexCoreCellAddress];
-       const discipleCell = sheet[discipleCellAddress];
-       const blockPartCell = sheet[blockPartCellAddress];
-       const controlTypeCell = sheet[controlTypeCellAddress];
-       const totalHoursCell = sheet[totalHoursCellAddress];
-       const contactHoursCell = sheet[contactHoursCellAddress];
-       const lectureHoursCell = sheet[lectureHoursCellAddress];
-       const labHoursCell = sheet[labHoursCellAddress];
-       const practiceHoursCell = sheet[practiceHoursCellAddress];
-       const ksrHoursCell = sheet[ksrHoursCellAddress];
-       const ikrHoursCell = sheet[ikrHoursCellAddress];
-       const srHoursCell = sheet[srHoursCellAddress];
-       const controlFormCell = sheet[controlFormCellAddress];
-       const zECell = sheet[zECellAddress];
-       const weeksCell = sheet[weeksCellAddress];
- 
-       const atCell = sheet[atCellAddress];
- 
-       if (discipleCell && discipleCell.v && discipleCell.v.trim() && atCell && parseInt(atCell.v, 10) === 8) {
-         const kursData = { ...this.uploaded_file };
-         kursData.kurs = 4;
-         kursData.semester = 8; 
-         kursData.disciple_name = discipleCell.v.trim();
- 
-         kursData.index_code = indexCoreCell?.v?.trim() ?? null;
-         kursData.block_part = blockPartCell?.v?.trim() ?? null;
-         kursData.control_type = controlTypeCell?.v ?? null;
-         kursData.total_hours = totalHoursCell?.v ?? 0;
-         kursData.contact_hours = contactHoursCell?.v ?? 0;
-         kursData.lecture_hours = lectureHoursCell?.v ?? 0;
-         kursData.lab_hours = labHoursCell?.v ?? 0;
-         kursData.practice_hours = practiceHoursCell?.v ?? 0;
-         kursData.ksr_hours = ksrHoursCell?.v ?? 0;
-         kursData.ikr_hours = ikrHoursCell?.v ?? 0;
-         kursData.sr_hours = srHoursCell?.v ?? 0;
-         kursData.control_form = controlFormCell?.v ?? null;
-         kursData.z_e = zECell?.v ?? null;
-         kursData.weeks = typeof weeksCell?.v === 'string' ? weeksCell.v.trim() : weeksCell?.v ?? null;
- 
-         console.log('Данные для первого семестра перед отправкой:', kursData);
- 
-         if (this.isUploadedFileValid(kursData)) {
-           uploadPromises.push(this.postUploaded_File(kursData));
-         } else {
-           console.warn(`Данные для дисциплины "${kursData.disciple_name}" не прошли валидацию.`);
-         }
-       }
-     }
- 
-     try {
-       this.showLoading = true; // Включаем индикатор загрузки
-       await Promise.all(uploadPromises); // Ожидаем завершения всех запросов
-       console.log('Все данные успешно отправлены.');
-     } catch (error) {
-       console.error("Ошибка при отправке данных:", error);
-     } finally {
-       this.showLoading = false; // Отключаем индикатор загрузки после завершения
-     }
-   } else {
-     console.warn(`Лист "${kursSheetName}" не найден.`);
-   }
- },
  
  // КОНЕЦ ПАРСИНГА 
-
- async loadUploadedFiles() { 
-  try {
-    if (Array.isArray(this.uploaded_fileList)) {
-
-      const allFiles = this.uploaded_fileList.filter(uploaded_file => uploaded_file.deleted_at === null);
-
-      this.detailRowData = allFiles;
-      this.compareRowData = allFiles;
-
-      const uniqueFiles = allFiles.reduce((acc, current) => {
-        if (!acc.find(file => 
-          file.direction_code === current.direction_code && 
-          file.direction_name === current.direction_name && 
-          file.qualification === current.qualification && 
-          file.academic_year === current.academic_year)) {
-          acc.push(current);
-        }
-        return acc;
-      }, []);
-
-      // Сохраняем уникальные файлы в `rowData`
-      this.rowData.value = uniqueFiles;
-
-      // Создаем массив `years` с уникальными значениями `academic_year`
-      this.years = [...new Set(uniqueFiles.map(file => file.academic_year))];
-
-      // Выводим список уникальных лет в консоль
-      console.log("Уникальные academic_years:", this.years);
-      console.log("Все файлы (включая дубликаты):", this.detailRowData);
-    } else if (this.uploaded_fileList && this.uploaded_fileList.deleted_at === null) {
-      this.rowData.value = [this.uploaded_fileList];
-      this.detailRowData = [this.uploaded_fileList];
-    } else {
-      this.rowData.value = [];
-      this.detailRowData = [];
-    }
-  } catch (error) {
-    console.error("Ошибка при загрузке данных файлов:", error);
-    this.rowData.value = [];  // Очистка в случае ошибки
-    this.detailRowData = [];
-  }
-},
 
 async loadImportPrograms() { 
   try {
@@ -1706,18 +920,37 @@ async loadImportPrograms() {
 
       const allFiles = this.import_programList.filter(import_program => import_program.deleted_at === null);
 
-      console.log(allFiles);
-
+      this.rowData.value = allFiles;
+      
     } else if (this.import_programList && this.import_programList.deleted_at === null) {
       this.rowData.value = [this.import_programList];
-      this.detailRowData = [this.import_programList];
     } else {
       this.rowData.value = [];
+    }
+  } catch (error) {
+    console.error("Ошибка при загрузке данных файлов:", error);
+    this.rowData.value = []; 
+  }
+},
+
+async loadImportDisciples() { 
+  try {
+    if (Array.isArray(this.import_discipleList)) {
+
+      const allFiles = this.import_discipleList.filter(import_disciple => import_disciple.deleted_at === null);
+
+      this.detailRowData = allFiles;
+
+      console.log("ДЕТАЛИ");
+      console.log(this.detailRowData);
+
+    } else if (this.import_discipleList && this.import_discipleList.deleted_at === null) {
+      this.detailRowData = [this.import_discipleList];
+    } else {
       this.detailRowData = [];
     }
   } catch (error) {
     console.error("Ошибка при загрузке данных файлов:", error);
-    this.rowData.value = [];  // Очистка в случае ошибки
     this.detailRowData = [];
   }
 },
@@ -1752,7 +985,6 @@ async loadImportPrograms() {
        }
        this.formVisible = false;
        this.resetStd();
-       this.loadStudentsData();
      }, 
  
  onFirstDataRendered(params) {
@@ -1776,17 +1008,12 @@ async loadImportPrograms() {
        }
      },
      onFilterChanged() {
-   // This function will be called whenever filters change.
-   // You can perform your desired action here.
-   // For example, you can get the current filter model:
    this.filters=false;
    const savedQuickFilter = this.gridApi.getQuickFilter();
    const savedFilterModel = this.gridApi.getFilterModel();
  
-   // Initialize an empty object for queryParams
    const queryParams = {};
  
-   // Check if savedQuickFilter is not empty, then add it to queryParams
    if (savedQuickFilter) {
      queryParams.quickFilter = JSON.stringify(savedQuickFilter);
      this.filters=true;
@@ -1805,48 +1032,26 @@ async loadImportPrograms() {
  },
  
  async clearData() {  
+
   console.log("Файлы перед удалением:", this.uploaded_fileList);
 
   try {
     if (this.uploaded_fileList && this.uploaded_fileList.length > 0) {
+
       this.showLoading = true; 
 
-      // 1. Находим ключевые поля у выбранных файлов
-      const uniqueKeysToDelete = this.uploaded_fileList
-        .filter(file => file.selected === true && !file.deleted_at)
-        .map(file => ({
-          direction_code: file.direction_code,
-          direction_name: file.direction_name,
-          qualification: file.qualification,
-          academic_year: file.academic_year
-        }));
-
-      console.log("Ключи для удаления:", uniqueKeysToDelete);
-
-      // 2. Находим все файлы, которые соответствуют найденным ключам
-      const filesToDelete = this.uploaded_fileList.filter(file => 
-        uniqueKeysToDelete.some(key => 
-          key.direction_code === file.direction_code &&
-          key.direction_name === file.direction_name &&
-          key.qualification === file.qualification &&
-          key.academic_year === file.academic_year
-        )
-      );
-
-      // Выводим файлы, которые будут удалены
       if (filesToDelete.length > 0) {
         console.log("Файлы, которые будут удалены:", JSON.stringify(filesToDelete, null, 2));
       } else {
         console.log('Нет файлов для удаления');
       }
 
-      // 3. Удаляем файлы по одному
       for (const file of filesToDelete) {
         await this.deleteUploaded_File(file);
       }
 
       // 4. Обновляем список файлов после удаления
-      await this.loadUploadedFiles(); 
+      //await this.loadImportPrograms(); 
 
       this.showLoading = false;
     } else {
@@ -1870,7 +1075,7 @@ async loadImportPrograms() {
  
          await Promise.all(deletePromises);
  
-         await this.loadUploadedFiles();
+         //await this.loadImportPrograms();
          this.showLoading = false;
        } else {
          console.log('Нет файлов для удаления');
@@ -1891,20 +1096,33 @@ async loadImportPrograms() {
  },
    
  computed: {
+
      ...mapState(useUploaded_FileStore, ["uploaded_fileList"]),
      ...mapState(useImport_ProgramStore, ["import_programList"]),
-     currentUser() {
+     ...mapState(useImport_DiscipleStore, ["import_discipleList"]),
+
+    currentUser() {
        return this.$store.state.auth.user;
      },
      currentColumnDefs2() {
        return this.columnDefs2Options[this.selectedOption4];
      },
      filteredRowDataArchive() {
-  const data = this.rowData.value || [];
-  console.log(data)
-  if (!this.selectedYear) return data;
-  return data.filter(file => file.academic_year === this.selectedYear);
-},
+    const data = this.rowData.value || [];
+
+    return data.filter((file) => {
+      const yearMatch = this.formValues.years
+        ? file.years === this.formValues.years
+        : true;
+
+      const programMatch = this.formValues.codes
+        ? file.code === this.formValues.codes
+        : true;
+
+      return yearMatch && programMatch;
+    });
+  },
+
 filteredRowDataCompare() {
 
   const selectedRows = (this.rowData.value || []).filter(row => row.selected === true);
@@ -1943,56 +1161,6 @@ filteredRowDataCompare() {
   return filteredData;
 },
 
-dynamicColumnDefs() {
-    // Получаем данные для сравнения (например, отфильтрованные данные)
-    const data = this.filteredRowDataCompare || [];
-    
-    // Собираем уникальные дисциплины и направления
-    const groups = {};
-    data.forEach(row => {
-      const discipline = row.disciple_name;
-      const directionKey = `${row.direction_name} ${row.academic_year}`;
-      if (discipline) {
-        if (!groups[discipline]) {
-          groups[discipline] = new Set();
-        }
-        groups[discipline].add(directionKey);
-      }
-    });
-
-    const columnDefs = Object.keys(groups).map(discipline => {
-      const children = Array.from(groups[discipline]).map(directionKey => {
-        return {
-          headerName: directionKey,
-          // Здесь можно использовать valueGetter, чтобы выбрать часы для соответствующей комбинации.
-          // Например, если в строке часы хранятся в поле total_hours:
-          valueGetter: params => {
-            // Допустим, для текущей строки (params.data) нужно вернуть часы, если 
-            // направление и год соответствуют столбцу, иначе пусто.
-            if (
-              `${params.data.direction_name} ${params.data.academic_year}` === directionKey &&
-              params.data.disciple_name === discipline
-            ) {
-              return params.data.total_hours;
-            }
-            return "";
-          },
-          // Можно добавить cellRenderer, форматирование и другие опции.
-          minWidth: 100
-        };
-      });
-      return {
-        headerName: discipline,
-        children: children
-      };
-    });
-    
-    // Дополнительно можно добавить "фиксированные" столбцы, например, если нужно вывести сам discipline_name отдельно.
-    return [
-      { field: 'disciple_name', headerName: 'Дисциплина', pinned: 'left', minWidth: 150 },
-      ...columnDefs
-    ];
-  },
      uniqueDepartments() {
        // Собираем все департаменты из списка файлов
        const departments = this.uploaded_fileList.map((file) => file.department);
@@ -2020,6 +1188,14 @@ dynamicColumnDefs() {
  </script>
  
  <style scoped>
+
+ .year-selector-container {
+  display: flex;
+  gap: 34px; /* расстояние между элементами */
+  justify-content: flex-end;
+  align-items: center;
+  padding: 5px;
+ }
  
  .header-content-wrapper {
      display: flex;
@@ -2066,9 +1242,9 @@ dynamicColumnDefs() {
    @media (min-width: 1023px) {
  
  .list{
-   padding-left: 100px;
+   padding-left: 90px;
    padding-right: 5px;
- 
+
  }
  }
 

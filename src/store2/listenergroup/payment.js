@@ -16,7 +16,6 @@ export const usePaymentStore = defineStore('payment', {
     },
     actions: {
         async getPaymentList() {
-            console.log("Я в платежах")
             const responseData = await api.getPaymentList();
             this.paymentList = responseData.map((payment) => {
                 return new Payment(payment);
@@ -29,7 +28,7 @@ export const usePaymentStore = defineStore('payment', {
 
         async postPayment(payment) {
             const response = await api.postPayment(payment);
-
+            console.log(response);
             if (response.success === true) {
 
                 await this.getPaymentList();

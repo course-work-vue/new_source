@@ -5,10 +5,18 @@
         <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
           <button
             @click="openSidebar"
-            class="btn btn-primary float-start"
+            class="btn btn-primary me-2 float-start"
             type="button"
           >
-            <i class="material-icons-outlined">add</i>Добавить группу
+            <i class="material-icons-outlined"></i>Создать пустую группу
+          </button>
+          <button
+            @click="openAddSidebar"
+            class="btn btn-primary float-start"
+            type="button"
+            :disabled="canClickButton"
+          >
+            <i class="material-icons-outlined">add</i>Сформировать группу
           </button>
         </div>
         <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
@@ -40,6 +48,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -83,26 +92,84 @@
         Удалить
       </Button>
     </Sidebar>
+
+    <Sidebar
+      v-model:visible="showAddSidebar"
+      position="bottom"
+      modal
+      :header="`Создать группу по программе ${creatingProgram}`"
+      class="custom-sidebar h-auto"
+      :style="{ width: '40%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+    >
+      <div class="card flex flex-row">
+        <div class="form card__form">
+          <auto-form
+            v-model="listenergroup"
+            v-model:errors="errors"
+            :scheme="scheme"
+            class="custom-form"
+          >
+          </auto-form>
+        </div>
+      </div>
+
+      <div style="height: 30vh">
+        <div class="h-100 pt-5">
+        <ag-grid-vue
+          class="ag-theme-alpine"
+          style="width: 100%; height: 100%;"
+          :columnDefs="columnDefs.value"
+          :rowData="rowData.value"
+          :defaultColDef="defaultColDef"
+          :localeText="localeText"
+          rowSelection="multiple"
+          animateRows="true"
+          :rowHeight="40"
+          @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onFilterChanged"
+          :pagination="true"
+          :paginationPageSize="paginationPageSize"
+        >
+        </ag-grid-vue>
+      </div>
+    </div>
+
+      <Button class="btn btn-primary float-start" @click="submit">
+        Сохранить
+      </Button>
+      <Button
+        class="btn btn-primary float-end"
+        v-if="listenergroup.id"
+        @click="deleteLgr"
+      >
+        Удалить
+      </Button>
+    </Sidebar>
   </div>
 </template>
 
 <script>
 import { AgGridVue } from "ag-grid-vue3";
-import { reactive, onMounted, ref } from "vue";
+import { computed, reactive, onMounted, ref } from "vue";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useListenergroupStore } from "@/store2/listenergroup/listenergroup";
 import { useProgramStore } from "@/store2/listenergroup/program";
+import { useL_Group_StatusStore } from "@/store2/listenergroup/l_group_status";
+import { useListenerStore } from "@/store2/listenergroup/listener";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import { TextInput } from "@/model/form/inputs/TextInput";
 import { TimePickerInput } from "@/model/form/inputs/TimePickerInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
-import ButtonCell from "@/components/LgroupButtonCell.vue";
+import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import Listenergroup from "../../model/listener-group/Listenergroup";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 export default {
   name: "App",
@@ -112,6 +179,8 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
+
     const gridApi = ref(null);
     const gridColumnApi = ref(null);
     const dataFromApi = ref(null);
@@ -125,17 +194,19 @@ export default {
     };
 
     const rowData = reactive({});
+    const l_group_status = reactive([]);
+
     const columnDefs = reactive({
       value: [
         {
           sortable: false,
           filter: false,
-          headerName: "Действия",
+          headerName: "",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
             label: "View Details",
           },
-          maxWidth: 120,
+          maxWidth: 50,
           resizable: false,
         },
         { field: "group_number", headerName: "Номер группы" },
@@ -151,7 +222,16 @@ export default {
       minWidth: 300,
     };
 
-    onMounted(() => {
+    const canClickButton = computed(() => {
+  return Array.isArray(l_group_status.value) &&
+    l_group_status.value.length &&
+    l_group_status.value[0]?.group_formed !== undefined
+    ? !l_group_status.value[0].group_formed
+    : false;
+});
+
+    onMounted(async () => {
+      await loadL_Group_StatusData();
     });
 
     const onFilterTextBoxChanged = () => {
@@ -160,11 +240,24 @@ export default {
       );
     };
 
+    const loadL_Group_StatusData = async () => {
+  try {
+    const store = useL_Group_StatusStore();
+    await store.getL_Group_StatusList();
+    l_group_status.value = store.l_group_statusList;
+    console.log(l_group_status.value[0]?.group_formed);
+  } catch (error) {
+    console.error("Ошибка при загрузке статуса группы:", error);
+  }
+};
+
     return {
       onGridReady,
       columnDefs,
       rowData,
+      l_group_status,
       defaultColDef,
+      localeText,
       cellWasClicked: (event) => {
         console.log("cell was clicked", event);
       },
@@ -173,6 +266,7 @@ export default {
       },
       onFilterTextBoxChanged,
       paginationPageSize,
+      canClickButton,
       dataFromApi,
       dataLoaded,
     };
@@ -180,6 +274,7 @@ export default {
   data() {
     return {
       showSidebar: false,
+      showAddSidebar: false,
       quickFilterValue: "",
       filters: false,
       listenergroup: new Listenergroup(),
@@ -191,18 +286,16 @@ export default {
     try {
       await this.getListenergroupList();
       await this.getProgramList();
+      await this.getL_Group_StatusList();
+      await this.getReady_ListenerList();
       this.loadListenergroupData();
+      //this.loadL_Group_StatusData();
+      //console.log(this.l_group_status[0].group_formed);
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
 
     this.scheme = new FormScheme([
-      new ComboboxInput({
-        key: "group_program_id",
-        label: "Программа",
-        placeholder: "Выберите программу",
-        options: this.programOptions,
-      }),
       new TextInput({
         key: "group_number",
         label: "Номер группы",
@@ -222,23 +315,9 @@ export default {
         label: "Дата окончания",
       }),
       
-      new TextInput({
-        key: "people_count",
-        label: "Количество человек",
-        placeholder: "Введите количество человек",
-      }),
-
-      new TimePickerInput({
-    key: "starttime",
-    label: "Время начала",
-    placeholder: "Выберите время начала (чч:мм:сс)",
-  }),
-  new TimePickerInput({
-    key: "endtime",
-    label: "Время окончания",
-    placeholder: "Выберите время окончания (чч:мм:сс)",
-  }),
     ]);
+
+    
   },
   methods: {
     ...mapActions(useListenergroupStore, [
@@ -248,8 +327,13 @@ export default {
       "deleteListenergroup",
     ]),
     ...mapActions(useProgramStore, ["getProgramList"]),
+    ...mapActions(useL_Group_StatusStore, ["getL_Group_StatusList"]),
+    ...mapActions(useListenerStore, [
+      "getReady_ListenerList",
+    ]),
+
     cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
+      if (event.colDef && event.colDef.headerName === "") {
         this.edit(event);
       }
     },
@@ -353,12 +437,19 @@ export default {
       this.resetLgr();
       this.showSidebar = true;
     },
+    openAddSidebar() {
+      console.log("Открываю!");
+      this.resetLgr();
+      this.showAddSidebar = true;
+    },
     closeSidebar() {
       this.showSidebar = false;
+      this.showAddSidebar = false;
     },
   },
   computed: {
     ...mapState(useListenergroupStore, ["listenergroupList"]),
+    ...mapState(useL_Group_StatusStore, ["l_group_statusList"]),
     programOptions() {
       const programStore = useProgramStore();
       return Object.values(programStore.programMap || {}).map((item) => ({
@@ -398,7 +489,7 @@ export default {
 /* Стили для формы: располагаем поля в 3 колонки */
 .custom-form {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -442,7 +533,7 @@ export default {
 
 .form {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 15px;
   margin-bottom: 10px;
 }

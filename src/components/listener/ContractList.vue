@@ -38,6 +38,7 @@
           :columnDefs="columnDefs.value"
           :rowData="rowData.value"
           :defaultColDef="defaultColDef"
+          :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
           @cell-clicked="cellWasClicked"
@@ -114,6 +115,7 @@ import { useContractStore } from "@/store2/listenergroup/contract";
 import { useListenerStore } from "@/store2/listenergroup/listener";
 import { usePayerStore } from "@/store2/listenergroup/payer";
 import { useProgramStore } from "@/store2/listenergroup/program";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 export default {
   name: "ContractList",
@@ -127,6 +129,8 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
+
     const gridApi = ref(null);
     const gridColumnApi = ref(null);
     const dataFromApi = ref(null);
@@ -145,12 +149,12 @@ export default {
         {
           sortable: false,
           filter: false,
-          headerName: "Действия",
+          headerName: "",
           cellRenderer: "ButtonCell",
           cellRendererParams: {
             label: "View Details",
           },
-          maxWidth: 120,
+          maxWidth: 50,
           resizable: false,
         },
         {
@@ -194,6 +198,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
+      localeText,
       cellWasClicked: (event) => {
         console.log("cell was clicked", event);
       },
@@ -334,7 +339,7 @@ export default {
       this.filters = false;
     },
     cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
+      if (event.colDef && event.colDef.headerName === "") {
         this.resetContract();
         this.contract = event.data;
         this.showSidebar = true;
@@ -350,7 +355,7 @@ export default {
         if (currentContract.id) {
           await UserService.putContract(currentContract);
         } else {
-          await UserService.postContract(currentContract);
+          await this.postContract(currentContract);
         }
         this.showSidebar = false;
         this.resetContract();

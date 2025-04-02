@@ -1,10 +1,14 @@
 import api from '@/api/api';
 import Import_Program from '@/model/import-group/Import_Program';
 import { defineStore } from 'pinia';
+import Import_Program_Year from '../../model/import-group/Import_Program_Year';
+import Import_Program_Code from '../../model/import-group/Import_Program_Code';
 
 export const useImport_ProgramStore = defineStore('import_program', {
     state: () => ({
         import_programList: [],
+        import_program_yearsList:[],
+        import_program_codesList:[],
     }),
     getters: {
         import_programMap(state) {
@@ -16,11 +20,25 @@ export const useImport_ProgramStore = defineStore('import_program', {
     },
     actions: {
         async getImport_ProgramList() {
-            console.log("IP!")
             const responseData = await api.getImport_ProgramList();
-            console.log(responseData);
+            
             this.import_programList = responseData.map((import_program) => {
                 return new Import_Program(import_program);
+            });
+        },
+
+        async getImport_ProgramYearsList() {
+            const responseData = await api.getImport_ProgramYearsList();
+            this.import_program_yearsList = responseData.map((import_program_years) => {
+                return new Import_Program_Year(import_program_years);
+            });
+        },
+
+        async getImport_ProgramCodesList() {
+            const responseData = await api.getImport_ProgramCodesList();
+            console.log(responseData)
+            this.import_program_codesList = responseData.map((import_program_codes) => {
+                return new Import_Program_Code(import_program_codes);
             });
         },
 
@@ -29,6 +47,7 @@ export const useImport_ProgramStore = defineStore('import_program', {
         },
 
         async postImport_Program(import_program) {
+            console.log(import_program);
             const response = await api.postImport_Program(import_program);
             console.log(response);
             if (response.success !== true) {

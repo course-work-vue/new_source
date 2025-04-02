@@ -16,6 +16,7 @@ export default class Listener {
   email;
   group_id;
   deleted_at;
+  program_id;
 
 
   constructor(listener) {
@@ -33,6 +34,7 @@ export default class Listener {
     this.email = listener?.email ?? null;
     this.group_id = listener?.group_id ?? null;
     this.deleted_at = listener?.deleted_at ?? null;
+    this.program_id = listener?.program_id ?? null;
   }
 
   get listenergroup_number() {

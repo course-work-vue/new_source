@@ -16,10 +16,17 @@ export const useListenerStore = defineStore('listener', {
     },
     actions: {
         async getListenerList() {
-            console.log("дошёл до гета");
             const responseData = await api.getListenerList();
             this.listenerList = responseData.map((listener) => {
                 return new Listener(listener);
+            });
+        },
+
+        async getReady_ListenerList() {
+            const responseData = await api.getReady_ListenerList();
+            console.log(responseData);
+            this.listenerList = responseData.map((ready_listener) => {
+                return new Listener(ready_listener);
             });
         },
 

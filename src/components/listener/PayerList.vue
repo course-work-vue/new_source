@@ -27,26 +27,28 @@
 
 
 <br>
-<div style="height: 90vh">
-<div class="h-100 pt-5">
-  <ag-grid-vue
-    class="ag-theme-alpine"
-    style="width: 100%; height: 100%;"
-    :columnDefs="columnDefs.value"
-    :rowData="rowData.value"
-    :defaultColDef="defaultColDef"
-    rowSelection="multiple"
-    animateRows="true"
-    @cell-clicked="cellWasClicked"
-    @grid-ready="onGridReady"
-    @firstDataRendered="onFirstDataRendered"
-    @filter-changed="onFilterChanged"
-    :pagination="true"            
-    :paginationPageSize="paginationPageSize"  
-  >
-  </ag-grid-vue>
+  <div style="height: 90vh">
+    <div class="h-100 pt-5">
+      <ag-grid-vue
+        class="ag-theme-alpine"
+        style="width: 100%; height: 100%;"
+        :columnDefs="columnDefs.value"
+        :rowData="rowData.value"
+        :defaultColDef="defaultColDef"
+        :localeText="localeText"
+        rowSelection="multiple"
+        animateRows="true"
+        @cell-clicked="cellWasClicked"
+        @grid-ready="onGridReady"
+        @firstDataRendered="onFirstDataRendered"
+        @filter-changed="onFilterChanged"
+        :pagination="true"            
+        :paginationPageSize="paginationPageSize"  
+      >
+      </ag-grid-vue>
+    </div>
+  </div>
 </div>
-</div></div>
 
 <Sidebar
       v-model:visible="showSidebar"
@@ -115,10 +117,7 @@ import Payer from "@/model/listener-group/Payer";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-
-
-import UserService from "../../services/user.service";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
 /* eslint-disable vue/no-unused-components */
 export default {
@@ -129,9 +128,10 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
+
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
-    // Obtain API from grid's onGridReady event
 
     const dataFromApi = ref(null); // This will store the data from the API
     const dataLoaded = ref(false); // This flag will indicate if data is loaded
@@ -155,13 +155,13 @@ export default {
       {
       sortable: false,
       filter: false,
-      headerName: 'Действия',
+      headerName: '',
       cellRenderer: 'ButtonCell',
       cellRendererParams: {
         onClick: navigateToStudent,
         label: 'View Details', // Button label
       },
-      maxWidth: 120, 
+      maxWidth: 50,
       resizable: false
 
     },
@@ -202,6 +202,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
+      localeText,
       cellWasClicked: (event) => { // Example of consuming Grid Event
         console.log("cell was clicked", event);
       },
@@ -311,7 +312,7 @@ async mounted() {
       "deletePayer",
     ]),
     cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "Действия") {
+      if (event.colDef && event.colDef.headerName === "") {
         this.edit(event);
       }
     },
