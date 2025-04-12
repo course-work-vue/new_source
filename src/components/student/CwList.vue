@@ -118,6 +118,7 @@
       v-if="filePath"
       :documentUrl="filePath"
       documentTitle="Отчёт по научным руководителям"
+      :objectType="objectType"
     />
   </Dialog>
 </template>
@@ -151,7 +152,7 @@ import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
 import { useDepartamentStore } from "@/store2/teachergroup/departament";
 import { useTeacherStore } from "@/store2/teachergroup/teacher";
 import { useStudentStore } from "@/store2/studentgroup/student";
-
+import * as XLSX from "xlsx";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
@@ -251,6 +252,7 @@ export default {
       scheme: null,
       formVisible: false,
       docPreview: false,
+      objectType: "excel",
     };
   },
   computed: {
@@ -357,6 +359,7 @@ export default {
       }
     },
     async generateTeacherReport() {
+      // Получаем список курсовых работ из стора
       const courseWorkStore = useCourseWorkStore();
       const courseWorks = courseWorkStore.courseWorkList;
 
@@ -375,127 +378,89 @@ export default {
         return acc;
       }, {});
 
-      const docContent = [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({
-              text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
-              size: 22,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({
-              text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
-              size: 24,
-            }),
-            new TextRun({
-              text: "«Кубанский государственный университет»",
-              size: 28,
-              bold: true,
-              break: 1,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({ text: "(ФГБОУ ВО «КубГУ»)", bold: true, size: 24 }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-          children: [
-            new TextRun({
-              text: "Факультет компьютерных технологий и прикладной математики",
-              size: 28,
-              break: 1,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 300 },
-          children: [
-            new TextRun({
-              text: "Отчёт по научным руководителям",
-              size: 28,
-              break: 1,
-            }),
-          ],
-        }),
-      ];
+      // Создаем новую книгу Excel
+      const wb = XLSX.utils.book_new();
 
-      // Формируем основной отчет
+      // Для каждого преподавателя создаем отдельный лист
       Object.entries(courseWorksByTeacher).forEach(([teacherName, years]) => {
-        docContent.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: teacherName, bold: true, size: 28 }),
-            ],
-          })
-        );
+        // Формируем массив данных для рабочего листа
+        const sheetData = [];
 
-        Object.entries(years).forEach(([year, semesters]) => {
-          docContent.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Год: ${year}`,
-                  bold: true,
-                  size: 26,
-                  break: 1,
-                }),
-              ],
-            })
-          );
-
-          Object.entries(semesters).forEach(([semester, courseWorksList]) => {
-            docContent.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Семестр: ${semester}`,
-                    bold: true,
-                    size: 24,
-                    break: 1,
-                  }),
-                ],
-              })
-            );
-
-            courseWorksList.forEach((cw, idx) => {
-              const ocenka = cw.course_work_ocenka
-                ? ` – Оценка: ${cw.course_work_ocenka};`
-                : "";
-              const theme = cw.course_work_theme
-                ? ` ${cw.course_work_theme}`
-                : "";
-              docContent.push(
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${idx + 1}. ${cw.student_name}${ocenka}${theme}`,
-                      size: 24,
-                    }),
-                  ],
-                })
-              );
-            });
-          });
+        // Добавляем строку заголовков столбцов (ручная шапка)
+        sheetData.push({
+          Год: "Год",
+          Семестр: "Семестр",
+          "№": "№",
+          Студент: "Студент",
+          Оценка: "Оценка",
+          Тема: "Тема",
         });
+
+        // Перебираем года в отсортированном порядке для удобства
+        Object.keys(years)
+          .sort()
+          .forEach((year) => {
+            const semesters = years[year];
+            // Перебираем семестры (также сортированно)
+            Object.keys(semesters)
+              .sort()
+              .forEach((semester) => {
+                const courseWorksList = semesters[semester];
+                courseWorksList.forEach((cw, idx) => {
+                  sheetData.push({
+                    Год: year,
+                    Семестр: semester,
+                    "№": idx + 1,
+                    Студент: cw.student_name,
+                    Оценка: cw.course_work_ocenka || "",
+                    Тема: cw.course_work_theme || "",
+                  });
+                });
+              });
+          });
+
+        // Преобразуем данные в рабочий лист Excel
+        // Опция skipHeader: true запрещает автоматическую генерацию строки заголовка
+        const ws = XLSX.utils.json_to_sheet(sheetData, {
+          header: ["Год", "Семестр", "№", "Студент", "Оценка", "Тема"],
+          skipHeader: true,
+        });
+
+        // Задаем ширину столбцов для лучшего отображения
+        ws["!cols"] = [
+          { wch: 10 }, // Год
+          { wch: 10 }, // Семестр
+          { wch: 5 }, // №
+          { wch: 30 }, // Студент
+          { wch: 10 }, // Оценка
+          { wch: 50 }, // Тема
+        ];
+
+        // Обеспечиваем соответствие имени листа требованиям Excel
+        let sheetName = teacherName;
+        if (sheetName.length > 31) {
+          sheetName = sheetName.substring(0, 31);
+        }
+        sheetName = sheetName.replace(/[:\\\/\?\*\[\]]/g, "_");
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
 
-      const doc = new Document({
-        sections: [{ properties: {}, children: docContent }],
+      // Генерируем книгу Excel в виде ArrayBuffer
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      // Создаем Blob
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      const blob = await Packer.toBlob(doc);
-      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
+      // Устанавливаем необходимые параметры и отправляем Blob на сервер
+      this.objectType = "excel";
+      this.documentTitle = "Отчет по научным руководителям";
+      this.filePath = await this.uploadGeneratedFile(
+        blob,
+        "teacher_report.xlsx"
+      );
+      this.docPreview = true;
     },
 
     resetCW() {
