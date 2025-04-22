@@ -638,7 +638,7 @@ updateProfileById(prof_id, prof_dir_id, prof_name) {
 }
   getDirectionsAsIdText(){
     const query = {
-      query: `SELECT dir_id AS id, dir_code AS text
+      query: `SELECT dir_id AS id, dir_name, dir_code AS text
       FROM "directions" ORDER BY 
       text ASC;`,
     };
@@ -1665,7 +1665,7 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
   }
 
 
-  getDaysAsIdText(){
+ getDaysAsIdText(){
     const query = {
       query: `SELECT day_id AS id, dayofweek AS text
       FROM "days";`,
@@ -1674,78 +1674,147 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
-  savesSchedule(aud_id, day_id, subject_id,  teacher_id){
     
+
+    assignAuditoriumToSchedule(lesson_id, aud_id){
       const query = {
-        query: `INSERT INTO "schedule" (
-          "aud_id",
-          "day_id",
-          "subject_id",
-          "teacher_id"
-      ) VALUES (
-          '${aud_id}',
-          '${day_id}',
-          '${subject_id}',
-          '${teacher_id}'
-      );`,
+        query: `
+      "aud_id" = '${aud_id}'
+      WHERE
+      "lesson_id" = '${lesson_id}';
+        `,
       };
-      return axios.post(API_URL, query, { headers: authHeader() });
+      return axios.put(API_URL+"teachschedule", query, { headers: authHeader() });
     }
 
-  getAllAudit(){
-      const query = {
-        query: `SELECT
-       c.schedule_id,
-       a.number,
-       a.type,
-       a.count,
-       s.subject_name,
-       d.dayofweek,
-       CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name
-       
-    FROM
-      schedule c
-      join
-      auditorium a on c.aud_id=a.aud_id
-      join
-      subjects s on c.subject_id=s.subject_id
-      join
-      days d on c.day_id=d.day_id
-      join 
-      teachers t on c.teacher_id=t.teacher_id;
-    `,
-      };
-      return axios.post(API_URL, query, { headers: authHeader() });
-    }
 
-    getAuditById(scheduleId){
-      const query = {
-        query: `SELECT * from schedule where 
-        schedule_id='${scheduleId}';`,
-      };
-      return axios.post(API_URL, query, { headers: authHeader() });
-    }
-
-    updateScheduleById(scheduleId,day_id,subject_id,teacher_id,aud_id){
-      const query = {
-        query: `"day_id = '${day_id}',
-        subject_id = '${subject_id}',
-        teacher_id = '${teacher_id}',
-        aud_id = '${aud_id}'
-    WHERE
-        "schedule_id" = '${scheduleId}';`,
-      };
-      
-      return axios.put(API_URL+"schedule", query, { headers: authHeader() });
-    }
-
-    deleteScheduleById(schedule_id){
-      const query = {
-        query: `DELETE FROM schedule where "schedule_id" = '${schedule_id}'`,
-      };
   
-      return axios.post(API_URL, query, { headers: authHeader() });
-    }
+
+  getTeachSchedule(group_id) {
+    const query = {
+      query: `SELECT
+    ts.lesson_id, 
+    ts.wl_id,
+    CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name, 
+    s.subject_name,
+    ts.time,
+    ts.day_id,
+    g.group_number,
+    a.number
+    FROM 
+        teachschedule ts
+    JOIN 
+        workload wl ON ts.wl_id = wl.wl_id
+    JOIN 
+        teachers t ON wl.teacher_id = t.teacher_id
+    JOIN 
+        subjects s ON wl.subject_id = s.subject_id
+    JOIN 
+        groups g ON wl.group_id = g.group_id
+    JOIN 
+        days d ON ts.day_id = d.day_id
+    LEFT JOIN
+        auditorium a ON ts.aud_id = a.aud_id
+    WHERE 
+        g.group_id = '${group_id}'
+    
+    ;`,
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  getGroupSchedule(teacher_id) {
+    const query = {
+      query: `SELECT 
+    ts.lesson_id, 
+    ts.wl_id,
+    CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name, 
+    s.subject_name,
+    ts.time,
+    ts.day_id,
+    g.group_number,
+    a.number
+    FROM 
+        teachschedule ts
+    JOIN 
+        workload wl ON ts.wl_id = wl.wl_id
+    JOIN 
+        teachers t ON wl.teacher_id = t.teacher_id
+    JOIN 
+        subjects s ON wl.subject_id = s.subject_id
+    JOIN 
+        groups g ON wl.group_id = g.group_id
+    JOIN 
+        days d ON ts.day_id = d.day_id
+    LEFT JOIN
+        auditorium a ON ts.aud_id = a.aud_id
+    WHERE 
+        t.teacher_id = '${teacher_id}'
+    
+    ;`,
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  getGroupByDirAndCourse(dir_id, course){
+    const query = {
+      query: `SELECT
+      g.group_id,
+      g.group_number
+  FROM
+      groups AS g
+  
+  WHERE
+      g.group_dir_id = '${dir_id}'  AND course = '${course}'  
+      ;
+  `,
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  getWorkloadByGroupIds(groupIds) {
+    const ids = groupIds.map(id => `'${id}'`).join(',');
+    const query = {
+      query: `
+        SELECT w.wl_id,
+        w.group_id, 
+        s.subject_name, 
+        CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name,
+        g.group_number
+        FROM workload w
+        JOIN subjects s ON w.subject_id = s.subject_id
+        JOIN teachers t ON w.teacher_id = t.teacher_id
+        JOIN groups g ON w.group_id = g.group_id
+        WHERE w.group_id IN (${ids})
+      `
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  assignLesson({ wl_id, day_id, time }) {
+    const query = {
+      query: `INSERT INTO teachschedule (
+        wl_id,
+        day_id,
+        time
+      ) VALUES (
+        '${wl_id}',
+        '${day_id}',
+        '${time}'
+      );`
+    };
+  
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  deleteLesson(lesson_id) {
+    const query = {
+      query: `DELETE FROM teachschedule 
+              WHERE lesson_id = '${lesson_id}';`
+    };
+  
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
 
   //Excel Запросы
 
