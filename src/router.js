@@ -57,9 +57,10 @@ const CourseList = () => import("./components/CourseList.vue")
 const CourseDetail = () => import("./components/CourseDetail.vue")
 
 
+//Расписание
+
 const AuditList = () => import("./components/AuditList.vue")
-const AuditDetail = () => import("./components/AuditDetail.vue")
-const AddAudit = () => import("./components/AddAudit.vue")
+const ScheduleList = () => import("./components/ScheduleList.vue")
 
 const addLgroup = () => import("./components/AddListenergroup.vue")
 const lGroupList = () => import("./components/ListenergroupList.vue")
@@ -242,9 +243,9 @@ const routes = [
       { path: '/payments/:paymentID', component: PaymentDetail },
       { path: '/AddPayment', component: AddPayment },
 
+      //Расписание
       { path: '/audits', component: AuditList },
-      { path: '/audits/:scheduleId', component: AuditDetail },
-      { path: '/AddAudit', component: AddAudit },
+      { path: '/schedules', component: ScheduleList },
 
 
 
