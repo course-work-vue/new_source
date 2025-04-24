@@ -76,6 +76,7 @@ const model = ref([
             icon: "pi pi-fw pi-calendar-times",
             to: "/ScheduleLoads",
           },
+          { label: "Расписание", icon: "pi pi-fw pi-calendar", to: "/schedules" },
           { label: "Аудитории", icon: "pi pi-fw pi-building", to: "/audits" },
         ],
       },
