@@ -8,7 +8,7 @@ export default Object.freeze({
     courseWork: prefix + 'delete_course_work',
     role: prefix + 'delete_roles',
     deleteFunctionUser: prefix + 'delete_function_user',
-    deleteProcedureUser: prefix + 'delete_procedure_user',
+    deleteProcedureUser: prefix + 'ums.delete_procedure_user',
     deleteUserRoleByUserId: prefix + 'delete_user_role_by_user_id',
 
     listener: prefix + 'delete_listeners',

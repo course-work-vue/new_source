@@ -116,9 +116,9 @@ const routes = [
       { path: '/rights/:table', component: RightsTable },
       { path: '/directions', name: "Направления", component: DirectionList },
       {
-         path: '/groups', 
-         name: "Группы", 
-         component: GroupList 
+        path: '/groups',
+        name: "Группы",
+        component: GroupList
       },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
@@ -142,33 +142,33 @@ const routes = [
         name: "Слушатели",
         component: ListenerList
       },
-      { 
-        path: '/payers', 
+      {
+        path: '/payers',
         name: "Плательщики",
         component: PayerList
       },
-      { 
-        path: '/lgroups', 
+      {
+        path: '/lgroups',
         name: "Группы слушателей",
-        component: lGroupList 
+        component: lGroupList
       },
       {
         path: '/addlgroup',
         name: "Добавить группу",
         component: addLgroup
       },
-      { 
+      {
         path: '/contracts',
         name: "Договоры",
         component: ContractList
       },
-      { 
-        path: '/programs', 
+      {
+        path: '/programs',
         name: "Программы",
         component: ProgramList
       },
-      { 
-        path: '/payments', 
+      {
+        path: '/payments',
         name: "Платежи",
         component: PaymentList
       },
@@ -208,12 +208,12 @@ const routes = [
         component: BoardUser,
       },
 
-      { path: '/procedures', name: "Процедуры", component: ProcedureList, meta: { roles: ["super_admin"] }, },
-      { path: '/functions', name: "Функции", component: FunctionList, meta: { roles: ["super_admin"] }, },
-      { path: '/triggers', name: "Триггеры", component: TriggerList, meta: { roles: ["super_admin"] }, },
-      { path: '/tables', name: "Таблицы", component: TableList, meta: { roles: ["super_admin"] }, },
-      { path: '/roles', name: "Роли", component: RoleList, meta: { roles: ["super_admin"] }, },
-      { path: '/users', name: "Пользователи", component: UserList, meta: { roles: ["super_admin"] }, },
+      { path: '/procedures', name: "Процедуры", component: ProcedureList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/functions', name: "Функции", component: FunctionList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/triggers', name: "Триггеры", component: TriggerList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/tables', name: "Таблицы", component: TableList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/roles', name: "Роли", component: RoleList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/users', name: "Пользователи", component: UserList, meta: { roles: ["super_admin", 'superadmin'] }, },
     ]
     // { path: '/AddStudent/:groupName', component: AddStudent },
   },
