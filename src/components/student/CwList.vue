@@ -1,76 +1,85 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div v-if="!pr">
-      <h1>Список всех квалификационных работ</h1>
-    </div>
-    <div v-if="pr">
-      <h1>Список квалификационных работ с ФИО {{ pr_n }}</h1>
-    </div>
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить квал. работу
-          </button>
-          <button
-            @click="previewDocx"
-            class="mx-2 btn btn-primary float-start"
-            type="button"
-          >
-            Отчёт о научных руководителях
-          </button>
-
-          <div class="col col-6 float-end d-inline-flex align-items-center">
-            <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
-              type="button"
-            >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
-            </button>
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
-          </div>
-        </div>
-        <br />
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!pr">Список всех квалификационных работ</span>
+        <span v-if="pr">Список квалификационных работ с ФИО {{ pr_n }}</span>
       </div>
     </div>
-    <br />
 
-    <br />
-    <div style="height: 95vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"
-          :paginationPageSize="paginationPageSize"
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Second row: Action Buttons -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 ps-0 py-0 pe-2">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить квал. работу
+        </button>
+      </div>
+      <div class="col-4 p-0">
+        <button
+          @click="previewDocx"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">description</i>Отчёт о научных
+          руководителях
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :rowHeight="40"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
+        </div>
       </div>
     </div>
   </div>
+
   <Dialog
     v-model:visible="formVisible"
     modal
@@ -613,42 +622,74 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.skeleton {
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.grid-container {
+  height: 100%;
   width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+  display: flex;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.ag-theme-alpine {
+  flex: 1;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
 }
 
-.nmbr {
-  height: 44px;
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
+}
+
+.ag-row .ag-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -662,39 +703,17 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
-}
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
 }
 
 .form {

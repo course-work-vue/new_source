@@ -102,6 +102,7 @@ body {
   margin: 0;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 html {
@@ -116,4 +117,24 @@ body {
   padding: 1rem;
   overflow: auto;
 }
+
+/* WebKit browsers */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+
 </style>
