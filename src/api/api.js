@@ -124,7 +124,7 @@ export default {
     ReqExec.put(endpoints.procedure.import_disciple, import_disciple.id, import_disciple),
 
   //role
-  getRoleList: () => ReqExec.get(endpoints.rest.role, null, true),
+  getRoleList: () => ReqExec.get(endpoints.function_end.role, null, true),
   postRole: (role) => ReqExec.post(endpoints.function_end.insert_roles, role), //to:do
   putRole: (roleid, role) => ReqExec.put(endpoints.rest.role, roleid, role),
   deleteRole: (role) => ReqExec.put(endpoints.procedure.role, role.roleid, role),
@@ -144,17 +144,17 @@ export default {
   putProcedureUser: (id, procedureUser) => ReqExec.put(endpoints.directLinks.updateProcedureFromSql, id, procedureUser),
   deleteProcedureUser: (procedureUser) => ReqExec.put(endpoints.procedure.deleteProcedureUser, procedureUser, procedureUser),
   //tableUser
-  getTableUserList: () => ReqExec.get(endpoints.rest.tableUser, null, true),
+  getTableUserList: () => ReqExec.get(endpoints.function_end.tableUser, null, true),
   postTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.createTable, tableUser),
-  putTableUser: (id, tableUser) => ReqExec.put(endpoints.directLinks.updateTableFromSql, id, tableUser),//to:do
-  deleteTableUser: (tableUser) => ReqExec.put(endpoints.table.deleteTableUser, tableUser, tableUser),//to:do
+  putTableUser: (id, tableUser) => ReqExec.post(endpoints.directLinks.updateTableFromSql, tableUser),//to:do
+  deleteTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.deleteTableFromSql, tableUser),//to:do
   //triggerUser
   getTriggerUserList: () => ReqExec.get(endpoints.rest.triggerUser, null, true), 
   postTriggerUser: (triggerUser) => ReqExec.post(endpoints.directLinks.createTrigger, triggerUser),//to:do
   putTriggerUser: (id, triggerUser) => ReqExec.put(endpoints.directLinks.updateTriggerFromSql, id, triggerUser),//to:do
   deleteTriggerUser: (triggerUser) => ReqExec.put(endpoints.trigger.deleteTriggerUser, triggerUser, triggerUser),//to:do
   //user
-  getUserList: () => ReqExec.get(endpoints.rest.user, null, true),
+  getUserList: () => ReqExec.get(endpoints.function_end.user, null, true),
   postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),//to:do
   putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),//to:do
   deleteUser: (user) => ReqExec.put(endpoints.procedure.user, user.id, user),//to:do
@@ -165,7 +165,7 @@ export default {
   postUserRole: (userRole) => ReqExec.post(endpoints.rest.userRole, userRole),
   deleteUserRole: (userRole) => ReqExec.put(endpoints.procedure.deleteUserRoleByUserId, userRole.id, userRole),
   //permission
-  getPermissionList: () => ReqExec.get(endpoints.rest.permission, null, true),
+  getPermissionList: () => ReqExec.get(endpoints.function_end.permission, null, true),
   postPermission: (permission) => ReqExec.post(endpoints.rest.permission, permission),
   deletePermission: (permission) => ReqExec.put(endpoints.rest.permission, permission, permission),
 
