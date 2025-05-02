@@ -341,8 +341,6 @@ export default {
     };
   },
   async mounted() {
-    await this.getGroupList();
-    await this.getStudentList();
     await this.getRoleList();
     await this.getFunctionUserList();
     await this.getUserList();
