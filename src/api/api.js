@@ -1,6 +1,6 @@
 import endpoints from '@/api/endpoints';
 import ReqExec from '@/services/RequestExecutor';
-ReqExec.baseUrl = 'https://ncatbird.ru/ums/server';
+ReqExec.baseUrl = 'https://ncatbird.ru/server';
 
 
 
