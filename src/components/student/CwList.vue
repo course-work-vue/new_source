@@ -1,76 +1,85 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div v-if="!pr">
-      <h1>Список всех квалификационных работ</h1>
-    </div>
-    <div v-if="pr">
-      <h1>Список квалификационных работ с ФИО {{ pr_n }}</h1>
-    </div>
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-12">
-          <button
-            @click="openCreatingForm"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить квал. работу
-          </button>
-          <button
-            @click="previewDocx"
-            class="mx-2 btn btn-primary float-start"
-            type="button"
-          >
-            Отчёт о научных руководителях
-          </button>
-
-          <div class="col col-6 float-end d-inline-flex align-items-center">
-            <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
-              type="button"
-            >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
-            </button>
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
-          </div>
-        </div>
-        <br />
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!pr">Список всех квалификационных работ</span>
+        <span v-if="pr">Список квалификационных работ с ФИО {{ pr_n }}</span>
       </div>
     </div>
-    <br />
 
-    <br />
-    <div style="height: 95vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"
-          :paginationPageSize="paginationPageSize"
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Second row: Action Buttons -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 ps-0 py-0 pe-2">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить квал. работу
+        </button>
+      </div>
+      <div class="col-4 p-0">
+        <button
+          @click="previewDocx"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">description</i>Отчёт о научных
+          руководителях
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :rowHeight="40"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
+        </div>
       </div>
     </div>
   </div>
+
   <Dialog
     v-model:visible="formVisible"
     modal
@@ -118,6 +127,7 @@
       v-if="filePath"
       :documentUrl="filePath"
       documentTitle="Отчёт по научным руководителям"
+      :objectType="objectType"
     />
   </Dialog>
 </template>
@@ -151,7 +161,7 @@ import { useCourseWorkStore } from "@/store2/studentgroup/courseWork";
 import { useDepartamentStore } from "@/store2/teachergroup/departament";
 import { useTeacherStore } from "@/store2/teachergroup/teacher";
 import { useStudentStore } from "@/store2/studentgroup/student";
-
+import * as XLSX from "xlsx";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
@@ -251,6 +261,7 @@ export default {
       scheme: null,
       formVisible: false,
       docPreview: false,
+      objectType: "excel",
     };
   },
   computed: {
@@ -357,6 +368,7 @@ export default {
       }
     },
     async generateTeacherReport() {
+      // Получаем список курсовых работ из стора
       const courseWorkStore = useCourseWorkStore();
       const courseWorks = courseWorkStore.courseWorkList;
 
@@ -375,127 +387,89 @@ export default {
         return acc;
       }, {});
 
-      const docContent = [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({
-              text: "МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ",
-              size: 22,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({
-              text: "Федеральное государственное бюджетное образовательное учреждение высшего образования",
-              size: 24,
-            }),
-            new TextRun({
-              text: "«Кубанский государственный университет»",
-              size: 28,
-              bold: true,
-              break: 1,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({ text: "(ФГБОУ ВО «КубГУ»)", bold: true, size: 24 }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-          children: [
-            new TextRun({
-              text: "Факультет компьютерных технологий и прикладной математики",
-              size: 28,
-              break: 1,
-            }),
-          ],
-        }),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 300 },
-          children: [
-            new TextRun({
-              text: "Отчёт по научным руководителям",
-              size: 28,
-              break: 1,
-            }),
-          ],
-        }),
-      ];
+      // Создаем новую книгу Excel
+      const wb = XLSX.utils.book_new();
 
-      // Формируем основной отчет
+      // Для каждого преподавателя создаем отдельный лист
       Object.entries(courseWorksByTeacher).forEach(([teacherName, years]) => {
-        docContent.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: teacherName, bold: true, size: 28 }),
-            ],
-          })
-        );
+        // Формируем массив данных для рабочего листа
+        const sheetData = [];
 
-        Object.entries(years).forEach(([year, semesters]) => {
-          docContent.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Год: ${year}`,
-                  bold: true,
-                  size: 26,
-                  break: 1,
-                }),
-              ],
-            })
-          );
-
-          Object.entries(semesters).forEach(([semester, courseWorksList]) => {
-            docContent.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Семестр: ${semester}`,
-                    bold: true,
-                    size: 24,
-                    break: 1,
-                  }),
-                ],
-              })
-            );
-
-            courseWorksList.forEach((cw, idx) => {
-              const ocenka = cw.course_work_ocenka
-                ? ` – Оценка: ${cw.course_work_ocenka};`
-                : "";
-              const theme = cw.course_work_theme
-                ? ` ${cw.course_work_theme}`
-                : "";
-              docContent.push(
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `${idx + 1}. ${cw.student_name}${ocenka}${theme}`,
-                      size: 24,
-                    }),
-                  ],
-                })
-              );
-            });
-          });
+        // Добавляем строку заголовков столбцов (ручная шапка)
+        sheetData.push({
+          Год: "Год",
+          Семестр: "Семестр",
+          "№": "№",
+          Студент: "Студент",
+          Оценка: "Оценка",
+          Тема: "Тема",
         });
+
+        // Перебираем года в отсортированном порядке для удобства
+        Object.keys(years)
+          .sort()
+          .forEach((year) => {
+            const semesters = years[year];
+            // Перебираем семестры (также сортированно)
+            Object.keys(semesters)
+              .sort()
+              .forEach((semester) => {
+                const courseWorksList = semesters[semester];
+                courseWorksList.forEach((cw, idx) => {
+                  sheetData.push({
+                    Год: year,
+                    Семестр: semester,
+                    "№": idx + 1,
+                    Студент: cw.student_name,
+                    Оценка: cw.course_work_ocenka || "",
+                    Тема: cw.course_work_theme || "",
+                  });
+                });
+              });
+          });
+
+        // Преобразуем данные в рабочий лист Excel
+        // Опция skipHeader: true запрещает автоматическую генерацию строки заголовка
+        const ws = XLSX.utils.json_to_sheet(sheetData, {
+          header: ["Год", "Семестр", "№", "Студент", "Оценка", "Тема"],
+          skipHeader: true,
+        });
+
+        // Задаем ширину столбцов для лучшего отображения
+        ws["!cols"] = [
+          { wch: 10 }, // Год
+          { wch: 10 }, // Семестр
+          { wch: 5 }, // №
+          { wch: 30 }, // Студент
+          { wch: 10 }, // Оценка
+          { wch: 50 }, // Тема
+        ];
+
+        // Обеспечиваем соответствие имени листа требованиям Excel
+        let sheetName = teacherName;
+        if (sheetName.length > 31) {
+          sheetName = sheetName.substring(0, 31);
+        }
+        sheetName = sheetName.replace(/[:\\\/\?\*\[\]]/g, "_");
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
 
-      const doc = new Document({
-        sections: [{ properties: {}, children: docContent }],
+      // Генерируем книгу Excel в виде ArrayBuffer
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      // Создаем Blob
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      const blob = await Packer.toBlob(doc);
-      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
+      // Устанавливаем необходимые параметры и отправляем Blob на сервер
+      this.objectType = "excel";
+      this.documentTitle = "Отчет по научным руководителям";
+      this.filePath = await this.uploadGeneratedFile(
+        blob,
+        "teacher_report.xlsx"
+      );
+      this.docPreview = true;
     },
 
     resetCW() {
@@ -648,42 +622,74 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.skeleton {
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+
+.grid-container {
+  height: 100%;
   width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+  display: flex;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.ag-theme-alpine {
+  flex: 1;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
 }
 
-.nmbr {
-  height: 44px;
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
+}
+
+.ag-row .ag-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -697,39 +703,17 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
-}
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
 }
 
 .form {

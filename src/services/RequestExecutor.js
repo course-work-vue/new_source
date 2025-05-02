@@ -130,6 +130,8 @@ class RequestExecutor {
 
             return await response.json();
         } catch (error) {
+            console.log('here test')
+            console.log(url)
             throw new Error(error);
         } finally {
             if (this.loadingMask) layoutStore.setIsLoading(false);

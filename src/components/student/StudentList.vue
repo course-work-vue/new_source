@@ -1,92 +1,67 @@
 <template>
-  <div v-if="!loading">
-    <div class="col col-xs-9 col-lg-12 list">
-      <div class="col col-12">
-        <div class="d-inline-flex">
-          <div v-if="!spisok">
-            <h1>Список всех студентов</h1>
-          </div>
-          <h1 v-if="spisok">Список студентов {{ groupn }} группы</h1>
-          <h1 class="m-0" v-if="subg">, {{ subgn }} подгруппы</h1>
-        </div>
-
-        <div class="col col-12">
-          <div class="float-start">
-            <button
-              @click="openCreatingForm"
-              class="btn btn-primary float-start"
-              type="button"
-            >
-              <i class="material-icons-outlined">add</i>Добавить студента
-            </button>
-            <button
-              @click="previewDocx"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
-              Отчёт о формах обучения
-            </button>
-            <button
-              @click="contingent"
-              class="mx-2 btn btn-primary float-start"
-              type="button"
-            >
-              Контингент
-            </button>
-          </div>
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1" v-if="!loading">
+    <!-- Title Row -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!spisok">Список всех студентов</span>
+        <span v-if="spisok">Список студентов {{ groupn }} группы</span>
+        <span class="ms-1" v-if="subg">, {{ subgn }} подгруппы</span>
       </div>
-      <div class="col col-12">
-        <div class="col col-6 float-start">
-          <div class="form-group d-inline-flex align-items-center">
-            <label class="bigger form-label" for="group_id"
-              >Фильтр по группе:</label
-            >
+    </div>
 
-            <select
-              class="form-select"
-              id="group_id"
-              v-model="myValue"
-              @change="handleSelectChange(myValue)"
-            >
-              <option selected="selected" value="">Нет</option>
-              <option
-                v-for="group in this.groupList.sort(
-                  (a, b) => a.group_number - b.group_number
-                )"
-                :key="group.group_number"
-                :value="group.group_number"
-              >
-                {{ group.group_number }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="col col-6 float-end d-inline-flex align-items-center">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Second row: Filter by Group and Subgroup -->
+    <div class="row g-2 mb-2">
+      <div class="col-6 p-0 pe-3">
+        <div class="form-group d-flex align-items-center">
+          <label class="form-label me-2" for="group_id"
+            >Фильтр по группе:</label
           >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+          <select
+            class="form-select"
+            id="group_id"
+            v-model="myValue"
+            @change="handleSelectChange(myValue)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option
+              v-for="group in filteredGroups"
+              :key="group.group_number"
+              :value="group.group_number"
+            >
+              {{ group.group_number }}
+            </option>
+          </select>
         </div>
       </div>
-      <div class="col col-6 float-start">
-        <div class="form-group d-inline-flex align-items-center">
-          <label class="bigger form-label" for="subgroup_id"
+      <div class="col-6 p-0">
+        <div class="form-group d-flex align-items-center">
+          <label class="form-label me-2" for="subgroup_id"
             >Фильтр по подгруппе:</label
           >
-
           <select
             class="form-select"
             id="subgroup_id"
@@ -99,14 +74,46 @@
           </select>
         </div>
       </div>
-      <div style="height: 90vh">
-        <div class="h-100 pt-5">
+    </div>
+
+    <!-- Third row: Action Buttons -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 ps-0 py-0 pe-2">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить студента
+        </button>
+      </div>
+      <div class="col-4 ps-0 py-0 pe-2">
+        <button
+          @click="previewDocx"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">description</i>Отчёт о формах
+          обучения
+        </button>
+      </div>
+      <div class="col-4 p-0">
+        <button @click="contingent" class="btn btn-primary w-100" type="button">
+          <i class="material-icons-outlined me-1">group</i>Контингент
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
           <ag-grid-vue
             class="ag-theme-alpine"
-            style="width: 100%; height: 100%"
             :columnDefs="columnDefs.value"
             :rowData="rowData.value"
             :defaultColDef="defaultColDef"
+            :rowHeight="40"
             :localeText="localeText"
             rowSelection="multiple"
             animateRows="true"
@@ -120,28 +127,35 @@
         </div>
       </div>
     </div>
-    <div class="container mt-3">
-      <table class="table table-striped">
-        Список отстающих студентов
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">First Name</th>
-            <th scope="col">Last Name</th>
-            <th scope="col">Sum</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in dataFromApi" :key="index">
-            <th scope="row">{{ index }}</th>
-            <td>{{ item.first_name }}</td>
-            <td>{{ item.last_name }}</td>
-            <td>{{ item.sum }}</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <!-- Underperforming Students Table -->
+    <div class="row g-2 mt-3">
+      <div class="col-12 p-0">
+        <div class="table-container">
+          <h5 class="mb-2">Список отстающих студентов</h5>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">First Name</th>
+                <th scope="col">Last Name</th>
+                <th scope="col">Sum</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in dataFromApi" :key="index">
+                <th scope="row">{{ index }}</th>
+                <td>{{ item.first_name }}</td>
+                <td>{{ item.last_name }}</td>
+                <td>{{ item.sum }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
+
   <Dialog v-model:visible="formVisible" modal header="Форма студента">
     <div class="card flex flex-row">
       <div class="form card__form">
@@ -521,7 +535,7 @@ export default {
         key: "group_id",
         label: "Номер группы",
         options: [
-          ...[...this.groupList].map((group) => ({
+          ...[...this.filteredGroups].map((group) => ({
             label: group.group_number,
             value: group.group_id,
           })),
@@ -1573,6 +1587,11 @@ export default {
     ]),
     ...mapState(useGroupStore, ["groupList", "groupMap"]),
     ...mapState(useDirectionStore, ["directionMap"]),
+    filteredGroups() {
+      return this.groupList
+        .filter((group) => !group.deleted_at) // Exclude groups with deleted_at
+        .sort((a, b) => a.group_number - b.group_number); // Sort by group_number
+    },
   },
   async created() {},
 };
@@ -1601,31 +1620,51 @@ var filterParams = {
 </script>
 
 <style lang="scss" scoped>
-.bigger {
-  font-size: 30px;
-  white-space: nowrap;
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
 }
 
-.ag-row .ag-cell {
+.grid-container {
+  height: 100%;
+  width: 100%;
   display: flex;
-  justify-content: center;
-  /* align horizontal */
+}
+
+.ag-theme-alpine {
+  flex: 1;
+}
+
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
+}
+
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
   align-items: center;
 }
 
-.skeleton {
-  width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
 }
 
 .text-center * {
@@ -1633,29 +1672,27 @@ var filterParams = {
   display: flex;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
+.ag-row .ag-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-
-  50% {
-    opacity: 1;
-  }
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
 }
 
-.nmbr {
-  height: 44px;
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -1682,31 +1719,9 @@ var filterParams = {
     0 0 8px rgba(6, 215, 29, 0.6);
 }
 
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
+.table-container {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .card {

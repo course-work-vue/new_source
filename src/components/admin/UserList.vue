@@ -1,54 +1,58 @@
 <template>
-  <div v-if="!loading">
-    <div class="col col-xs-9 col-lg-12 list">
-      <div class="col col-12">
-        <div class="d-inline-flex">
-          <div v-if="!spisok">
-            <h1>Список всех пользователей</h1>
-          </div>
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1" v-if="!loading">
+    <!-- Title Row -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!spisok">Список всех пользователей</span>
+      </div>
+    </div>
 
-        <div class="col col-12">
-          <div class="float-start">
-            <button
-              @click="openCreatingForm"
-              class="btn btn-primary float-start"
-              type="button"
-            >
-              <i class="material-icons-outlined">add</i>Добавить пользователя
-            </button>
-          </div>
-        </div>
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
       </div>
-      <div class="col col-12">
-        <div class="col col-6 float-start"></div>
-        <div class="col col-6 float-end d-inline-flex align-items-center">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
-        </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
       </div>
-      <br />
-      <div style="height: 90vh">
-        <div class="ag-grid-wrap h-100 pt-5">
+    </div>
+
+    <!-- Add User Button Row -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить пользователя
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
           <ag-grid-vue
             class="ag-theme-alpine"
-            style="width: 100%; height: 100%"
             :columnDefs="columnDefs.value"
             :rowData="rowData.value"
+            :rowHeight="40"
             :defaultColDef="defaultColDef"
             :localeText="localeText"
             rowSelection="multiple"
@@ -64,6 +68,7 @@
       </div>
     </div>
   </div>
+
   <Dialog
     v-model:visible="formVisible"
     class="dialog"
@@ -440,6 +445,7 @@ export default {
     },
     openCreatingForm() {
       this.resetUser();
+      this.selectedRoles = [];
       this.formVisible = true;
     },
     async validateForm() {
@@ -447,7 +453,7 @@ export default {
       const errors = {};
 
       for (const item of this.scheme.items) {
-        const result = item.validate(this.role[item.key]);
+        const result = item.validate(this.user[item.key]);
 
         if (result !== true) {
           // Check for `true`, which means the field is valid
@@ -462,28 +468,34 @@ export default {
     },
 
     async submit() {
+      const isValid = await this.validateForm();
+      if (!isValid) {
+        console.error("Form validation failed", this.errors);
+        return;
+      }
       let user = { ...this.user };
+      let userId;
       if (user.id) {
         await this.putUser(user);
+        userId = user.id;
       } else {
-        await this.postUser(user);
+        userId = await this.postUser(user);
       }
-
-      const userRolesToSave = this.selectedRoles.map((roleId) => {
-        return new UserRole({ userid: user.id, roleid: roleId });
-      });
-
-      await this.deleteUserRoleByUserId(user);
-
-      // Добавляем новые роли
-      for (const userRole of userRolesToSave) {
+      // Clear this users previous roles if any
+      if (user.id) {
+        await this.deleteUserRoleByUserId(user.id);
+      }
+      // Assign new roles
+      for (const roleId of this.selectedRoles) {
+        const userRole = new UserRole();
+        userRole.userid = userId;
+        userRole.roleid = roleId;
         await this.postUserRole(userRole);
       }
-
       await this.getUserRoleList();
-
       this.formVisible = false;
       this.resetUser();
+      this.selectedRoles = [];
       this.loadUserssData();
     },
 
@@ -498,17 +510,10 @@ export default {
 
     async loadUserssData() {
       try {
-        if (Array.isArray(this.roleList)) {
-          // Filter out roles where deleted_at is not null and sort by full_name
-          this.rowData.value = this.userList;
-        } else {
-          // Handle case where roleList is not an array
-
-          this.rowData.value = [];
-        }
+        this.rowData.value = this.userList;
         this.loading = false;
       } catch (error) {
-        console.error("Error loading roles data:", error);
+        console.error("Error loading users data:", error);
       }
     },
 
@@ -557,7 +562,7 @@ export default {
       }
     },
     onFilterChanged() {
-      // This users will be called whenever filters change.
+      // This function will be called whenever filters change.
       // You can perform your desired action here.
       // For example, you can get the current filter model:
       this.filters = false;
@@ -652,38 +657,51 @@ var filterParams = {
 </script>
 
 <style lang="scss" scoped>
-.dialog {
-  flex: 1;
-  :deep(p-dialog p-component dialog) {
-    flex: 1;
-  }
-}
-.ag-grid-wrap {
-  width: 100%;
-}
-.bigger {
-  font-size: 30px;
-  white-space: nowrap;
-}
-.ag-row .ag-cell {
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
   display: flex;
-  justify-content: center; /* align horizontal */
+  margin-bottom: 5px;
+}
+
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.ag-theme-alpine {
+  flex: 1;
+}
+
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
+}
+
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
   align-items: center;
 }
 
-.skeleton {
-  width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
 }
 
 .text-center * {
@@ -691,27 +709,27 @@ var filterParams = {
   display: flex;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.ag-row .ag-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
 }
 
-.nmbr {
-  height: 44px;
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -725,38 +743,23 @@ var filterParams = {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
+
+.dialog {
+  flex: 1;
+  :deep(p-dialog p-component dialog) {
+    flex: 1;
   }
 }
 

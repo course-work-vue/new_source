@@ -76,6 +76,7 @@ const model = ref([
             icon: "pi pi-fw pi-calendar-times",
             to: "/ScheduleLoads",
           },
+          { label: "Расписание", icon: "pi pi-fw pi-calendar", to: "/schedules" },
           { label: "Аудитории", icon: "pi pi-fw pi-building", to: "/audits" },
         ],
       },
@@ -87,7 +88,7 @@ const model = ref([
       {
         label: "Админ панель",
         icon: "pi pi-fw pi-box",
-        roles: ["super_admin"], // Этот маршрут доступен только для админа
+        roles: ["super_admin", 'superadmin'], // Этот маршрут доступен только для админа
         items: [
           {
             label: "Процедуры",

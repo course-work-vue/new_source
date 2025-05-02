@@ -44,9 +44,10 @@ const CourseList = () => import("./components/CourseList.vue")
 const CourseDetail = () => import("./components/CourseDetail.vue")
 
 
+//Расписание
+
 const AuditList = () => import("./components/AuditList.vue")
-const AuditDetail = () => import("./components/AuditDetail.vue")
-const AddAudit = () => import("./components/AddAudit.vue")
+const ScheduleList = () => import("./components/ScheduleList.vue")
 
 const addLgroup = () => import("./components/AddListenergroup.vue")
 
@@ -116,9 +117,9 @@ const routes = [
       { path: '/rights/:table', component: RightsTable },
       { path: '/directions', name: "Направления", component: DirectionList },
       {
-         path: '/groups', 
-         name: "Группы", 
-         component: GroupList 
+        path: '/groups',
+        name: "Группы",
+        component: GroupList
       },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
@@ -142,33 +143,33 @@ const routes = [
         name: "Слушатели",
         component: ListenerList
       },
-      { 
-        path: '/payers', 
+      {
+        path: '/payers',
         name: "Плательщики",
         component: PayerList
       },
-      { 
-        path: '/lgroups', 
+      {
+        path: '/lgroups',
         name: "Группы слушателей",
-        component: lGroupList 
+        component: lGroupList
       },
       {
         path: '/addlgroup',
         name: "Добавить группу",
         component: addLgroup
       },
-      { 
+      {
         path: '/contracts',
         name: "Договоры",
         component: ContractList
       },
-      { 
-        path: '/programs', 
+      {
+        path: '/programs',
         name: "Программы",
         component: ProgramList
       },
-      { 
-        path: '/payments', 
+      {
+        path: '/payments',
         name: "Платежи",
         component: PaymentList
       },
@@ -183,9 +184,9 @@ const routes = [
 
       { path: '/programs', component: ProgramList },
 
+      //Расписание
       { path: '/audits', component: AuditList },
-      { path: '/audits/:scheduleId', component: AuditDetail },
-      { path: '/AddAudit', component: AddAudit },
+      { path: '/schedules', component: ScheduleList },
 
       //ЖУРНАЛ
       { path: '/teachers', component: TeacherList },
@@ -208,12 +209,12 @@ const routes = [
         component: BoardUser,
       },
 
-      { path: '/procedures', name: "Процедуры", component: ProcedureList, meta: { roles: ["super_admin"] }, },
-      { path: '/functions', name: "Функции", component: FunctionList, meta: { roles: ["super_admin"] }, },
-      { path: '/triggers', name: "Триггеры", component: TriggerList, meta: { roles: ["super_admin"] }, },
-      { path: '/tables', name: "Таблицы", component: TableList, meta: { roles: ["super_admin"] }, },
-      { path: '/roles', name: "Роли", component: RoleList, meta: { roles: ["super_admin"] }, },
-      { path: '/users', name: "Пользователи", component: UserList, meta: { roles: ["super_admin"] }, },
+      { path: '/procedures', name: "Процедуры", component: ProcedureList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/functions', name: "Функции", component: FunctionList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/triggers', name: "Триггеры", component: TriggerList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/tables', name: "Таблицы", component: TableList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/roles', name: "Роли", component: RoleList, meta: { roles: ["super_admin", 'superadmin'] }, },
+      { path: '/users', name: "Пользователи", component: UserList, meta: { roles: ["super_admin", 'superadmin'] }, },
     ]
     // { path: '/AddStudent/:groupName', component: AddStudent },
   },
