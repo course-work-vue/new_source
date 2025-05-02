@@ -59,13 +59,20 @@ export default {
     ReqExec.put(endpoints.procedure.listener, listener.id, listener),
 
   getDayList: () => ReqExec.get(endpoints.rest.day, null, true),
+  
   getL_Group_StatusList: () => ReqExec.get(endpoints.rest.l_group_status, null, true),
 
   getReady_ListenerList:() => ReqExec.get(endpoints.rest.ready_listener, null, true),
+  getL_Ready_GroupList:() => ReqExec.get(endpoints.rest.l_ready_group, null, true),
+
   getListener_WishList: () => ReqExec.get(endpoints.rest.listener_wish, null, true),
   postListener_Wish: (listener_wish) => ReqExec.post(endpoints.rest.listener_wish, listener_wish),
   putListener_Wish: (id, listener_wish) =>
       ReqExec.put(endpoints.rest.listener_wish, id, listener_wish),
+  getL_Wish_DayList: () => ReqExec.get(endpoints.rest.l_wish_day, null, true),
+  postL_Wish_Day: (l_wish_day) => ReqExec.post(endpoints.rest.l_wish_day, l_wish_day),
+  putL_Wish_Day: (id, l_wish_day) =>
+      ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
 
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),
@@ -122,6 +129,9 @@ export default {
     ReqExec.put(endpoints.rest.import_disciple, direction_code, import_disciple),
   deleteImport_Disciple: (import_disciple) =>
     ReqExec.put(endpoints.procedure.import_disciple, import_disciple.id, import_disciple),
+
+  getImport_DiscipleDepartmentsList: () => ReqExec.get(endpoints.rest.import_disciple_departments, null, true),
+  getImport_DiscipleSemestresList: () => ReqExec.get(endpoints.rest.import_disciple_semestres, null, true),
 
   //role
   getRoleList: () => ReqExec.get(endpoints.rest.role, null, true),

@@ -67,6 +67,7 @@
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
+          v-if="scheme"
           v-model="listener"
           v-model:errors="errors"
           :scheme="scheme"
@@ -90,81 +91,103 @@
   </Sidebar>
 
   <Sidebar
-    v-model:visible="showWishes"
-    position="bottom"
-    modal
-    header="Пожелания слушателя"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
-    <div class="card flex flex-row">
-      <div class="col-5" style="margin-right: auto;">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th style="min-width: 100px;">День</th>
-              <th>Время начала</th>
-              <th>Время окончания</th>
-              <th>Действие</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(entry, index) in tableData" :key="index">
-              <td>
-                <select class="form-select" v-model="entry.day_id">
-                  <option v-for="day in days" :key="day.day_id" :value="day.day_id">
-                    {{ day.dayofweek }}
-                  </option>
-                </select>
-              </td>
-              <td>
-                <input class="form-control" type="time" v-model="entry.starttime" />
-              </td>
-              <td>
-                <input class="form-control" type="time" v-model="entry.endtime" />
-              </td>
-              <td>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  @click="removeRow(index)"
-                >
-                  Удалить
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button type="button" class="btn btn-primary" @click="addRow">+</button>
-      </div>
-      <div>
-        <div class="form2 card__form">
+  v-model:visible="showWishes"
+  position="bottom"
+  modal
+  header="Пожелания слушателя"
+  class="custom-sidebar h-auto"
+  :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+>
+  <div class="card">
+    <div class="row"> 
+    <div class="col-md-5" style="margin-right: auto;">
+      <h5>Дни и время</h5> 
+
+      <table class="table table-bordered table-sm">
+        <thead>
+          <tr>
+            <th style="min-width: 100px;">День</th>
+            <th>Время начала</th>
+            <th>Время окончания</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr v-for="(entry, index) in tableData" :key="entry.l_wish_day_id || `new-${index}`"> 
+            <td>
+              <select class="form-select form-select-sm" v-model="entry.day_id">
+                 <option :value="null" disabled>Выберите день</option> 
+                 <option v-for="day in days" :key="day.day_id" :value="day.day_id">
+                   {{ day.dayofweek }}
+                 </option>
+              </select>
+            </td>
+            <td>
+              <input class="form-control form-control-sm" type="time" v-model="entry.starttime" />
+            </td>
+            <td>
+              <input class="form-control form-control-sm" type="time" v-model="entry.endtime" />
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="removeRow(index)"
+              >
+                <i class="material-icons-outlined" style="font-size: 1rem;">delete</i>
+              </button>
+            </td>
+          </tr>
+
+           <tr v-if="!tableData || tableData.length === 0">
+                <td colspan="4" class="text-center text-muted">Нет записей о предпочтительном времени</td>
+           </tr>
+        </tbody>
+      </table>
+
+      <button type="button" class="btn btn-primary btn-sm mt-2" @click="addRowInWishForm">
+         <i class="material-icons-outlined" style="font-size: 1rem;">add</i> Добавить время
+      </button>
+    </div>
+
+    <div class="col-7">
+       <h5>Прочие пожелания</h5> 
+      <div class="form2 card__form mb-3">
+
         <auto-form
           v-model="listener_wish"
-          v-model:errors="errors"
+          v-model:errors="errorsWish"
           :scheme="secondScheme"
           class="custom-form"
         ></auto-form>
       </div>
       <div class="form3">
+
         <auto-form
           v-model="listener_wish"
-          v-model:errors="errors"
+          v-model:errors="errorsWish"
           :scheme="thirdScheme"
           class="custom-form"
         ></auto-form>
       </div>
-      </div>
     </div>
-    <Button class="btn btn-primary" @click="submitWishes">
+  </div>
+  </div>
+
+  <div class="mt-3 d-flex justify-content-end">
+      <Button class="btn btn-primary" @click="submitWishes">
       Сохранить пожелания
-    </Button>
-  </Sidebar>
+      </Button>
+  </div>
+</Sidebar>
+
+
 </template>
 
 <script>
 import { AgGridVue } from "ag-grid-vue3";
-import { reactive, onMounted, ref } from "vue";
+import { reactive, onMounted, ref, toRaw } from "vue";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ListenerHref from "@/components/listener/ListenerHrefCellRenderer.vue";
 import ListenerHref2 from "@/components/listener/ListenerHrefCellRenderer2.vue";
@@ -178,6 +201,11 @@ import { useListenergroupStore } from "@/store2/listenergroup/listenergroup";
 import { useProgramStore } from "@/store2/listenergroup/program";
 import { useDayStore } from "@/store2/listenergroup/day";
 import { useListener_WishStore } from "@/store2/listenergroup/listenerwish";
+import { useL_Wish_DayStore } from "@/store2/listenergroup/l_wish_day"
+
+import L_Wish_Day from "@/model/listener-group/L_Wish_Day"; 
+import Listener_Wish from "@/model/listener-group/Listener_Wish"; 
+
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -187,6 +215,7 @@ import {
 import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import { TextareaInput } from "@/model/form/inputs/TextareaInput";
 import Listener from "@/model/listener-group/Listener";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
@@ -201,16 +230,26 @@ export default {
   },
   setup() {
     const localeText = AG_GRID_LOCALE_RU;
-    const tableData = ref([]);
+    const tableData = reactive([]);
     
 
-    const addRow = () => {
-      const newRow = { day_id: "", starttime: "", endtime: "" };
-      tableData.value.push(newRow);
+    const addRow = (listenerId) => {
+      console.log('Adding new wish day row for listener:', listenerId); 
+      const newRow = new L_Wish_Day({
+          l_wish_day_id: null,
+          day_id: null,
+          starttime: '09:00', 
+          endtime: '18:00', 
+          listener_id: listenerId 
+      });
+      tableData.push(newRow);
+      console.log('tableData after add:', tableData.value); 
     };
 
     const removeRow = (index) => {
-      tableData.value.splice(index, 1);
+      console.log('Removing wish day row at index:', index); 
+      tableData.splice(index, 1);
+      console.log('tableData after remove:', tableData.value); 
     };
 
     const gridApi = ref(null);
@@ -248,6 +287,15 @@ export default {
         {
           field: "listenergroup_number",
           headerName: "Группа",
+          valueFormatter: params => {
+        // params.value содержит значение из поля 'listenergroup_number'
+        // Проверяем, есть ли значение (не null, не undefined, не пустая строка)
+        if (params.value === null || params.value === undefined || params.value === '') {
+          return "Нет группы"; // Возвращаем текст, если группы нет
+        } else {
+          return params.value; // Возвращаем номер группы, если он есть
+        }
+      }
         },
         {
           field: "people_count",
@@ -298,14 +346,16 @@ export default {
       onGridReady,
       columnDefs,
       rowData,
-      days,
       defaultColDef,
       localeText,
       paginationPageSize,
       onFilterTextBoxChanged,
+
       tableData,
+      days,
       addRow,
       removeRow,
+      toRaw,
     };
   },
   data() {
@@ -319,24 +369,21 @@ export default {
       scheme: null,
       secondScheme: null,
       thirdScheme: null,
-      listener_wish: null,
+
+      listener_wish: new Listener_Wish(),
+      errorsWish: {},
     };
   },
   async mounted() {
     try {
-      await this.getListenerList();
-      await this.getListenergroupList();
-      await this.getListener_WishList();
-      await this.getDayList();
-      await this.getProgramList();
+      await this.fetchInitialData();
       this.loadListenersData();
-      this.loadDaysData();
       this.loadListenerWishesData();
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
 
-    // Инициализация схем формы (основные поля)
+    
     this.scheme = new FormScheme([
       new TextInput({
         key: "surname",
@@ -412,7 +459,6 @@ export default {
 
     ]);
 
-    // Вторая схема формы (пожелания)
     this.secondScheme = new FormScheme([
       new TextInput({
         key: "group_size",
@@ -442,14 +488,16 @@ export default {
       }),
     ]);
     this.thirdScheme = new FormScheme([
-  new TextInput({
-    key: "listener_comment",
-    label: "Комментарий:",
-    validation: [requiredRule],
-    className: "wish_description",
-  }),
+    new TextareaInput({ 
+        key: "listener_comment",
+        label: "Комментарий слушателя:",
+        className: "wish_description",
+        rows: 3
+    }),
 ]);
   },
+  
+
   methods: {
     ...mapActions(useListenerStore, [
       "getListenerList",
@@ -464,6 +512,12 @@ export default {
       "putListener_Wish",
     ]),
     ...mapActions(useDayStore, ["getDayList"]),
+    ...mapActions(useL_Wish_DayStore, [
+      "getL_Wish_DayList",
+      "postL_Wish_Day",
+      "putL_Wish_Day",
+      "deleteL_Wish_Day",
+    ]),
     ...mapActions(useProgramStore, ["getProgramList"]),
 
     cellWasClicked(event) {
@@ -499,11 +553,33 @@ export default {
       this.resetLst();
       this.loadListenersData();
     },
+
+    async fetchInitialData() {
+   console.log("Fetching initial data...");
+   try {
+       await Promise.all([
+           this.getListenerList(),
+           this.getListenergroupList(),
+           this.getListener_WishList(),
+           this.getDayList(),
+           this.getL_Wish_DayList(),
+           this.getProgramList()
+       ]);
+       console.log("Initial data fetched successfully.");
+
+       await this.loadDaysData(); 
+   } catch (error) {
+       console.error("Ошибка при первичной загрузке данных:", error);
+   }
+},
+
     async loadDaysData(){
       try {
+        if (!this.dayList || this.dayList.length === 0) {
+           await this.getDayList();
+        }
         if (Array.isArray(this.dayList)) {
           this.days = this.dayList
-          console.log("Дни",this.days)
         } else {
           this.days.value = [];
         }
@@ -516,7 +592,6 @@ export default {
       try {
         if (Array.isArray(this.listener_wishList)) {
           this.listener_wishes = this.listener_wishList
-          console.log("Желания",this.listener_wishes)
         } else {
           this.listener_wishes.value = [];
         }
@@ -527,6 +602,7 @@ export default {
     },
     async loadListenersData() {
       try {
+        console.log(this.listenerList)
         if (Array.isArray(this.listenerList)) {
           this.rowData.value = this.listenerList
             .filter((listener) => listener.deleted_at === null)
@@ -584,12 +660,47 @@ export default {
       this.showSidebar = true;
     },
     openWishesForm() {
-      this.listener_wish = this.listener_wishList.find(
-    (wish) => wish.listener_id === this.listener.id
-  ) || {};
-  console.log("Пожелание для слушателя", this.listener.id, ":", this.listener_wish);
-      this.showWishes = true;
-    },
+
+      if (!this.listener || !this.listener.id) {
+        console.error("Cannot open wishes form: Listener ID is missing.");
+        this.$toast.add({severity:'warn', summary: 'Внимание', detail:'Сначала сохраните данные слушателя', life: 3000});
+        return;
+      }
+
+      console.log("Opening wishes form for listener:", this.listener.id);
+      this.errorsWish = {}; 
+
+      try {
+        const existingWish = this.listener_wishList.find(
+            (wish) => wish.listener_id === this.listener.id && !wish.deleted_at
+        );
+        this.listener_wish = new Listener_Wish(existingWish ? JSON.parse(JSON.stringify(existingWish)) : { listener_id: this.listener.id });
+        const currentWishDays = this.l_wish_dayList.filter(
+            (dayWish) => dayWish.listener_id === this.listener.id && !dayWish.deleted_at
+        );
+        const newTableDataContent = currentWishDays.map(dw => new L_Wish_Day(JSON.parse(JSON.stringify(dw))));
+        this.tableData.length = 0; 
+        newTableDataContent.forEach(item => this.tableData.push(item));
+
+        console.log("L_Wish_Day data loaded into reactive tableData:", this.tableData)
+
+        this.showWishes = true;
+    } catch(error) {
+         console.error("Error loading wishes data:", error);
+         this.$toast.add({severity:'error', summary: 'Ошибка', detail:'Не удалось загрузить данные пожеланий', life: 3000});
+    }
+  },
+
+  addRowInWishForm() {
+    if (!this.listener || !this.listener.id) {
+        console.error("Cannot add row, listener ID is missing.");
+        this.$toast.add({severity:'warn', summary: 'Внимание', detail:'Невозможно добавить строку без ID слушателя', life: 3000});
+        return;
+    }
+    this.addRow(this.listener.id);
+ },
+
+    
     closeSidebar() {
       this.showSidebar = false;
     },
@@ -598,21 +709,33 @@ export default {
       listener_wish.listener_id=this.listener.id;
       console.log(listener_wish)
       if (listener_wish.id) {
-        console.log("Меняю");
         await this.putListener_Wish(listener_wish);
       } else {
-        console.log("Добавляю");
         await this.postListener_Wish(listener_wish);
       }
       
+      const currentListenerId = this.listener.id;
+      try {
+        await this.syncLWishDays(currentListenerId);
+      } catch (error) {
+        console.error("Error during L_Wish_Day sync, caught in submitWishes:", error);
+      }
       this.showWishes = false;
     },
+
+    //Дописываю
+    async syncLWishDays(listenerId) {
+      console.log(`Starting manual L_Wish_Day sync for listener ${listenerId}...`)
+    },
+
+    
   },
   computed: {
     ...mapState(useListenerStore, ["listenerList"]),
     ...mapState(useListenergroupStore, ["listenergroupList"]),
     ...mapState(useListener_WishStore, ["listener_wishList"]),
     ...mapState(useDayStore, ["dayList"]),
+    ...mapState(useL_Wish_DayStore, ["l_wish_dayList"]),
     programOptions() {
       const programStore = useProgramStore();
       return Object.values(programStore.programMap || {}).map((item) => ({

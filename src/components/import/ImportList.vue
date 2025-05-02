@@ -1,230 +1,218 @@
 <template>
 
-<div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-  <button
-    @click="clearFilters"
-    :disabled="!filters"
-    class="btn btn-sm btn-primary text-nowrap mx-2 d-flex align-items-center"
-    type="button"
-  >
-    <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
-    Очистить фильтры
+  <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
     
-  </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
+    <span class="badge bg-secondary me-2">Next Program ID: {{ lastId }}</span>
+    
+    <button @click="clearFilters" :disabled="!filters"
+      class="btn btn-sm btn-primary text-nowrap mx-2 d-flex align-items-center" type="button">
+      <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
+      Очистить фильтры
+    </button>
+    <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
+      v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..." />
+  </div>
+
+  <div class="col col-xs-9 col-lg-12 mt-4 list">
+
+    <div class="col col-12">
+
+      <div class="mb-3 col col-12">
+
+        <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
+          <input type="file" @change="onFileChange" multiple accept=".xlsx, .xls, .plx">
         </div>
 
-    <div class="col col-xs-9 col-lg-12 mt-4 list">
-      
-     <div class="col col-12">
-      
-       <div class="mb-3 col col-12">
- 
-         <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
-           <input type="file" @change="onFileChange" multiple accept=".xlsx, .xls, .plx" >
-         </div>
-         
-         <div class="col col-6 float-end d-inline-flex align-items-center gap-2">
-          <button
-            @click="selectedCount === 0 ? clearData() : deleteSelected()"
-            type="button"
-            class="btn btn-danger btn-sm d-flex align-items-center"
-          >
+        <div class="col col-6 float-end d-inline-flex align-items-center gap-2">
+          <button @click="selectedCount === 0 ? deleteAllActiveProgramsConfirmed() : deleteSelected()" type="button"
+            class="btn btn-danger btn-sm d-flex align-items-center">
             <i class="material-icons-outlined me-2">close</i>
             {{ selectedCount === 0 ? 'Очистить' : 'Удалить выбранное' }}
           </button>
-    
-<!--
-    <button @click="" type="button" class="btn btn-success btn-sm d-flex align-items-center">
-        <i class="material-icons-outlined me-2">save</i>Сохранить
-    </button>
--->
-    <button @click="openCompareForm" type="button" class="btn btn-warning btn-sm d-flex align-items-center">
-        <i class="material-icons-outlined me-2">compare_arrows</i>Пересечение
-    </button>
 
-    <button @click="openArchiveForm" type="button" class="btn btn-primary btn-sm d-flex align-items-center">
-        <i class="material-icons-outlined me-2">assignment</i>Архив
-    </button>
+          <button @click="openCompareForm" :disabled="selectedCount < 2" type="button" class="btn btn-warning btn-sm d-flex align-items-center">
+            <i class="material-icons-outlined me-2">compare_arrows</i>Пересечение
+          </button>
 
-     </div>
-       </div>
-     </div>
- 
-     <div style="height: 50vh">
-       <div class="h-100 pt-5">
-          <ag-grid-vue
-            class="ag-theme-alpine"
-            style="width: 100%; height: 100%;"
-            :columnDefs="columnDefs.value"
-            :rowData="rowData.value"
-            :defaultColDef="defaultColDef"
-            :localeText="localeText"
-            rowSelection="multiple"
-            animateRows="true"
-            :rowHeight="40"
-            @cell-clicked="cellWasClicked"
-            @grid-ready="onGridReady"
-            @firstDataRendered="onFirstDataRendered"
-            @filter-changed="onFilterChanged"
-            domLayout="normal"
-            :pagination="true"            
-            :paginationPageSize="paginationPageSize"  
-          >
-          </ag-grid-vue>
-       </div>
-     </div>
- 
-   </div>
+          <button @click="openDisciplinesForm" type="button" class="btn btn-info btn-sm d-flex align-items-center">
+            <i class="material-icons-outlined me-2">menu_book</i>Дисциплины
+          </button>
 
-   <Sidebar
-    v-model:visible="showCompare"
-    position="bottom"
-    modal
-    header="Пересечение учебных планов"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
+          <button @click="openArchiveForm" type="button" class="btn btn-primary btn-sm d-flex align-items-center">
+            <i class="material-icons-outlined me-2">assignment</i>Архив
+          </button>
 
-  <div style="height: 50vh">
-       <div class="h-100 pt-5">
-        <ag-grid-vue
-  class="ag-theme-alpine"
-  style="width: 100%; height: 100%;"
-  :columnDefs="dynamicColumnDefs"
-  :rowData="rowDataForComparison"
-  :defaultColDef="defaultColDef"
-  :localeText="localeText"
-  rowSelection="multiple"
-  animateRows="true"
-  :rowHeight="40"
-  @cell-clicked="cellWasClicked"
-  @grid-ready="onGridReady"
-  @firstDataRendered="onFirstDataRendered"
-  @filter-changed="onFilterChanged"
-  :pagination="true"            
-  :paginationPageSize="paginationPageSize">
-</ag-grid-vue>
-       </div>
-     </div>
+        </div>
+      </div>
+    </div>
 
-  </Sidebar>
+    <div class="col col-12 mt-2"> <!-- Добавляем немного отступа сверху -->
+      <p v-if="successMessage" class="alert alert-success p-2">{{ successMessage }}</p>
+      <p v-if="errorMessage" class="alert alert-danger p-2">{{ errorMessage }}</p>
+    </div>
 
-  <Sidebar
-    v-model:visible="showArchive"
-    position="bottom"
-    modal
-    header="Архив"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
+    <div style="height: 50vh">
+      <div class="h-100 pt-5">
+        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefs.value"
+          :rowData="rowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+          animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked" @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" domLayout="normal"
+          :pagination="true" :paginationPageSize="paginationPageSize">
+        </ag-grid-vue>
+      </div>
+    </div>
 
-  <div class="year-selector-container">
-    
-    <auto-form
-            v-model="formValues"
-            v-model:errors="errors"
-            :scheme="archiveScheme"
-            class="custom-form"
-          >
-          </auto-form>
-    
   </div>
 
-  <div style="height: 50vh">
-       <div class="h-100 pt-5">
-         <ag-grid-vue
-     class="ag-theme-alpine"
-     style="width: 100%; height: 100%;"
-     :columnDefs="columnDefs.value"
-     :rowData="filteredRowDataArchive"
-     :defaultColDef="defaultColDef"
-     :localeText="localeText"
-     rowSelection="multiple"
-     animateRows="true"
-     :rowHeight="40"
-     @cell-clicked="cellWasClicked"
-     @grid-ready="onGridReady"
-     @firstDataRendered="onFirstDataRendered"
-     @filter-changed="onFilterChanged"
-     :pagination="true"            
-     :paginationPageSize="paginationPageSize"  
-   >
-   </ag-grid-vue>
-       </div>
-     </div>
-  </Sidebar>
+  <Sidebar v-model:visible="showCompare" position="bottom" modal header="Пересечение учебных планов"
+    class="custom-sidebar h-auto" :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-  <Sidebar
-    v-model:visible="showDetails"
-    position="bottom"
-    modal
-    :header="`Программа ${selectedDisciplineCode}`"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
+    <div class="year-selector-container">
 
-  <div style="height: 50vh">
-       <div class="h-100 pt-5">
-         <ag-grid-vue
-     class="ag-theme-alpine"
-     style="width: 100%; height: 100%;"
-     :columnDefs="detailColumnDefs.value"
-     :rowData="detailRowData"
-     :defaultColDef="defaultColDef"
-     :localeText="localeText"
-     rowSelection="multiple"
-     animateRows="true"
-     :rowHeight="40"
-     @cell-clicked="cellWasClicked"
-     @grid-ready="onGridReady"
-     @firstDataRendered="onFirstDataRendered"
-     @filter-changed="onFilterChanged"
-     :pagination="true"            
-     :paginationPageSize="paginationPageSize"  
-   >
-   </ag-grid-vue>
-       </div>
-     </div>
+      <auto-form v-model="formValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
+      </auto-form>
+
+    </div>
+
+    <div style="height: 50vh">
+      <div class="h-100 pt-5">
+        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="dynamicColumnDefs"
+          :rowData="rowDataForComparison" :defaultColDef="defaultColDef" :localeText="localeText"
+          rowSelection="multiple" animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered"
+          :pagination="true" :paginationPageSize="paginationPageSize">
+        </ag-grid-vue>
+      </div>
+    </div>
 
   </Sidebar>
- 
- </template>
- 
- <script>
- 
- import { AgGridVue } from "ag-grid-vue3"; 
- import { computed, reactive, onMounted, ref } from "vue";
- import ButtonCell from "@/components/import/ImportButtonCell.vue";
- import "ag-grid-community/styles/ag-grid.css"; 
- import "ag-grid-community/styles/ag-theme-alpine.css"; 
- 
- import { useRoute } from "vue-router";
- import { mapState, mapActions } from "pinia";
- import { useUploaded_FileStore } from "@/store2/uploadedfilegroup/uploaded_file";
- import { useImport_ProgramStore } from "@/store2/importgroup/import_program";
- import { useImport_DiscipleStore } from "@/store2/importgroup/import_disciple";
- import AutoForm from "@/components/form/AutoForm.vue";
- import { FormScheme } from "@/model/form/FormScheme";
 
- import { TextInput } from "@/model/form/inputs/TextInput";
- import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
- import Uploaded_File from "@/model/uploaded_file-group/Uploaded_File";
- import Import_Program from "@/model/import-group/Import_Program";
- 
- import Import_Disciple from "@/model/import-group/Import_Disciple";
- import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
- 
- import * as XLSX from 'xlsx';
+  <Sidebar v-model:visible="showDisciple" @hide="resetDiscipleFilters" position="bottom" modal header="Дисциплины" class="custom-sidebar h-auto"
+    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
+
+    <div class="year-selector-container">
+
+      <auto-form v-model="discipleFormValues" v-model:errors="errors" :scheme="discipleScheme" class="custom-form">
+      </auto-form>
+    </div>
+
+    <div style="height: 50vh">
+      <div class="h-100 pt-2">
+        <ag-grid-vue 
+          class="ag-theme-alpine grid-compact" 
+          style="width: 100%; height: 100%;" 
+          :columnDefs="detailColumnDefs.value"
+          :rowData="filteredDiscipleDataForAllPrograms" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+          animateRows="true" 
+          :rowHeight="35" 
+          @cell-clicked="cellWasClicked" 
+          @grid-ready="onGridReadyDetails"
+          @firstDataRendered="onFirstDataRendered" 
+          @filter-changed="onDetailFilterChanged" 
+          :pagination="true"
+          :paginationPageSize="paginationPageSize">
+        </ag-grid-vue>
+      </div>
+    </div>
+  </Sidebar>
+
+  <Sidebar v-model:visible="showArchive" @hide="resetArchiveFilters" position="bottom" modal header="Архив" class="custom-sidebar h-auto"
+    :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
+
+    <div class="year-selector-container">
+
+      <auto-form v-model="archiveFormValues" v-model:errors="errors" :scheme="archiveScheme" class="custom-form">
+      </auto-form>
+    </div>
+
+    <div style="height: 50vh">
+      <div class="h-100 pt-5">
+        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="archiveColumnDefs.value"
+          :rowData="filteredRowDataArchive" 
+          :defaultColDef="archiveColumnDefs" :localeText="localeText"
+          rowSelection="multiple" animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered" 
+          :pagination="true" :paginationPageSize="paginationPageSize">
+        </ag-grid-vue>
+      </div>
+    </div>
+  </Sidebar>
+
+  <Sidebar v-model:visible="showDetails" @hide="resetDetailsFilters" position="bottom" modal :header="`Программа ${selectedDisciplineCodeForTemplate}`"
+    class="custom-sidebar h-auto" :style="{ width: '80%', maxHeight: '80vh', height: 'auto', margin: 'auto' }">
+
+    <div class="year-selector-container flex-grow-1 me-3">
+      <div class="d-inline-flex align-items-center flex-shrink-0">
+          <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
+            class="btn btn-sm btn-primary text-nowrap mx-2 d-flex align-items-center" type="button">
+            <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
+            Очистить фильтр
+          </button>
+          <input class="form-control form-control-sm" type="text"
+                 v-model="detailQuickFilterValue"
+                 id="detail-filter-text-box"
+                 v-on:input="onDetailFilterTextBoxChanged()"
+                 placeholder="Поиск по дисциплинам..."
+                 style="width: 200px;" />
+      </div>
+      <auto-form v-model="detailsFormValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
+      </auto-form>
+    </div>
+
+    <div style="height: 50vh">
+      <div class="h-100 pt-2">
+        <ag-grid-vue 
+          class="ag-theme-alpine grid-compact" 
+          style="width: 100%; height: 100%;" 
+          :columnDefs="detailColumnDefs.value"
+          :rowData="detailRowData" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+          animateRows="true" 
+          :rowHeight="35" 
+          @cell-clicked="cellWasClicked" 
+          @grid-ready="onGridReadyDetails"
+          @firstDataRendered="onFirstDataRendered" 
+          @filter-changed="onDetailFilterChanged" 
+          :pagination="true"
+          :paginationPageSize="paginationPageSize">
+        </ag-grid-vue>
+      </div>
+    </div>
+
+  </Sidebar>
+
+</template>
+
+<script>
+
+import { AgGridVue } from "ag-grid-vue3";
+import { computed, reactive, onMounted, ref, watch, getCurrentInstance } from "vue";
+import ButtonCell from "@/components/import/ImportButtonCell.vue";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+
+import { useRoute } from "vue-router";
+import { mapState, mapActions, storeToRefs } from "pinia";
+import { useUploaded_FileStore } from "@/store2/uploadedfilegroup/uploaded_file";
+import { useImport_ProgramStore } from "@/store2/importgroup/import_program";
+import { useImport_DiscipleStore } from "@/store2/importgroup/import_disciple";
+import AutoForm from "@/components/form/AutoForm.vue";
+import { FormScheme } from "@/model/form/FormScheme";
+
+import { TextInput } from "@/model/form/inputs/TextInput";
+import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
+import Uploaded_File from "@/model/uploaded_file-group/Uploaded_File";
+import Import_Program from "@/model/import-group/Import_Program";
+
+import Import_Disciple from "@/model/import-group/Import_Disciple";
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
+
+import * as XLSX from 'xlsx';
 import Import_Program_Year from "../../model/import-group/Import_Program_Year";
 import Import_Program_Code from "../../model/import-group/Import_Program_Code";
+import Import_Disciple_Department from "../../model/import-group/Import_Disciple_Department";
+import Import_Disciple_Semester from "../../model/import-group/Import_Disciple_Semestr";
+
+import axios from 'axios';
 
 function transformDisciples(discipleList) {
   const grouped = {};
@@ -244,1028 +232,1565 @@ function transformDisciples(discipleList) {
   return Object.values(grouped);
 }
 
- export default {
-   name: 'import',
-   components: {
-     AgGridVue,
-     ButtonCell,
-     AutoForm,
-   },
-   setup() {
- 
-    const localeText = AG_GRID_LOCALE_RU;
-    const gridApi = ref(null);
-    const gridColumnApi = ref();
-     
-    const dataFromApi = ref(null); 
-    const dataLoaded = ref(false);
- 
-    const route = useRoute();
- 
-    const paginationPageSize = 60;
- 
-    const onGridReady = (params) => {
-       gridApi.value = params.api;
-       gridColumnApi.value = params.columnApi;
-     };
-     const navigateToListener = () => {};
- 
-     const rowData = reactive({}); 
-
-     const selectedCount = computed(() => {
-      return Array.isArray(rowData.value)
-        ? rowData.value.filter(item => item.selected === true).length
-        : 0;
-      });
-
-      const lastId = computed(() => {
-        return rowData.value?.length+1 ?? 0;
-    });
-
-     const detailRowData = ref({});
-     const compareRowData = ref({});
-     const codes = reactive([]);
-     const years = reactive([]);
- 
-     const columnDefs = reactive({
-       value: [
-       {
-       sortable: false,
-       filter: false,
-       headerName: '',
-       headerClass: "text-center",
-       cellRenderer: 'ButtonCell',
-       cellRendererParams: {
-         label: 'View Details',
-       },
-       maxWidth: 50, 
-       resizable: false
-     },
-            { 
-             field: "code", 
-             headerName: 'Код направления', 
-             maxWidth: 180
-           }, 
-           { 
-             field: "profile", 
-             headerName: 'Профиль', 
-             minWidth: 880, 
-           }, 
-           { 
-             field: "years", 
-             headerName: 'Учебный год', 
-             maxWidth: 150, 
-           }, 
-           {
-  headerName: '', 
-  field: "selected", 
-  cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
-  cellRenderer: (params) => {
-    const isSelected = params.value || false;
-
-    const container = document.createElement('div');
-    container.style.width = '100%';
-    container.style.height = '100%';
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.justifyContent = 'center';
-    container.style.cursor = 'pointer';
-    container.style.fontSize = '20px'; // Размер иконки
-    container.style.color = isSelected ? 'green' : 'gray'; // Цвет активной галочки
-
-    // Галочка или крестик
-    container.innerHTML = isSelected ? '✔' : '';
-
-    // Добавляем обработчик клика
-    container.addEventListener('click', () => {
-      const newValue = !isSelected; // Переключаем состояние
-      params.node.setDataValue('selected', newValue);
-
-      // Обновляем иконку и цвет
-      container.innerHTML = newValue ? '✔' : '';
-      container.style.color = newValue ? 'green' : 'gray';
-
-      //console.log(`Статус изменён: ${newValue ? 'Выбрано' : 'Снято'}`);
-      console.log('Данные строки:', params.data.code);
-    });
-
-    return container;
+export default {
+  name: 'import',
+  components: {
+    AgGridVue,
+    ButtonCell,
+    AutoForm,
   },
-  maxWidth: 120
-}
-       ],
-     });
- 
-     const detailColumnDefs = reactive({
-       value: [ 
-           { 
-             field: "disciple_name", 
-             headerName: 'Наименование', 
-             minWidth: 500, 
-           }, 
-           { 
-             field: "hours", 
-             headerName: 'Всего часов', 
-             maxWidth: 200, 
-           }, 
-       ],
-     });
+  setup() {
 
-     const compareColumnDefs = reactive({
-       value: [ 
-            { 
-             field: "index_code", 
-             headerName: 'Индекс', 
-             maxWidth: 200
-           }, 
-           { 
-             field: "disciple_name", 
-             headerName: 'Наименование', 
-             minWidth: 500, 
-           }, 
-           { 
-             field: "hours", 
-             headerName: 'Всего часов', 
-             maxWidth: 200, 
-           }, 
-           { 
-             field: "contact_hours", 
-             headerName: 'Кон Такт.', 
-           }, 
-           { 
-             field: "lecture_hours", 
-             headerName: 'Лек', 
-           },
-           { 
-             field: "lab_hours", 
-             headerName: 'Лаб', 
-           },
-           { 
-             field: "practice_hours", 
-             headerName: 'Пр', 
-           },
-           { 
-             field: "ksr_hours", 
-             headerName: 'КСР', 
-           },
-           { 
-             field: "ikr_hours", 
-             headerName: 'ИКР', 
-           },
-           { 
-             field: "sr_hours", 
-             headerName: 'СР', 
-           },
-           { 
-             field: "control_type", 
-             headerName: 'Контроль', 
-           },
-           { 
-             field: "z_e", 
-             headerName: 'з.е', 
-           },
-           { 
-             field: "weeks", 
-             headerName: 'Недель', 
-           },
-       ],
-     });
- 
-     const columnDefs2 = reactive({
-       value: [ 
-            { 
-             field: "index_code", 
-             headerName: 'Год', 
-             maxWidth: 200
-           }, 
-           { 
-             field: "direction_name", 
-             headerName: 'Лекции', 
-             minWidth: 500, 
-           }, 
-           { 
-             field: "qualification", 
-             headerName: 'Бюджет', 
-             maxWidth: 200, 
-           }, 
-           { 
-             field: "academic_year", 
-             headerName: 'Учебный год', 
-           }, 
-       ],
-     });
- 
-     const defaultColDef = {
-       sortable: true,
-       filter: true,
-       flex: 1,
-       resizable: true,
-       minWidth: 300
-     };
+    const instance = getCurrentInstance();
+    const localeText = AG_GRID_LOCALE_RU;
 
-     const importProgramStore = useImport_ProgramStore();
-     const importDiscipleStore = useImport_DiscipleStore();
+    const gridApi = ref(null);
+    const quickFilterValue = ref('');
+    const filters = ref(false); 
+    const rowData = reactive({ value: []});
+
+    const gridApiDetails = ref(null); 
+    const detailQuickFilterValue = ref(''); 
+    const detailFiltersActive = ref(false); 
+    const detailRowData = ref({});
+
+    const gridColumnApi = ref();
+    const gridColumnApiDetails = ref();
+
+    const dataFromApi = ref(null);
+    const dataLoaded = ref(false);
+
+    const route = useRoute();
+
+    const paginationPageSize = 60;
+
+    const onGridReady = (params) => {
+      gridApi.value = params.api;
+      gridColumnApi.value = params.columnApi;
+    };
+
+    const clearFilters = () => {
+      console.log('MAIN clearFilters called'); 
+      if (!gridApi.value) {
+        console.warn("API основной таблицы недоступно для очистки фильтров.");
+        return; 
+      }
+
+      gridApi.value.setFilterModel(null);
+      gridApi.value.setQuickFilter(null);
+
+      quickFilterValue.value = "";
+      filters.value = false;
+};
+
+const onFilterChanged = () => {
+  console.log('MAIN grid filter changed event');
+  if (!gridApi.value) return; 
+
+  const savedQuickFilter = gridApi.value.getQuickFilter();
+  const savedFilterModel = gridApi.value.getFilterModel();
+
+  filters.value = !!savedQuickFilter || (!!savedFilterModel && Object.keys(savedFilterModel).length > 0);
+  console.log('MAIN filters active state:', filters.value);
+
+};
+
+const onGridReadyDetails = (params) => {
+  console.log("Details grid ready");
+  gridApiDetails.value = params.api;
+  gridColumnApiDetails.value = params.columnApi;
+};
+
+const selectedCount = computed(() => {
+      // Доступ к массиву через rowData.value
+      if (!Array.isArray(rowData.value)) {
+        return 0;
+      }
+      const count = rowData.value.filter(item => item.selected === true).length;
+      console.log('Пересчет selectedCount (reactive):', count);
+      return count;
+    });
+
+    const lastId = computed(() => {
+
+      const allPrograms = importProgramStore.import_programList;
+
+      if (!allPrograms || allPrograms.length === 0) {
+        return 1; 
+      }
+
+      const maxId = allPrograms.reduce((max, program) => {
+         const currentId = Number(program.id) || 0;
+         return currentId > max ? currentId : max;
+      }, 0); 
+
+      return maxId + 1;
+    });
+
+    
+    const compareRowData = ref({});
+    const codes = reactive([]);
+    const years = reactive([]);
+
+    const selectedDisciplineCodeForTemplate = computed(() => {
+        return instance?.data.selectedDisciplineCode ?? null;
+    });
+
+    const columnDefs = reactive({
+      value: [
+        {
+          sortable: false,
+          filter: false,
+          headerName: '',
+          headerClass: "text-center",
+          cellRenderer: 'ButtonCell',
+          cellRendererParams: {
+            label: 'View Details',
+          },
+          maxWidth: 50,
+          resizable: false
+        },
+        {
+          field: "code",
+          headerName: 'Код направления',
+          maxWidth: 180,
+        },
+        {
+          field: "profile",
+          headerName: 'Профиль',
+          minWidth: 800,
+        },
+        {
+          field: "years",
+          headerName: 'Учебный год',
+          maxWidth: 150,
+        },
+        {
+          headerName: '',
+          field: "selected",
+          cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+          cellRenderer: (params) => {
+            const isSelected = params.value || false;
+
+            const container = document.createElement('div');
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            container.style.cursor = 'pointer';
+            container.style.fontSize = '20px'; 
+            container.style.color = isSelected ? 'green' : 'gray';
+
+            container.innerHTML = isSelected ? '✔' : '';
+
+            container.addEventListener('click', () => {
+              const newValue = !isSelected; 
+              params.node.setDataValue('selected', newValue);
+
+              container.innerHTML = newValue ? '✔' : '';
+              container.style.color = newValue ? 'green' : 'gray';
+
+              console.log('Данные строки:', params.data.code);
+            });
+
+            return container;
+          },
+          maxWidth: 120
+        }
+      ],
+    });
+
+    const archiveColumnDefs = reactive({
+      value: [
+        {
+          sortable: false,
+          filter: false,
+          headerName: '',
+          headerClass: "text-center",
+          cellRenderer: 'ButtonCell',
+          cellRendererParams: {
+            label: 'View Details',
+          },
+          maxWidth: 50,
+          resizable: false
+        },
+        {
+          field: "code",
+          headerName: 'Код направления',
+          maxWidth: 180,
+        },
+        {
+          field: "profile",
+          headerName: 'Профиль',
+          minWidth: 400,
+        },
+        {
+          field: "years",
+          headerName: 'Учебный год',
+          maxWidth: 150,
+        },
+        {
+          field: "start_year",
+          headerName: 'Год начала обучения',
+          maxWidth: 150,
+        },
+        {
+          field: "actualization_year",
+          headerName: 'Год актуализации',
+          maxWidth: 150,
+        },
+    
+      ],
+    });
+
+    const detailColumnDefs = reactive({
+      value: [
+        {
+          field: "disciple_name",
+          headerName: 'Наименование',
+          flex: 3,
+          minWidth: 250,
+        },
+        {
+          field: "hours",
+          headerName: 'Всего',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 90, 
+          flex: 1, 
+        },
+        {
+          field: "contact_hours",
+          headerName: 'Контакт.',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 80, // Предпочтительная ширина
+          flex: 1,
+        },
+        {
+          field: "lecture_hours",
+          headerName: 'Лек',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60, // Меньшая ширина
+          flex: 0.8, // Меньший flex
+        },
+        {
+          field: "lab_hours",
+          headerName: 'Лаб',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60,
+          flex: 0.8,
+        },
+        {
+          field: "practice_hours",
+          headerName: 'Пр',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60,
+          flex: 0.8,
+        },
+        {
+          field: "ksr_hours",
+          headerName: 'КСР',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60,
+          flex: 0.8,
+        },
+        {
+          field: "ikr_hours",
+          headerName: 'ИКР',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60,
+          flex: 0.8,
+        },
+        {
+          field: "independent_study_hours",
+          headerName: 'СР',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 60,
+          flex: 0.8,
+        },
+        {
+          field: "control_hours",
+          headerName: 'Контроль',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 80,
+          flex: 1,
+        },
+      ],
+    });
+
+    const compareColumnDefs = reactive({
+      value: [
+        {
+          field: "index_code",
+          headerName: 'Индекс',
+          maxWidth: 200
+        },
+        {
+          field: "disciple_name",
+          headerName: 'Наименование',
+          minWidth: 500,
+        },
+        {
+          field: "hours",
+          headerName: 'Всего часов',
+          maxWidth: 200,
+        },
+        {
+          field: "contact_hours",
+          headerName: 'Кон Такт.',
+        },
+        {
+          field: "lecture_hours",
+          headerName: 'Лек',
+        },
+        {
+          field: "lab_hours",
+          headerName: 'Лаб',
+        },
+        {
+          field: "practice_hours",
+          headerName: 'Пр',
+        },
+        {
+          field: "ksr_hours",
+          headerName: 'КСР',
+        },
+        {
+          field: "ikr_hours",
+          headerName: 'ИКР',
+        },
+        {
+          field: "sr_hours",
+          headerName: 'СР',
+        },
+        {
+          field: "control_type",
+          headerName: 'Контроль',
+        },
+        {
+          field: "z_e",
+          headerName: 'з.е',
+        },
+        {
+          field: "weeks",
+          headerName: 'Недель',
+        },
+      ],
+    });
+
+    const columnDefs2 = reactive({
+      value: [
+        {
+          field: "index_code",
+          headerName: 'Год',
+          maxWidth: 200
+        },
+        {
+          field: "direction_name",
+          headerName: 'Лекции',
+          minWidth: 500,
+        },
+        {
+          field: "qualification",
+          headerName: 'Бюджет',
+          maxWidth: 200,
+        },
+        {
+          field: "academic_year",
+          headerName: 'Учебный год',
+        },
+      ],
+    });
+
+    const defaultColDef = {
+      sortable: true,
+      filter: true,
+      resizable: true,
+      minWidth: 50,
+      headerClass: 'wrap-header-text',
+      cellStyle: {
+        'white-space': 'nowrap',
+        'overflow': 'hidden',
+        'text-overflow': 'ellipsis',
+      }
+    };
+
+    const importProgramStore = useImport_ProgramStore();
+    const importDiscipleStore = useImport_DiscipleStore();
+
+    const { import_programList } = storeToRefs(importProgramStore);
+    const { import_discipleList } = storeToRefs(importDiscipleStore);
 
     const rowDataForComparison = computed(() => {
-      // transformDisciples – функция, которая собирает данные в нужный вид
-      return transformDisciples(importDiscipleStore.import_discipleList);
-    });
+  console.log("[Computed] Пересчет rowDataForComparison");
+
+  // 1. Получаем ID ТОЛЬКО ВЫБРАННЫХ программ
+  const selectedProgramIds = (rowData.value || []) // Используем rowData.value
+                              .filter(program => program.selected === true)
+                              .map(program => program.id); // Нам нужны только их ID
+
+  console.log(`[Computed] rowDataForComparison: ID выбранных программ:`, selectedProgramIds);
+
+  if (selectedProgramIds.length < 2) {
+      // Если выбрано менее 2 программ, нет смысла показывать пересечение
+      // Хотя кнопка и так должна быть заблокирована
+      console.log("[Computed] rowDataForComparison: Менее 2 программ выбрано, возвращаем пустой массив.");
+      return [];
+  }
+
+  // 2. Получаем ВСЕ дисциплины из хранилища
+  const allDisciples = importDiscipleStore.import_discipleList || [];
+  console.log(`[Computed] rowDataForComparison: Всего дисциплин в store: ${allDisciples.length}`);
+
+  // 3. Фильтруем дисциплины: оставляем только те, что принадлежат ВЫБРАННЫМ программам
+  const relevantDisciples = allDisciples.filter(disciple =>
+    disciple.program_id !== undefined && selectedProgramIds.includes(disciple.program_id)
+  );
+  console.log(`[Computed] rowDataForComparison: Дисциплин, относящихся к выбранным программам: ${relevantDisciples.length}`);
+
+  // 4. Передаем отфильтрованные дисциплины в функцию трансформации
+  // Функция transformDisciples сама сгруппирует их и создаст hoursByProgram ТОЛЬКО для нужных ID
+  const transformedData = transformDisciples(relevantDisciples);
+  console.log("[Computed] rowDataForComparison: Трансформированные данные для таблицы:", transformedData);
+
+  return transformedData;
+});
 
     onMounted(async () => {
-      await importProgramStore.getImport_ProgramCodesList(); 
-  // или как у вас называется экшен/метод
-
-  // Посмотрим, что там внутри
-  console.log("Содержимое import_program_codesList:", importProgramStore.import_program_codesList);
-});
+    });
 
     const programsOptions = computed(() => {
-  return importProgramStore.import_program_codesList.map(item => {
-    return {
-      label: item.codes, 
-      value: item.codes  
-    };
-  });
-});
+      return importProgramStore.import_program_codesList.map(item => {
+        return {
+          label: item.codes,
+          value: item.codes
+        };
+      });
+    });
     const yearsOptions = computed(() => {
-  return importProgramStore.import_program_yearsList.map(item => {
-    return {
-      label: item.years, // то, что увидит пользователь
-      value: item.years  // внутреннее значение (v-model)
+      return importProgramStore.import_program_yearsList.map(item => {
+        return {
+          label: item.years,
+          value: item.years 
+        };
+      });
+    });
+
+    const timeYearsOptions = [
+  { label: 2020, value: 2020 },
+  { label: 2021, value: 2021 },
+  { label: 2022, value: 2022 },
+  { label: 2023, value: 2023 },
+  { label: 2024, value: 2024 },
+  { label: 2025, value: 2025 }
+];
+
+
+    const semestresOptions = computed(() => {
+       console.log('[LOG] Calculating semestresOptions. Source:', importDiscipleStore.import_disciple_semestresList);
+       const options = importDiscipleStore.import_disciple_semestresList.map(item => {
+         return {
+           label: item.semester,
+           value: item.semester
+         };
+       });
+       console.log('[LOG] Generated semestresOptions:', options);
+       return [{ label: "Не выбрано", value: null }, ...options];
+     });
+    const departmentsOptions = computed(() => {
+      console.log('[LOG] Calculating departments. Source:', importDiscipleStore.import_disciple_departmentsList);
+      return importDiscipleStore.import_disciple_departmentsList.map(item => {
+        return {
+          label: item.department,
+          value: item.department
+        };
+      });
+    });
+
+    const onFilterTextBoxChanged = () => {
+      console.log('MAIN filter input changed:', quickFilterValue.value);
+      if (!gridApi.value) {
+         console.warn("API основной таблицы не готово для фильтрации.");
+         return;
+      }
+      gridApi.value.setQuickFilter(quickFilterValue.value);
+
+      filters.value = !!quickFilterValue.value;
+      console.log('Filters state set by input:', filters.value);
     };
-  });
-});
-     
-     const onFilterTextBoxChanged = () => {
-       gridApi.value.setQuickFilter(
-         document.getElementById('filter-text-box').value
-       );
-     };
 
-     const dynamicColumnDefs = computed(() => {
+    const onDetailFilterTextBoxChanged = () => {
+  console.log('DETAIL filter input changed:', detailQuickFilterValue.value);
+  if (!gridApiDetails.value) {
+     console.warn("API таблицы деталей не готово для фильтрации (onDetailFilterTextBoxChanged).");
+     return;
+  }
+  gridApiDetails.value.setQuickFilter(detailQuickFilterValue.value);
+  // Немедленное обновление состояния кнопки
+  detailFiltersActive.value = !!detailQuickFilterValue.value;
+  console.log('DETAIL Filters state set by input:', detailFiltersActive.value);
+};
+
+const clearDetailFilters = () => {
+  console.log('DETAIL clearDetailFilters called');
+  if (!gridApiDetails.value) {
+     console.warn("API таблицы деталей не готово для очистки фильтра (clearDetailFilters).");
+     return;
+  }
+  gridApiDetails.value.setQuickFilter(null);
+  detailQuickFilterValue.value = ''; 
+  detailFiltersActive.value = false;
+};
+
+ const onDetailFilterChanged = () => {
+    console.log('DETAIL grid filter changed event');
+    if (!gridApiDetails.value) return; 
+
+    const savedQuickFilter = gridApiDetails.value.getQuickFilter();
+    const savedFilterModel = gridApiDetails.value.getFilterModel(); 
+
+    detailFiltersActive.value = !!savedQuickFilter || (!!savedFilterModel && Object.keys(savedFilterModel).length > 0);
+    console.log('DETAIL filters active state (event):', detailFiltersActive.value);
+ };
+
+    const dynamicColumnDefs = computed(() => {
       const columns = [
-        {
-          headerName: 'Дисциплина',
-          field: 'disciple_name',
-          pinned: 'left',
-          lockPinned: true,
-          width: 200,
-        }
-      ];
+    {
+      headerName: 'Дисциплина',
+      field: 'disciple_name',
+      pinned: 'left', // Закрепляем слева
+      lockPinned: true,
+      width: 300,     // Можно сделать пошире
+      resizable: true,
+      sortable: true,
+      filter: true,   // Добавим фильтр по названию
+    }
+  ];
 
-      importProgramStore.import_programList.forEach(program => {
+  const selectedPrograms = (rowData.value || []) // Используем rowData.value
+                            .filter(program => program.selected === true);
+
+  console.log(`[Computed] dynamicColumnDefs: Найдено выбранных программ: ${selectedPrograms.length}`);
+
+
+      selectedPrograms.forEach(program => {
+    // Проверяем, что у программы есть необходимые данные (id, code)
+    if (program && program.id !== undefined && program.code !== undefined) {
         columns.push({
-          headerName: program.code,
+          // Используем код и, возможно, часть профиля для заголовка
+          headerName: `${program.code} (${program.profile ? program.profile.substring(0,15)+'...' : 'Профиль N/A'})`,
+          // Уникальный ID колонки важен для valueGetter и фильтрации/сортировки
+          colId: `program_${program.id}`,
           valueGetter: (params) => {
-            return params.data.hoursByProgram?.[program.id] || 0;
+            // params.data - это объект дисциплины из rowDataForComparison
+            // { disciple_name: '...', hoursByProgram: { prog_id1: hours1, prog_id2: hours2 } }
+            // Достаем часы для ID программы ЭТОЙ КОЛОНКИ
+            return params.data?.hoursByProgram?.[program.id] ?? 0; // Возвращаем 0, если часов нет
           },
-          width: 100,
+          width: 120,              // Ширина колонки с часами
+          type: 'numericColumn',   // Для правильной сортировки и фильтрации чисел
+          filter: 'agNumberColumnFilter', // Фильтр для чисел
+          resizable: true,
+          sortable: true,          // Сортировка по часам
         });
+    } else {
+        console.warn("[Computed] dynamicColumnDefs: Пропуск программы из-за отсутствия id/code:", program);
+    }
       });
 
+      console.log("[Computed] dynamicColumnDefs: Итоговое количество колонок:", columns.length);
       return columns;
     });
- 
-     return {
- 
-       onGridReady,
-       columnDefs,
-       detailColumnDefs,
-       compareColumnDefs,
-       columnDefs2,
-       rowData,
-       selectedCount,
-       lastId,
-       detailRowData,
-       compareRowData,
-       rowDataForComparison,
-       dynamicColumnDefs,
-       years,
-       codes,
-       yearsOptions,
-       programsOptions,
-       defaultColDef,
-       localeText,
 
-       deselectRows: () =>{
-         gridApi.value.deselectAll()
-       },
- 
-       onFilterTextBoxChanged,
-       paginationPageSize,
-       navigateToListener,
-       dataFromApi,
-       dataLoaded,
-     };
- 
-   },
-   
-   data() {
-     return {
+    const isLoading = ref(false);
+    const successMessage = ref('');
+    const errorMessage = ref('');
+
+    const archiveFormValues = reactive({
+    codes: null,
+    academic_year: null, 
+    start_year: null,   
+    actualization_year: null //
+    });
+    const discipleFormValues = reactive({
+        codes: null,
+        semestres: null,
+        departments: null,
+    });
+    const detailsFormValues = reactive({
+        semestres: null,
+        departments: null,
+    });
+
+    const selectedDisciplineCode = ref(null); // Для заголовка
+    const selectedProgramId = ref(null);      // ID для фильтрации деталей <--- ВАЖНО!
+
+
+const filteredRowDataArchive = computed(() => {
+  const programs = import_programList.value || []; // Используем .value
+  const filters = archiveFormValues; // Используем новые значения формы
+
+  // Проверяем, есть ли хоть один активный фильтр
+  if (!filters.codes && !filters.academic_year && !filters.start_year && !filters.actualization_year) {
+      return programs; // Нет фильтров - возвращаем все программы
+  }
+
+  return programs.filter(program => {
+    // Условия фильтрации, использующие КЛЮЧИ из archiveFormValues
+    const codeMatch = !filters.codes || String(program.code) === String(filters.codes);
+    const academicYearMatch = !filters.academic_year || String(program.years) === String(filters.academic_year); // Предполагаем, что 'years' - поле в program
+    const startYearMatch = !filters.start_year || String(program.start_year) === String(filters.start_year); // Поле Год начала
+    const actualizationYearMatch = !filters.actualization_year || String(program.actualization_year) === String(filters.actualization_year); // Поле Год актуализации
+
+    // Возвращаем true, если все условия совпали
+    return codeMatch && academicYearMatch && startYearMatch && actualizationYearMatch;
+  });
+});
+
+// Фильтр для сайдбара "Дисциплины" (все программы)
+const filteredDiscipleDataForAllPrograms = computed(() => {
+  const disciples = import_discipleList.value || []; // Используем .value
+  const programs = import_programList.value || [];   // Нужны для поиска ID по коду
+  const filters = discipleFormValues; // Используем фильтры этого сайдбара
+
+  // Ищем ID программы по выбранному коду (если выбран)
+  let targetProgramId = null;
+  if (filters.codes) {
+      const selectedProgram = programs.find(p => String(p.code) === String(filters.codes));
+      if (selectedProgram) {
+          targetProgramId = selectedProgram.id;
+      } else {
+          return []; // Код выбран, но программа не найдена -> пусто
+      }
+  }
+
+  // Если нет активных фильтров (код, семестр, кафедра)
+  if (!targetProgramId && !filters.semestres && !filters.departments) {
+      return disciples; // Возвращаем все дисциплины
+  }
+
+  return disciples.filter(disciple => {
+      // Проверяем совпадение по ID программы (если код был выбран), семестру и кафедре
+      const programMatch = !targetProgramId || disciple.program_id === targetProgramId;
+      const semesterMatch = !filters.semestres || String(disciple.semester) === String(filters.semestres);
+      const departmentMatch = !filters.departments || String(disciple.department) === String(filters.departments);
+
+      return programMatch && semesterMatch && departmentMatch;
+  });
+});
+
+// Фильтр для сайдбара "Детали" (конкретная программа)
+const filteredDiscipleDataForSelectedProgram = computed(() => {
+    const disciples = import_discipleList.value || []; // Используем .value
+    const currentProgramId = selectedProgramId.value; // <-- Используем ID выбранной программы
+    const filters = detailsFormValues; // Используем фильтры этого сайдбара
+
+    // 1. Сначала фильтруем по ID выбранной программы
+    const disciplesForProgram = currentProgramId
+        ? disciples.filter(d => d.program_id === currentProgramId)
+        : []; // Если ID не выбран, показываем пусто (хотя сайдбар не должен открыться)
+
+    // 2. Затем применяем фильтры по семестру и кафедре из формы деталей
+    if (!filters.semestres && !filters.departments) {
+        return disciplesForProgram; // Нет доп. фильтров
+    }
+
+    return disciplesForProgram.filter(disciple => {
+        const semesterMatch = !filters.semestres || String(disciple.semester) === String(filters.semestres);
+        const departmentMatch = !filters.departments || String(disciple.department) === String(filters.departments);
+        return semesterMatch && departmentMatch;
+    });
+});
+
+// --- Reset Filter Methods ---
+const resetArchiveFilters = () => {
+    Object.keys(archiveFormValues).forEach(key => archiveFormValues[key] = null);
+    console.log("Archive filters reset");
+};
+const resetDiscipleFilters = () => {
+    Object.keys(discipleFormValues).forEach(key => discipleFormValues[key] = null);
+     console.log("Disciple filters reset");
+};
+const resetDetailsFilters = () => {
+    Object.keys(detailsFormValues).forEach(key => detailsFormValues[key] = null);
+    // Также сбрасываем быстрый фильтр для деталей, если он есть
+    clearDetailFilters(); // Предполагается, что clearDetailFilters уже существует
+     console.log("Details filters reset");
+};
+
+
+    return {
+
+      onGridReady,
+      columnDefs,
+      archiveColumnDefs,
+      detailColumnDefs,
+      compareColumnDefs,
+      columnDefs2,
+      rowData,
+      selectedCount,
+      lastId,
+      detailRowData,
+      compareRowData,
+      rowDataForComparison,
+      dynamicColumnDefs,
+      years,
+      codes,
+      yearsOptions,
+      timeYearsOptions,
+      programsOptions,
+      semestresOptions,
+      departmentsOptions,
+      defaultColDef,
+      localeText,
+
+      deselectRows: () => {
+        gridApi.value.deselectAll()
+      },
+
+      quickFilterValue,      
+      onFilterTextBoxChanged,
+      clearFilters,          
+      filters,               
+      onFilterChanged, 
+      onFilterTextBoxChanged,
+
+      onGridReadyDetails, 
+      detailRowData, 
+      archiveColumnDefs,
+      detailColumnDefs,
+      detailQuickFilterValue,     
+      detailFiltersActive,         
+      onDetailFilterTextBoxChanged,
+      clearDetailFilters,          
+      onDetailFilterChanged,            
+
+      selectedDisciplineCodeForTemplate,
+
+      paginationPageSize,
+      dataFromApi,
+      dataLoaded,
+
+      isLoading,
+      successMessage,
+      errorMessage,
+
+      archiveFormValues,
+      discipleFormValues ,
+      detailsFormValues,
+      filteredRowDataArchive,
+      filteredDiscipleDataForAllPrograms,
+      filteredDiscipleDataForSelectedProgram,
+      resetArchiveFilters,
+      resetDiscipleFilters,
+      resetDetailsFilters,
+    };
+
+  },
+
+  data() {
+    return {
       showCompare: false,
       showArchive: false,
+      showDisciple: false,
       showDetails: false,
       selectedYear: null,
-       columnDefs2Options: {
-         "Итого ВО": [
-           { field: "index_code", headerName: "Год", maxWidth: 200 },
-           { 
-             field: "hours", 
-             headerName: 'Всего часов', 
-             maxWidth: 200, 
-           }, 
-           { 
-             field: "contact_hours", 
-             headerName: 'Кон Такт.', 
-           }, 
-           { 
-             field: "lecture_hours", 
-             headerName: 'Лек', 
-           },
-           { 
-             field: "lab_hours", 
-             headerName: 'Лаб', 
-           },
-           { 
-             field: "practice_hours", 
-             headerName: 'Пр', 
-           },
-           { 
-             field: "ksr_hours", 
-             headerName: 'КСР', 
-           },
-           { 
-             field: "ikr_hours", 
-             headerName: 'ИКР', 
-           },
-           { 
-             field: "sr_hours", 
-             headerName: 'СР', 
-           },
-           { 
-             field: "control_type", 
-             headerName: 'Контроль', 
-           },
-           { 
-             field: "z_e", 
-             headerName: 'з.е', 
-           },
-           { 
-             field: "weeks", 
-             headerName: 'Недель', 
-           },
-         ],
-         "Все дисциплины": [
-           { field: "index_code", headerName: "Код дисциплины", maxWidth: 200 },
-           { field: "discipline_name", headerName: "Название дисциплины", minWidth: 500 },
-           { field: "credits", headerName: "Зачетные единицы", maxWidth: 150 },
-           { field: "hours", headerName: "Часы", maxWidth: 150 },
-         ]
-       },
- 
-       firstScheme: null,
-       archiveScheme:null,
-       quickFilterValue: '',
-       filters:false,
-       uploaded_file: new Uploaded_File(),
-       import_program: new Import_Program(),
-       import_program_year: new Import_Program_Year(),
-       import_program_code: new Import_Program_Code(),
-       import_disciple: new Import_Disciple(),
-       errors: {},
- 
-       selectedCourse: '', 
-       filteredRowData1: [],
+      selectedDisciplineCode: null,
+      firstScheme: null,
+      archiveScheme: null,
+      discipleScheme: null,
+      detailScheme: null,
+      uploaded_file: new Uploaded_File(),
+      import_program: new Import_Program(),
+      import_program_year: new Import_Program_Year(),
+      import_disciple_department: new Import_Disciple_Department(),
+      import_disciple_semester: new Import_Disciple_Semester(),
+      import_program_code: new Import_Program_Code(),
+      import_disciple: new Import_Disciple(),
+      errors: {},
 
-        formValues: {
-          codes: null, // выбранная программа
-          years: null, // выбранный год
-        },
-     };
-   },
-   async mounted() {
-     try {
-     await this.getImport_ProgramList();
-     await this.getImport_ProgramYearsList();
-     await this.getImport_ProgramCodesList();
+      selectedCourse: '',
+      selectedProgramFilter: null,
+      filteredRowData1: [],
 
-     await this.getImport_DiscipleList();
-     this.loadImportPrograms();
-     this.loadImportDisciples();
-   } catch (error) {
-     console.error("Ошибка при загрузке данных слушателей:", error);
-   }
- 
-   this.firstScheme = new FormScheme([
-   new TextInput({
-         key: "direction_code",
-         label: "Фамилия",
-         placeholder: "Фамилия",
-         disabled: true,  // Поле будет неактивным для редактирования
-       }),
-     ])
+      formValues: {
+        codes: null, // выбранная программа
+        years: null, // выбранный год
+      },
 
-     this.archiveScheme = new FormScheme([
-     new ComboboxInput({
+      detailFilter: {
+      semestres: null,
+      departments: null,
+      },
+      detailErrors: {},      // если AutoForm возвращает ошибки
+      gridApiDetails: null,  // API грида деталей
+
+      isLoading: false,
+      successMessage: '',
+      errorMessage: '',
+    };
+  },
+  async mounted() {
+    try {
+      await this.fetchInitialData()
+
+      this.loadImportPrograms();
+      this.loadImportDisciples();
+    } catch (error) {
+      console.error("Ошибка при загрузке данных слушателей:", error);
+    }
+
+    this.firstScheme = new FormScheme([
+      new TextInput({
+        key: "direction_code",
+        label: "Фамилия",
+        placeholder: "Фамилия",
+        disabled: true,  // Поле будет неактивным для редактирования
+      }),
+    ])
+
+    this.archiveScheme = new FormScheme([
+  new ComboboxInput({
+    key: "codes", // Оставляем как есть
+    label: "Программа",
+    placeholder: "Выберите программу",
+    options: this.programsOptions,
+  }),
+  new ComboboxInput({
+    key: "academic_year", // <-- Уникальный ключ для учебного года
+    label: "Учебный год",
+    placeholder: "Выберите год",
+    options: this.yearsOptions,
+  }),
+  new ComboboxInput({
+    key: "start_year", // <-- Уникальный ключ для года начала
+    label: "Год начала",
+    placeholder: "Выберите год",
+    options: this.timeYearsOptions, // Используем общие опции годов
+  }),
+  new ComboboxInput({
+    key: "actualization_year", // <-- Уникальный ключ для года актуализации
+    label: "Год актуализации",
+    placeholder: "Выберите год",
+    options: this.timeYearsOptions, // Используем общие опции годов
+  }),
+]);
+      this.discipleScheme = new FormScheme([
+      new ComboboxInput({
         key: "codes",
         label: "Программа",
         placeholder: "Выберите программу",
         options: this.programsOptions,
       }),
       new ComboboxInput({
-        key: "years",
-        label: "Год",
-        placeholder: "Выберите Год",
-        options: this.yearsOptions,
+        key: "semestres",
+        label: "Семестр",
+        placeholder: "Выберите семестр",
+        options: this.semestresOptions,
       }),
-     ])
-   },
- 
-   
-   
-   
-   methods: {
-     ...mapActions(useUploaded_FileStore, [
-       "putUploaded_File",
-       "deleteUploaded_File",
-     ]),
-     ...mapActions(useImport_ProgramStore, [
-       "getImport_ProgramList",
-       "getImport_ProgramYearsList",
-       "getImport_ProgramCodesList",
-       "postImport_Program",
-       "putImport_Program",
-       "deleteImport_Program",
-     ]),
-     ...mapActions(useImport_DiscipleStore, [
-       "getImport_DiscipleList",
-       "postImport_Disciple",
-       "putImport_Disciple",
-       "deleteImport_Disciple",
-     ]),
-     cellWasClicked(event) {
-       if (event.colDef && event.colDef.headerName === "") {
-         this.edit(event);
-       }
-     },
-     resetUpd() {
-       this.uploaded_file = new Uploaded_File();
-     },
-     edit(event) {
-       this.resetUpd();
-       this.selectedDisciplineCode = event.data.code;
-       console.log(event.data);
-       this.openDetailsForm();
-     },
- 
-async onFileChange(event) {
-  const files = event.target.files;
-  const programsData = [];
+      new ComboboxInput({
+        key: "departments",
+        label: "Кафедра",
+        placeholder: "Выберите кафедру",
+        options: this.departmentsOptions,
+      }),
 
-  const readFile = (file) => { 
-  console.log(`Прочитали файл: ${file.name}`);
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
+    ])
 
-        // Читаем данные с листа "Титул"
-        const sheetName = "Титул";
-        const sheet = workbook.Sheets[sheetName];
-        if (!sheet) {
-          throw new Error(`Лист "${sheetName}" не найден`);
-        }
+    this.detailScheme = new FormScheme([
+      new ComboboxInput({
+        key: "semestres",
+        label: "Семестр",
+        placeholder: "Выберите семестр",
+        options: this.semestresOptions,
+      }),
+      new ComboboxInput({
+        key: "departments",
+        label: "Кафедра",
+        placeholder: "Выберите кафедру",
+        options: this.departmentsOptions,
+      }),
+    ])
+  },
 
-        let extractedData = {
-          code: "Не найден",
-          profile: "Не найден",
-          years: "Не найден",
-        };
+  methods: {
+    ...mapActions(useUploaded_FileStore, [
+      "putUploaded_File",
+      "deleteUploaded_File",
+    ]),
+    ...mapActions(useImport_ProgramStore, [
+      "getImport_ProgramList",
+      "getImport_ProgramYearsList",
+      "getImport_ProgramCodesList",
+      "postImport_Program",
+      "putImport_Program",
+      "deleteImport_Program",
+    ]),
+    ...mapActions(useImport_DiscipleStore, [
+      "getImport_DiscipleList",
+      "getImport_DiscipleDepartmentsList",
+      "getImport_DiscipleSemestresList",
+      "postImport_Disciple",
+      "putImport_Disciple",
+      "deleteImport_Disciple",
+    ]),
+    cellWasClicked(event) {
+      if (event.colDef && event.colDef.headerName === "") {
+        this.edit(event);
+      }
+    },
+    resetUpd() {
+      this.uploaded_file = new Uploaded_File();
+    },
+    edit(event) {
+      this.resetUpd();
+      this.selectedDisciplineCode = event.data.code; // Устанавливаем код (из setup ref)
+  this.selectedProgramId = event.data.id;       // <-- ВАЖНО: Устанавливаем ID (из setup ref)
+  console.log(`Установлен selectedProgramId: ${this.selectedProgramId}`); // Для отладки
+  this.openDetailsForm();
+    },
 
-        extractedData.code = "04.04.04";
-        extractedData.profile = sheet["D30"] ? sheet["D30"].v : null;
-        extractedData.years = sheet["W41"] ? sheet["W41"].v : null; 
+    async onFileChange(event) {
+      const files = event.target.files;
+      const programsData = [];
 
-        // Создаем программу
-        await this.postImport_Program(extractedData);
-        await this.getImport_ProgramList();
-        
-        // Предполагается, что после обновления this.lastId содержит ID новой программы
+      const readFile = (file) => {
+        console.log(`Прочитали файл: ${file.name}`);
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, { type: "array" });
 
-        // Обработка листа "Курс 1" - для каждого ряда читаем ячейку E и создаем дисциплину
-        const courseSheets = ["Курс 1"];
-        for (const courseSheetName of courseSheets) {
-          const courseSheet = workbook.Sheets[courseSheetName];
-          if (courseSheet) {
-            // Проходим по рядам с 17 по 105
-            for (let row = 17; row <= 105; row++) {
-
-              const cellAddress = `E${row}`;
-              const cell = courseSheet[cellAddress];
-
-              const hoursCellAddress = `AG${row}`;
-              const hoursCell = courseSheet[hoursCellAddress];
-
-              console.log(this.lastId)
-              if (cell && cell.v) {
-                // Формируем объект дисциплины с нужными полями
-                const import_disciple = {
-                  program_id: this.lastId,      // Здесь используем последний ID программы
-                  disciple_name: cell.v,  
-                  hours: hoursCell.v,        
-                  // можно добавить и другие поля, если необходимо
-                };
-
-                await this.postImport_Disciple(import_disciple);
+              const sheetName = "Титул";
+              const sheet = workbook.Sheets[sheetName];
+              if (!sheet) {
+                throw new Error(`Лист "${sheetName}" не найден`);
               }
-            }
-          } else {
-            console.warn(`Лист ${courseSheetName} не найден.`);
-          }
+
+              let extractedData = {
+                code: "Не найден",
+                profile: "Не найден",
+                years: "Не найден",
+              };
+
+              extractedData.code = sheet["D27"] ? sheet["D27"].v : null;
+              extractedData.profile = sheet["D30"] ? sheet["D30"].v : null;
+              extractedData.years = sheet["W41"] ? sheet["W41"].v : null;
+
+              await this.postImport_Program(extractedData);
+              await this.getImport_ProgramList(); 
+
+              const courseSheets = ["Курс 4"];
+              const allDisciplePromises = [];
+
+              for (const courseSheetName of courseSheets) {
+                const courseSheet = workbook.Sheets[courseSheetName];
+                if (courseSheet) {
+
+                  const getCellValue = (sheet, address) => {
+                    const cell = sheet[address];
+
+                    return cell?.v ?? null;
+                  };
+
+                  const getCellNumber = (sheet, address) => {
+                    const cell = sheet[address];
+                    const value = cell?.v;
+                    if (value !== null && value !== undefined && value !== '' && !isNaN(Number(value))) {
+                      return parseInt(Number(value), 10);
+                    }
+                    return null;
+                  };
+
+                  const getCellString = (sheet, address) => {
+                    const cell = sheet[address];
+                    const value = cell?.w ?? cell?.v;
+                    if (value !== null && value !== undefined) {
+                      return String(value).trim();
+                    }
+                    return null;
+                  };
+
+                  for (let row = 17; row <= 105; row++) {
+
+                    const discipleName = getCellString(courseSheet, `E${row}`);
+                    const departmentValue = getCellString(courseSheet, `AS${row}`);
+
+                    const rawSemester = getCellNumber(courseSheet, `AT${row}`);
+                    let validatedSemester = null;
+                    if (typeof rawSemester === 'number' && Number.isInteger(rawSemester) && rawSemester >= 0 && rawSemester <= 9) {
+                      validatedSemester = rawSemester;
+                    }
+
+                    if (discipleName && departmentValue && validatedSemester) {
+                      const import_disciple = {
+                        program_id: this.lastId-1,
+                        disciple_name: discipleName,
+
+                        hours: getCellNumber(courseSheet, `AG${row}`) ?? 0,
+                        contact_hours: getCellNumber(courseSheet, `AH${row}`) ?? 0,
+                        lecture_hours: getCellNumber(courseSheet, `AI${row}`) ?? 0,
+                        lab_hours: getCellNumber(courseSheet, `AJ${row}`) ?? 0,
+                        practice_hours: getCellNumber(courseSheet, `AK${row}`) ?? 0,
+                        ksr_hours: getCellNumber(courseSheet, `AL${row}`) ?? 0,
+                        ikr_hours: getCellNumber(courseSheet, `AM${row}`) ?? 0,
+                        independent_study_hours: getCellNumber(courseSheet, `AN${row}`) ?? 0,
+                        control_hours: getCellNumber(courseSheet, `AO${row}`) ?? 0,
+
+                        department: departmentValue,
+                        semester: validatedSemester
+                      };
+
+                      allDisciplePromises.push(this.postImport_Disciple(import_disciple));
+                    }
+                  }
+                } else {
+                  console.warn(`Лист ${courseSheetName} не найден.`);
+                }
+              }
+
+              if (allDisciplePromises.length > 0) {
+            console.log(`Запускаем параллельное добавление ${allDisciplePromises.length} дисциплин...`);
+
+            await Promise.all(allDisciplePromises);
+
+            console.log("Все дисциплины успешно добавлены.");
+        } else {
+            console.log("Дисциплины для добавления не найдены.");
         }
 
         this.loadImportPrograms();
-        resolve(extractedData);
-      } catch (error) {
-        console.error(`Ошибка при обработке файла ${file.name}:`, error);
-        reject(error);
-      }
-    };
-    reader.onerror = (error) => {
-      console.error(`Ошибка при чтении файла ${file.name}:`, error);
-      reject(error);
-    };
-    reader.readAsArrayBuffer(file);
-  });
-};
+        this.loadImportDisciples();
 
-  const readPLXFile = (file) => {
-    console.log(`Обрабатываем .plx файл: ${file.name}`);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const textContent = e.target.result;
+        resolve(extractedData); 
 
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(textContent, "text/xml");
 
-          const planRows = xmlDoc.getElementsByTagName("ПланыСтроки");
-          const disciplines = [];
-
-          for (let i = 0; i < planRows.length; i++) {
-            const disciplineName = planRows[i].getAttribute("Дисциплина");
-            if (disciplineName) {
-              const import_disciple = {
-                  program_id: this.lastId,      
-                  disciple_name: disciplineName,  
-                  //hours: hoursCell.v,        // Значение ячейки E
-                  
-                };
-
-              await this.postImport_Disciple(import_disciple);
+            } catch (error) {
+              console.error(`Ошибка при обработке файла ${file.name}:`, error);
+              reject(error);
             }
-          }
+          };
+          reader.onerror = (error) => {
+            console.error(`Ошибка при чтении файла ${file.name}:`, error);
+            reject(error);
+          };
+          reader.readAsArrayBuffer(file);
+        });
+      };
 
-          console.log("Список дисциплин:", disciplines);
+      const readPLXFile = (file) => {
+        console.log(`Обрабатываем .plx файл: ${file.name}`);
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const textContent = e.target.result;
 
-          let extractedData = {
-            code: "Не найден",
-            profile: "Не найден",
-            years: "Не найден",
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(textContent, "text/xml");
+
+              let extractedData = {
+                code: "Не найден",
+                profile: "Не найден",
+                years: "Не найден",
+              };
+
+              const allElements = xmlDoc.getElementsByTagName("*");
+              let profileValues = [];
+
+              for (let i = 0; i < allElements.length; i++) {
+                let element = allElements[i];
+
+                if (extractedData.code === "Не найден" && element.hasAttribute("Шифр")) {
+                  extractedData.code = element.getAttribute("Шифр");
+                }
+                if (element.hasAttribute("Название")) {
+                  profileValues.push(element.getAttribute("Название"));
+                }
+                if (element.hasAttribute("УчебныйГод")) {
+                  extractedData.years = element.getAttribute("УчебныйГод");
+                }
+                if (
+                  extractedData.code !== "Не найден" &&
+                  profileValues.length > 1 &&
+                  extractedData.years !== "Не найден"
+                ) {
+                  break;
+                }
+              }
+
+              if (profileValues.length > 1) {
+                extractedData.profile = profileValues[1];
+              }
+
+              console.log(extractedData);
+              await this.postImport_Program(extractedData);
+              await this.getImport_ProgramList();
+              this.loadImportPrograms();
+
+              const planRows = xmlDoc.getElementsByTagName("ПланыСтроки");
+              const disciplines = [];
+
+              for (let i = 0; i < planRows.length; i++) {
+                const disciplineName = planRows[i].getAttribute("Дисциплина");
+                if (disciplineName) {
+                  const import_disciple = {
+                    program_id: this.lastId,
+                    disciple_name: disciplineName,
+                    //hours: hoursCell.v,        // Значение ячейки E
+                  };
+
+                  //await this.postImport_Disciple(import_disciple);
+                }
+              }
+
+              console.log("Список дисциплин:", disciplines);
+
+              
+
+              resolve(extractedData);
+            } catch (error) {
+              console.error(`Ошибка при обработке .plx файла ${file.name}:`, error);
+              reject(error);
+            }
           };
 
-          const allElements = xmlDoc.getElementsByTagName("*");
-          let profileValues = [];
+          reader.onerror = (error) => {
+            console.error(`Ошибка при чтении .plx файла ${file.name}:`, error);
+            reject(error);
+          };
 
-          for (let i = 0; i < allElements.length; i++) {
-            let element = allElements[i];
+          reader.readAsText(file, "UTF-16");
+        });
+      };
 
-            if (extractedData.code === "Не найден" && element.hasAttribute("Шифр")) {
-              extractedData.code = element.getAttribute("Шифр");
-            }
-            if (element.hasAttribute("Название")) {
-              profileValues.push(element.getAttribute("Название"));
-            }
-            if (element.hasAttribute("УчебныйГод")) {
-              extractedData.years = element.getAttribute("УчебныйГод");
-            }
-            if (
-              extractedData.code !== "Не найден" &&
-              profileValues.length > 1 &&
-              extractedData.years !== "Не найден"
-            ) {
-              break;
-            }
+      try {
+        for (const file of files) {
+          let programData;
+          if (file.name.endsWith(".plx")) {
+            programData = await readPLXFile(file);
+          } else {
+            programData = await readFile(file);
           }
-
-          if (profileValues.length > 1) {
-            extractedData.profile = profileValues[1];
-          }
-
-          console.log(this.lastId);
-          await this.postImport_Program(extractedData);
-          await this.getImport_ProgramList();
-          this.loadImportPrograms();
-          console.log(this.lastId);
-          
-          
-          resolve(extractedData);
-        } catch (error) {
-          console.error(`Ошибка при обработке .plx файла ${file.name}:`, error);
-          reject(error);
+          programsData.push(programData);
         }
-      };
 
-      reader.onerror = (error) => {
-        console.error(`Ошибка при чтении .plx файла ${file.name}:`, error);
-        reject(error);
-      };
+        console.log(programsData);
 
-      reader.readAsText(file, "UTF-16");
-    });
-  };
+        // После фикса сервера
+        //await this.postImport_Program(programsData);
+        //await this.getImport_ProgramList();
+        //this.loadImportPrograms();
 
-  try {
-    for (const file of files) {
-      let programData;
-      if (file.name.endsWith(".plx")) {
-        programData = await readPLXFile(file);
+      } catch (error) {
+        console.error("Ошибка при загрузке файлов:", error);
+      }
+    },
+
+
+    // КОНЕЦ ПАРСИНГА 
+
+    async loadImportPrograms() {
+      try {
+        if (Array.isArray(this.import_programList)) {
+
+          const allFiles = this.import_programList.filter(import_program => import_program.deleted_at === null);
+
+          this.rowData.value = allFiles;
+
+        } else if (this.import_programList && this.import_programList.deleted_at === null) {
+          this.rowData.value = [this.import_programList];
+        } else {
+          this.rowData.value = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных файлов:", error);
+        this.rowData.value = [];
+      }
+    },
+
+    async loadImportDisciples() {
+      try {
+        if (Array.isArray(this.import_discipleList)) {
+
+          const allFiles = this.import_discipleList.filter(import_disciple => import_disciple.deleted_at === null);
+
+          this.detailRowData = allFiles;
+
+          console.log("ДЕТАЛИ");
+          console.log(this.detailRowData);
+
+        } else if (this.import_discipleList && this.import_discipleList.deleted_at === null) {
+          this.detailRowData = [this.import_discipleList];
+        } else {
+          this.detailRowData = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных файлов:", error);
+        this.detailRowData = [];
+      }
+    },
+
+    resetList() {
+      this.uploaded_file = new Uploaded_File();
+    },
+
+    openCompareForm() {
+      console.log("Filtered data:", this.filteredRowDataCompare);
+      this.showCompare = true;
+    },
+    openArchiveForm() {
+      this.showArchive = true;
+    },
+    openDisciplinesForm() {
+      this.showDisciple = true;
+    },
+    openDetailsForm() {
+      this.showDetails = true;
+    },
+
+    openCreatingForm() {
+      this.resetList();
+      this.formVisible = true;
+    },
+
+    async submit() {
+      let student = { ...this.student };
+
+      if (student.student_id) {
+        await this.putStudent(student);
       } else {
-        programData = await readFile(file);
+        await this.postStudent(student);
       }
-      programsData.push(programData);
-    }
+      this.formVisible = false;
+      this.resetStd();
+    },
 
-    console.log(programsData);
+    onFirstDataRendered(params) {
+      this.gridApi = params.api;
+      this.columnApi = params.columnApi;
 
-    // После фикса сервера
-    //await this.postImport_Program(programsData);
-    //await this.getImport_ProgramList();
-    //this.loadImportPrograms();
+      const filterModelQuery = this.$route.query.filterModel;
+      if (filterModelQuery) {
+        const filterModel = JSON.parse(filterModelQuery);
+        this.gridApi.setFilterModel(filterModel);
+        this.filters = true;
+      }
 
-  } catch (error) {
-    console.error("Ошибка при загрузке файлов:", error);
-  }
-  },
+      const quickFilterQuery = this.$route.query.quickFilter;
+      if (quickFilterQuery) {
+        const quickFilter = JSON.parse(quickFilterQuery);
+        this.gridApi.setQuickFilter(quickFilter);
+        this.quickFilterValue = quickFilter;
+        this.filters = true;
+      }
+    },
 
- 
- // КОНЕЦ ПАРСИНГА 
+    async deleteAllActiveProgramsApiCall() {
+      this.isLoading = true;
+      this.successMessage = '';
+      this.errorMessage = '';
+      const deleteAllUrl = '/api/v1/import-programs/all-active'; // Или ваш полный URL API
 
-async loadImportPrograms() { 
-  try {
-    if (Array.isArray(this.import_programList)) {
+      try {
+        const response = await axios.delete(deleteAllUrl);
 
-      const allFiles = this.import_programList.filter(import_program => import_program.deleted_at === null);
+        if (response.status === 204) {
+          this.successMessage = 'Все активные программы и связанные дисциплины успешно помечены как удаленные.';
+          // !!! ВАЖНО: Обновите данные в таблице после удаления !!!
+          await this.loadImportPrograms(); // Вызовите метод, который перезагружает данные для основной таблицы
+          // Возможно, потребуется также очистить или обновить связанные данные, если они отображаются
+          // await this.loadImportDisciples(); // Если нужно обновить и дисциплины
+        } else {
+          this.errorMessage = `Операция завершена, но получен неожиданный статус: ${response.status}`;
+        }
+      } catch (error) {
+        console.error("Ошибка при удалении всех программ:", error);
+        if (error.response && error.response.data && error.response.data.message) {
+          this.errorMessage = `Ошибка сервера: ${error.response.data.message}`;
+        } else if (error.response) {
+          this.errorMessage = `Ошибка сервера: Статус ${error.response.status}`;
+        } else if (error.request) {
+          this.errorMessage = 'Не удалось связаться с сервером. Проверьте соединение или настройки CORS.';
+        } else {
+          this.errorMessage = `Произошла ошибка: ${error.message}`;
+        }
+      } finally {
+        this.isLoading = false;
+      }
+    },
 
-      this.rowData.value = allFiles;
-      
-    } else if (this.import_programList && this.import_programList.deleted_at === null) {
-      this.rowData.value = [this.import_programList];
-    } else {
-      this.rowData.value = [];
-    }
-  } catch (error) {
-    console.error("Ошибка при загрузке данных файлов:", error);
-    this.rowData.value = []; 
-  }
-},
+    deleteAllActiveProgramsConfirmed() {
+      this.successMessage = '';
+      this.errorMessage = '';
 
-async loadImportDisciples() { 
-  try {
-    if (Array.isArray(this.import_discipleList)) {
-
-      const allFiles = this.import_discipleList.filter(import_disciple => import_disciple.deleted_at === null);
-
-      this.detailRowData = allFiles;
-
-      console.log("ДЕТАЛИ");
-      console.log(this.detailRowData);
-
-    } else if (this.import_discipleList && this.import_discipleList.deleted_at === null) {
-      this.detailRowData = [this.import_discipleList];
-    } else {
-      this.detailRowData = [];
-    }
-  } catch (error) {
-    console.error("Ошибка при загрузке данных файлов:", error);
-    this.detailRowData = [];
-  }
-},
- 
- resetList() {
-    this.uploaded_file = new Uploaded_File();
-  },
-
-  openCompareForm() {
-    console.log("Filtered data:", this.filteredRowDataCompare);
-    this.showCompare = true;
-  },
-  openArchiveForm() {
-    this.showArchive = true;
-  },
-  openDetailsForm() {
-    this.showDetails = true;
-  },
-
- openCreatingForm() {
-       this.resetList();
-       this.formVisible = true;
-     },
-
-     async submit() {
-       let student = { ...this.student };
- 
-       if (student.student_id) {
-         await this.putStudent(student);
-       } else {
-         await this.postStudent(student);
-       }
-       this.formVisible = false;
-       this.resetStd();
-     }, 
- 
- onFirstDataRendered(params) {
-       this.gridApi = params.api;
-       this.columnApi = params.columnApi;
- 
-       // Check if filterModel exists in the route query
-       const filterModelQuery = this.$route.query.filterModel;
-       if (filterModelQuery) {
-         const filterModel = JSON.parse(filterModelQuery);
-         this.gridApi.setFilterModel(filterModel);
-         this.filters=true;
-       }
- 
-       const quickFilterQuery = this.$route.query.quickFilter;
-       if (quickFilterQuery) {
-         const quickFilter = JSON.parse(quickFilterQuery);
-         this.gridApi.setQuickFilter(quickFilter);
-         this.quickFilterValue = quickFilter;
-         this.filters=true;
-       }
-     },
-     onFilterChanged() {
-   this.filters=false;
-   const savedQuickFilter = this.gridApi.getQuickFilter();
-   const savedFilterModel = this.gridApi.getFilterModel();
- 
-   const queryParams = {};
- 
-   if (savedQuickFilter) {
-     queryParams.quickFilter = JSON.stringify(savedQuickFilter);
-     this.filters=true;
-   }
- 
-   // Check if savedFilterModel is not empty, then add it to queryParams
-   if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
-     queryParams.filterModel = JSON.stringify(savedFilterModel);
-     this.filters=true;
-   }
- 
-   // Push the query parameters to the router
-   this.$router.push({ query: queryParams });
- 
-   // Do something with the filterModel or trigger other actions as needed.
- },
- 
- async clearData() {  
-
-  console.log("Файлы перед удалением:", this.uploaded_fileList);
-
-  try {
-    if (this.uploaded_fileList && this.uploaded_fileList.length > 0) {
-
-      this.showLoading = true; 
-
-      if (filesToDelete.length > 0) {
-        console.log("Файлы, которые будут удалены:", JSON.stringify(filesToDelete, null, 2));
+      if (window.confirm('Вы уверены, что хотите удалить все активные программы и связанные с ними дисциплины?')) {
+        this.deleteAllActiveProgramsApiCall();
       } else {
-        console.log('Нет файлов для удаления');
+        console.log('Удаление всех программ отменено пользователем.');
       }
+    },
 
-      for (const file of filesToDelete) {
-        await this.deleteUploaded_File(file);
-      }
+    async deleteSelected() {
+       console.warn("Логика для deleteSelected() еще не реализована или не показана.");
+       const selectedNodes = this.gridApi.value.getSelectedNodes();
+       const selectedIds = selectedNodes.map(node => node.data.id);
 
-      // 4. Обновляем список файлов после удаления
-      //await this.loadImportPrograms(); 
+       if (selectedIds.length === 0) {
+         this.errorMessage = "Сначала выберите программы для удаления.";
+         return;
+       }
 
-      this.showLoading = false;
-    } else {
-      console.log('Нет файлов для удаления');
-    }
-  } catch (error) {
-    this.showLoading = false;
-    console.error("Ошибка при удалении файлов:", error);
-  }
-},
+       if (!window.confirm(`Вы уверены, что хотите удалить ${selectedIds.length} выбранных программ и связанные с ними дисциплины?`)) {
+          return;
+       }
 
-   async saveData() {
-     console.log(this.uploaded_fileList);
-     try {
-       if (this.uploaded_fileList && this.uploaded_fileList.length > 0) {
-         this.showLoading = true; 
- 
-         const deletePromises = this.uploaded_fileList
-           .filter(file => !file.deleted_at) 
-           .map(file => this.deleteUploaded_File(file));  
- 
+       this.isLoading = true;
+       this.successMessage = '';
+       this.errorMessage = '';
+
+       try {
+         // Вызываем стандартный DELETE для каждого ID
+         const deletePromises = selectedIds.map(id => axios.delete(`/api/v1/import-programs/${id}`));
          await Promise.all(deletePromises);
- 
-         //await this.loadImportPrograms();
-         this.showLoading = false;
-       } else {
-         console.log('Нет файлов для удаления');
-       }
-     } catch (error) {
-       this.showLoading = false;
-       console.error("Ошибка при удалении файлов:", error);
-     }
-   },
- 
- 
-   async showGruz() {
- 
-     console.log(this.uniqueDepartments)
-     this.showSidebar2 = true;
- 
-   }
- },
-   
- computed: {
 
-     ...mapState(useUploaded_FileStore, ["uploaded_fileList"]),
-     ...mapState(useImport_ProgramStore, ["import_programList"]),
-     ...mapState(useImport_DiscipleStore, ["import_discipleList"]),
+         this.successMessage = `${selectedIds.length} программ(ы) успешно удалены (логически).`;
+         // Обновляем данные в таблице
+         await this.loadImportPrograms();
+         // Возможно, потребуется обновить и дисциплины
+         // await this.loadImportDisciples();
+
+       } catch (error) {
+          console.error("Ошибка при удалении выбранных программ:", error);
+          // Обработка ошибок (аналогично deleteAllActiveProgramsApiCall)
+          // ... (добавьте обработку ошибок) ...
+          this.errorMessage = "Произошла ошибка при удалении выбранных программ.";
+       } finally {
+          this.isLoading = false;
+       }
+    },
+
+    async saveData() {
+      console.log(this.uploaded_fileList);
+      try {
+        if (this.uploaded_fileList && this.uploaded_fileList.length > 0) {
+          this.showLoading = true;
+
+          const deletePromises = this.uploaded_fileList
+            .filter(file => !file.deleted_at)
+            .map(file => this.deleteUploaded_File(file));
+
+          await Promise.all(deletePromises);
+
+          //await this.loadImportPrograms();
+          this.showLoading = false;
+        } else {
+          console.log('Нет файлов для удаления');
+        }
+      } catch (error) {
+        this.showLoading = false;
+        console.error("Ошибка при удалении файлов:", error);
+      }
+    },
+
+      async fetchInitialData() {
+   console.log("Fetching initial data...");
+   try {
+       await Promise.all([
+           this.getImport_ProgramList(),
+           this.getImport_ProgramYearsList(),
+           this.getImport_ProgramCodesList(),
+           this.getImport_DiscipleDepartmentsList(),
+           this.getImport_DiscipleSemestresList(),
+           this.getImport_DiscipleList()
+       ]);
+       console.log("Initial data fetched successfully.");
+
+   } catch (error) {
+       console.error("Ошибка при первичной загрузке данных:", error);
+   }
+},
+  },
+
+  computed: {
+
+    ...mapState(useUploaded_FileStore, ["uploaded_fileList"]),
+    ...mapState(useImport_ProgramStore, ["import_programList"]),
+    ...mapState(useImport_DiscipleStore, ["import_discipleList"]),
 
     currentUser() {
-       return this.$store.state.auth.user;
-     },
-     currentColumnDefs2() {
-       return this.columnDefs2Options[this.selectedOption4];
-     },
-     filteredRowDataArchive() {
-    const data = this.rowData.value || [];
+      return this.$store.state.auth.user;
+    },
+    currentColumnDefs2() {
+      return this.columnDefs2Options[this.selectedOption4];
+    },
 
-    return data.filter((file) => {
-      const yearMatch = this.formValues.years
-        ? file.years === this.formValues.years
-        : true;
+    filteredRowDataCompare() {
 
-      const programMatch = this.formValues.codes
-        ? file.code === this.formValues.codes
-        : true;
+      const selectedRows = (this.rowData.value || []).filter(row => row.selected === true);
+      console.log("Выбранные строки:", selectedRows);
+      console.log("С чем сравниваем:", this.compareRowData);
+      if (!selectedRows.length) return [];
 
-      return yearMatch && programMatch;
-    });
+      const frequency = {};
+      selectedRows.forEach(row => {
+        const name = row.disciple_name;
+        if (name) {
+          frequency[name] = (frequency[name] || 0) + 1;
+        }
+      });
+      console.log("Частота discipline name в выбранных строках:", frequency);
+
+      const filteredData = (this.compareRowData || []).filter(compareRow => {
+        return selectedRows.some(mainRow => {
+
+          const isEqual =
+            mainRow.direction_code === compareRow.direction_code &&
+            mainRow.direction_name === compareRow.direction_name &&
+            mainRow.qualification === compareRow.qualification &&
+            mainRow.academic_year === compareRow.academic_year;
+
+          const sameDisciple = mainRow.disciple_name === compareRow.disciple_name;
+          const isCommon = sameDisciple && (frequency[compareRow.disciple_name] || 0) >= 2;
+          console.log("Сравниваем:");
+          console.log(" mainRow:", mainRow);
+          console.log(" compareRow:", compareRow);
+          console.log(" Результат сравнения:", isEqual, "и общая дисциплина:", isCommon);
+          return isEqual && isCommon;
+        });
+      });
+      console.log("Отфильтрованные данные:", filteredData);
+      return filteredData;
+    },
+
+    programFilterOptions() {
+    const programStore = useProgramStore();
+    return Object.values(programStore.programMap || {})
+      .map(item => ({
+        value: item.program_name,  // фильтровать будем по именно этому полю
+        label: item.program_name,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   },
 
-filteredRowDataCompare() {
+    filteredRowData() {
+      return this.rowDataAll[this.selectedOption4] || [];
+    },
+    availableSemesters() {
+      const semesters = this.selectedCourse === 1
+        ? [1, 2]
+        : this.selectedCourse === 2
+          ? [3, 4]
+          : this.selectedCourse === 3
+            ? [5, 6]
+            : this.selectedCourse === 4
+              ? [7, 8]
+              : [];
+      console.log("Available semesters for course", this.selectedCourse, ":", semesters);  // Логируем
+      return semesters;
+    },
+  }
+}
+</script>
 
-  const selectedRows = (this.rowData.value || []).filter(row => row.selected === true);
-  console.log("Выбранные строки:", selectedRows);
-  console.log("С чем сравниваем:", this.compareRowData);
-  if (!selectedRows.length) return [];
-
-  const frequency = {};
-  selectedRows.forEach(row => {
-    const name = row.disciple_name;
-    if (name) {
-      frequency[name] = (frequency[name] || 0) + 1;
-    }
-  });
-  console.log("Частота discipline name в выбранных строках:", frequency);
-
-  const filteredData = (this.compareRowData || []).filter(compareRow => {
-    return selectedRows.some(mainRow => {
-
-      const isEqual =
-        mainRow.direction_code === compareRow.direction_code &&
-        mainRow.direction_name === compareRow.direction_name &&
-        mainRow.qualification === compareRow.qualification &&
-        mainRow.academic_year === compareRow.academic_year;
-
-      const sameDisciple = mainRow.disciple_name === compareRow.disciple_name;
-      const isCommon = sameDisciple && (frequency[compareRow.disciple_name] || 0) >= 2;
-      console.log("Сравниваем:");
-      console.log(" mainRow:", mainRow);
-      console.log(" compareRow:", compareRow);
-      console.log(" Результат сравнения:", isEqual, "и общая дисциплина:", isCommon);
-      return isEqual && isCommon;
-    });
-  });
-  console.log("Отфильтрованные данные:", filteredData);
-  return filteredData;
-},
-
-     uniqueDepartments() {
-       // Собираем все департаменты из списка файлов
-       const departments = this.uploaded_fileList.map((file) => file.department);
-       // Возвращаем уникальные значения
-       return [...new Set(departments.filter((dept) => dept))];
-     },
-     filteredRowData() {
-       return this.rowDataAll[this.selectedOption4] || [];
-     },
-     availableSemesters() {
-     const semesters = this.selectedCourse === 1
-       ? [1, 2]
-       : this.selectedCourse === 2
-       ? [3, 4]
-       : this.selectedCourse === 3
-       ? [5, 6]
-       : this.selectedCourse === 4
-       ? [7, 8]
-       : [];
-     console.log("Available semesters for course", this.selectedCourse, ":", semesters);  // Логируем
-     return semesters;
-   },
-   }
- }
- </script>
- 
- <style scoped>
-
- .year-selector-container {
+<style scoped>
+.year-selector-container {
   display: flex;
-  gap: 34px; /* расстояние между элементами */
+  gap: 34px;
+  /* расстояние между элементами */
   justify-content: flex-end;
   align-items: center;
   padding: 5px;
- }
- 
- .header-content-wrapper {
-     display: flex;
-     gap: 10px; 
-   }
-   .header-content {
-     display: flex;
-     flex-direction: column;
-     align-items: flex-start;
-   }
-   .my-selectbox {
-     margin: 0;
-     padding: 5px;
-   }
- 
-   .btn-danger {
-     background-color: #ff4d4d;
-     border-color: #ff4d4d;
-   }
- 
-   .btn-danger:hover {
-     background-color: #ff1a1a;
-     border-color: #ff1a1a;
-   }
- 
-   .btn-lg {
-     font-size: 1.25rem;
-     padding: 0.75rem 1.5rem;
-     border-radius: 0.3rem;
-   }
- 
-   .material-icons-outlined {
-     font-size: 1.5rem;
-   }
- 
-   .me-2 {
-     margin-right: 0.5rem;
-   }
- 
-   .gap-2 {
-     gap: 0.5rem;
-   }
- 
-   @media (min-width: 1023px) {
- 
- .list{
-   padding-left: 90px;
-   padding-right: 5px;
+}
 
- }
- }
+.header-content-wrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.my-selectbox {
+  margin: 0;
+  padding: 5px;
+}
+
+.btn-danger {
+  background-color: #ff4d4d;
+  border-color: #ff4d4d;
+}
+
+.btn-danger:hover {
+  background-color: #ff1a1a;
+  border-color: #ff1a1a;
+}
+
+.btn-lg {
+  font-size: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.3rem;
+}
+
+.material-icons-outlined {
+  font-size: 1.5rem;
+}
+
+.me-2 {
+  margin-right: 0.5rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+@media (min-width: 1023px) {
+
+  .list {
+    padding-left: 90px;
+    padding-right: 5px;
+
+  }
+}
 
 .year-selector-container {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 5px; /* Уменьшаем отступ */
+  padding: 5px;
+  /* Уменьшаем отступ */
 }
 
 .year-selector-container label {
-  margin-right: 5px; /* Уменьшаем отступ между текстом и селектором */
-  font-size: 14px; /* Делаем текст меньше */
-  white-space: nowrap; /* Предотвращаем перенос */
+  margin-right: 5px;
+  /* Уменьшаем отступ между текстом и селектором */
+  font-size: 14px;
+  /* Делаем текст меньше */
+  white-space: nowrap;
+  /* Предотвращаем перенос */
 }
 
 .year-selector-container select {
-  width: 150px; /* Уменьшаем ширину селектора */
-  height: 30px; /* Делаем его компактнее */
-  font-size: 14px; /* Уменьшаем размер шрифта */
+  width: 150px;
+  /* Уменьшаем ширину селектора */
+  height: 30px;
+  /* Делаем его компактнее */
+  font-size: 14px;
+  /* Уменьшаем размер шрифта */
   padding: 2px 5px;
 }
-
- </style>
+</style>

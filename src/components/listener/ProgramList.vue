@@ -1,6 +1,5 @@
 <template>
   <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <!-- Шапка: кнопка добавления и фильтры -->
     <div class="col col-12">
       <div class="mb-3 col col-12">
         <div class="col col-6 float-start d-inline-flex align-items-center mb-2">

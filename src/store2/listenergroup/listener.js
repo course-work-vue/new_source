@@ -5,6 +5,7 @@ import { defineStore } from 'pinia';
 export const useListenerStore = defineStore('listener', {
     state: () => ({
         listenerList: [],
+        ready_listenerList: [],
     }),
     getters: {
         listenerMap(state) {
@@ -24,8 +25,8 @@ export const useListenerStore = defineStore('listener', {
 
         async getReady_ListenerList() {
             const responseData = await api.getReady_ListenerList();
-            console.log(responseData);
-            this.listenerList = responseData.map((ready_listener) => {
+            //console.log(responseData);
+            this.ready_listenerList = responseData.map((ready_listener) => {
                 return new Listener(ready_listener);
             });
         },

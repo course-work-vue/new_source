@@ -1,5 +1,6 @@
 import Formatter from "@/utils/Formatter";
 import { useListenergroupStore } from '@/store2/listenergroup/listenergroup';
+import { useProgramStore } from '@/store2/listenergroup/program';
 
 export default class Listener {
   id;
@@ -46,6 +47,17 @@ export default class Listener {
     console.log('group_number:', groupNumber);
 
     return groupNumber ? groupNumber : null;
+}
+
+get listener_program() {
+  const programStore = useProgramStore();
+  const programObj = programStore.programMap[this.program_id]; // используем program_id, а не group_id
+
+  const program = programObj?.program_name || programObj?.[[Target]]?.program_name; // если [[Target]] нужен, можно оставить, но лучше искать более явное решение
+
+  console.log('Программа:', program);
+
+  return program ? program : null;
 }
 
 get full_name() {

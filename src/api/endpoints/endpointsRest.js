@@ -29,9 +29,11 @@ export default Object.freeze({
     ready_listener: prefix + 'ready_listeners',
     listener_wish:prefix + 'listener_wishes',
     day: prefix + 'days',
+    l_wish_day: prefix + 'l_wish_days',
     l_group_status: prefix + 'l_group_status',
-    l_group: prefix + 'l_groups',
+    l_ready_group: prefix + 'l_ready_groups',
 
+    l_group: prefix + 'l_groups',
     contract: prefix + 'contracts',
     payer: prefix + 'payers',
     pay_graph: prefix + 'pay_graphs',
@@ -47,4 +49,6 @@ export default Object.freeze({
     import_programs: prefix+'import_programs_f',
 
     import_disciple: prefix+'import_disciples',
+    import_disciple_semestres: prefix+'import_disciple_semestres',
+    import_disciple_departments: prefix+'import_disciple_departments',
 });
