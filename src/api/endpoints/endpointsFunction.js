@@ -12,4 +12,5 @@ export default Object.freeze({
     functionUser:prefix+'ums.select_function_user',
     userRole:prefix+'ums.select_userrole',
     selectRole:prefix+'ums.select_roles',
+    postRole:prefix+'ums.insert_role',
 });
