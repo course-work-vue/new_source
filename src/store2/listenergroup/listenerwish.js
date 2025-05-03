@@ -17,7 +17,6 @@ export const useListener_WishStore = defineStore('listener_wish', {
     actions: {
         async getListener_WishList() {
             const responseData = await api.getListener_WishList();
-            console.log("Ответ API:", responseData);
             this.listener_wishList = responseData.map((listener_wish) => {
                 return new Listener_Wish(listener_wish);
             });

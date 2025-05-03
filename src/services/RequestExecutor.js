@@ -107,6 +107,7 @@ class RequestExecutor {
             }
 
             if (data instanceof FormData) {
+                const json = JSON.stringify(data);
                 init = { ...init, body: data };
             } else if (data) {
 

@@ -1,10 +1,14 @@
 import api from '@/api/api';
 import Import_Disciple from '@/model/import-group/Import_Disciple';
 import { defineStore } from 'pinia';
+import Import_Disciple_Department from "../../model/import-group/Import_Disciple_Department";
+import Import_Disciple_Semester from "../../model/import-group/Import_Disciple_Semestr";
 
 export const useImport_DiscipleStore = defineStore('import_disciple', {
     state: () => ({
         import_discipleList: [],
+        import_disciple_semestresList:[],
+        import_disciple_departmentsList:[],
     }),
     getters: {
         import_discipleMap(state) {
@@ -21,6 +25,23 @@ export const useImport_DiscipleStore = defineStore('import_disciple', {
                 return new Import_Disciple(import_disciple);
             });
         },
+
+        async getImport_DiscipleSemestresList() {
+                    const responseData = await api.getImport_DiscipleSemestresList();
+                    console.log("Семестры")
+                    console.log(responseData)
+                    this.import_disciple_semestresList = responseData.map((import_disciple_semestres) => {
+                        return new Import_Disciple_Semester(import_disciple_semestres);
+                    });
+                },
+        
+                async getImport_DiscipleDepartmentsList() {
+                    const responseData = await api.getImport_DiscipleDepartmentsList();
+                    console.log(responseData);
+                    this.import_disciple_departmentsList = responseData.map((import_disciple_departments) => {
+                        return new Import_Disciple_Department(import_disciple_departments);
+                    });
+                },
 
         async getImport_Disciple(code) {
             await api.getImport_Disciple(code);

@@ -227,11 +227,7 @@ export default {
   },
   async mounted() {
     try {
-      await this.getContractList();
-      await this.getProgramList();
-      console.log()
-      await this.getListenerList();
-      await this.getPayerList();
+      await this.fetchInitialData();
       
       this.loadContractsData();
     } catch (error) {
@@ -374,6 +370,24 @@ export default {
         console.error("Ошибка удаления договора:", error);
       }
     },
+
+    async fetchInitialData() {
+   console.log("Fetching initial data...");
+   try {
+       await Promise.all([
+        this.getContractList(),
+        this.getProgramList(),
+        this.getListenerList(),
+        this.getPayerList(),
+       ]);
+       console.log("Initial data fetched successfully.");
+
+       await this.loadDaysData(); 
+   } catch (error) {
+       console.error("Ошибка при первичной загрузке данных:", error);
+   }
+},
+
     async loadContractsData() {
       try {
         if (Array.isArray(this.contractList)) {

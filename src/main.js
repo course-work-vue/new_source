@@ -6,7 +6,6 @@ import "bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FontAwesomeIcon } from './plugins/font-awesome'
 //import Select2 from 'vue3-select2-component';
-//import Toast from "vue-toastification";
 //import "vue-toastification/dist/index.css";
 
 import { createPinia } from 'pinia';
@@ -19,9 +18,20 @@ import * as directives from 'vuetify/directives'
 import * as labsComponents from 'vuetify/labs/components'
 const vuetify = createVuetify({     components:{         ...components,         ...labsComponents     },     directives,  })
 */
-//const options = {
-// You can set your toast options here
-//};
+const options = {
+  position: "top-right",
+    timeout: 5000,
+    closeOnClick: true,
+    pauseOnFocusLoss: true,
+    pauseOnHover: true,
+    draggable: true,
+    draggablePercent: 0.6,
+    showCloseButtonOnHover: false,
+    hideProgressBar: false,
+    closeButton: "button",
+    icon: true,
+    rtl: false
+};
 import PrimeVue from 'primevue/config';
 import 'primeicons/primeicons.css'
 import "primeflex/primeflex.css";
@@ -373,7 +383,7 @@ app.component('VirtualScroller', VirtualScroller);
 app
   .use(router)
 app.use(store)
-//app.use(Toast, options)
+app.use(Toast, options)
 app.use(createPinia())
 // .use(vuetify)
 app.component("font-awesome-icon", FontAwesomeIcon)

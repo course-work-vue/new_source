@@ -106,12 +106,26 @@
         @update:value="update($event, item.key)"
       >
       </combobox-input>
+
+      <textarea-input
+        v-if="item instanceof TEXTAREA"
+        :item-key="item.key"
+        :value="modelValue[item.key]"
+        :error="errors[item.key]"
+        :label="item.label"
+        :placeholder="item.placeholder"
+        :rows="item.rows"        
+        :class-name="item.className"  
+        @update:value="update($event, item.key)"
+      ></textarea-input>
+      
     </slot>
   </div>
 </template>
 
 <script>
 import TextInput from "@/components/form/inputs/TextInput.vue";
+import TextareaInput from "@/components/form/inputs/TextareaInput.vue";
 import TimePickerInput from "@/components/form/inputs/TimePickerInput.vue";
 import MaskInput from "@/components/form/inputs/MaskInput.vue";
 import DateInput from "@/components/form/inputs/DateInput.vue";
@@ -122,6 +136,7 @@ import ComboboxInput from "@/components/form/inputs/ComboboxInput.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 
 import { TextInput as TextInputModel } from "@/model/form/inputs/TextInput";
+import { TextareaInput as TextareaInputModel } from "@/model/form/inputs/TextareaInput";
 import { TimePickerInput as TimePickerInputModel } from "@/model/form/inputs/TimePickerInput";
 import { MaskInput as MaskInputModel } from "@/model/form/inputs/MaskInput";
 import { DateInput as DateInputModel } from "@/model/form/inputs/DateInput";
@@ -134,6 +149,7 @@ export default {
   name: "AutoForm",
   components: {
     TextInput,
+    TextareaInput,
     TimePickerInput,
     MaskInput,
     DateInput,
@@ -164,6 +180,7 @@ export default {
   data() {
     return {
       TEXT: TextInputModel,
+      TEXTAREA: TextareaInputModel,
       TIME: TimePickerInputModel,
       MASK: MaskInputModel,
       DATE: DateInputModel,
