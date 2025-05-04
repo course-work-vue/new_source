@@ -1,114 +1,156 @@
 <template>
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <!-- Title Row -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Импорт учебных планов</span>
+      </div>
+    </div>
 
-  <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-    
-    <span class="badge bg-secondary me-2">Next Program ID: {{ lastId }}</span>
-    
-    <button @click="clearFilters" :disabled="!filters"
-      class="btn btn-sm btn-primary text-nowrap mx-2 d-flex align-items-center" type="button">
-      <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
-      Очистить фильтры
-    </button>
-    <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
-      v-on:input="onFilterTextBoxChanged()" placeholder="Поиск..." />
-  </div>
+    <div class="row g-2 mb-2 align-items-center">
+       <div class="col-auto ps-0 py-0 pe-2">
+         <span class="badge bg-secondary text-nowrap">Next Program ID: {{ lastId }}</span>
+       </div>
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn d-flex align-items-center"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
 
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-
-    <div class="col col-12">
-
-      <div class="mb-3 col col-12">
-
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2 ">
-          <input type="file" @change="onFileChange" multiple accept=".xlsx, .xls, .plx">
-        </div>
-
-        <div class="col col-6 float-end d-inline-flex align-items-center gap-2">
-          <button @click="selectedCount === 0 ? deleteAllActiveProgramsConfirmed() : deleteSelected()" type="button"
+    <div class="row g-2 mb-2">
+      <div class="col-auto p-0">
+        <label class="btn btn-primary d-flex align-items-center">
+          <i class="material-icons-outlined me-1">upload_file</i> Загрузить файл(ы)
+          <input type="file" @change="onFileChange" multiple accept=".xlsx, .xls, .plx" class="d-none">
+        </label>
+      </div>
+      <div class="col"></div> 
+      <div class="col-auto p-0 d-flex align-items-center gap-2">
+         <button @click="selectedCount === 0 ? deleteAllActiveProgramsConfirmed() : deleteSelected()" type="button"
             class="btn btn-danger btn-sm d-flex align-items-center">
-            <i class="material-icons-outlined me-2">close</i>
-            {{ selectedCount === 0 ? 'Очистить' : 'Удалить выбранное' }}
+            <i class="material-icons-outlined me-1">delete_sweep</i> 
+            {{ selectedCount === 0 ? 'Очистить все' : 'Удалить выбранное' }} 
           </button>
 
           <button @click="openCompareForm" :disabled="selectedCount < 2" type="button" class="btn btn-warning btn-sm d-flex align-items-center">
-            <i class="material-icons-outlined me-2">compare_arrows</i>Пересечение
+            <i class="material-icons-outlined me-1">compare_arrows</i>Пересечение
           </button>
 
-          <button @click="openDisciplinesForm" type="button" class="btn btn-info btn-sm d-flex align-items-center">
-            <i class="material-icons-outlined me-2">menu_book</i>Дисциплины
+          <button @click="openDisciplinesForm" type="button" class="btn btn-info btn-sm d-flex align-items-center text-white"> <!-- Added text-white for better contrast on btn-info -->
+            <i class="material-icons-outlined me-1">menu_book</i>Дисциплины
           </button>
 
           <button @click="openArchiveForm" type="button" class="btn btn-primary btn-sm d-flex align-items-center">
-            <i class="material-icons-outlined me-2">assignment</i>Архив
+            <i class="material-icons-outlined me-1">archive</i>Архив 
           </button>
+      </div>
+    </div>
 
+    <div class="row g-2 mb-2" v-if="successMessage || errorMessage">
+       <div class="col-12 p-0">
+         <p v-if="successMessage" class="alert alert-success p-2 mb-0">{{ successMessage }}</p>
+         <p v-if="errorMessage" class="alert alert-danger p-2 mb-0">{{ errorMessage }}</p>
+       </div>
+     </div>
+
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            style="width: 100%; height: 100%;"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :rowHeight="40"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+            >
+            <!-- Removed domLayout="normal" as flex layout handles it -->
+          </ag-grid-vue>
         </div>
       </div>
     </div>
-
-    <div class="col col-12 mt-2"> <!-- Добавляем немного отступа сверху -->
-      <p v-if="successMessage" class="alert alert-success p-2">{{ successMessage }}</p>
-      <p v-if="errorMessage" class="alert alert-danger p-2">{{ errorMessage }}</p>
-    </div>
-
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefs.value"
-          :rowData="rowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-          animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked" @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" domLayout="normal"
-          :pagination="true" :paginationPageSize="paginationPageSize">
-        </ag-grid-vue>
-      </div>
-    </div>
-
   </div>
 
+  <!-- Sidebars remain outside the main container -->
   <Sidebar v-model:visible="showCompare" position="bottom" modal header="Пересечение учебных планов"
     class="custom-sidebar h-auto" :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container">
-
+    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
       <auto-form v-model="formValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
       </auto-form>
-
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="dynamicColumnDefs"
-          :rowData="rowDataForComparison" :defaultColDef="defaultColDef" :localeText="localeText"
-          rowSelection="multiple" animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered"
-          :pagination="true" :paginationPageSize="paginationPageSize">
+    <div style="height: 50vh"> <!-- Keep height for sidebar content -->
+      <div class="h-100"> <!-- Removed pt-5 -->
+        <ag-grid-vue
+          class="ag-theme-alpine"
+          style="width: 100%; height: 100%;"
+          :columnDefs="dynamicColumnDefs"
+          :rowData="rowDataForComparison"
+          :defaultColDef="defaultColDef"
+          :localeText="localeText"
+          rowSelection="multiple"
+          animateRows="true"
+          :rowHeight="40"
+          @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered"
+          :pagination="true"
+          :paginationPageSize="paginationPageSize">
         </ag-grid-vue>
       </div>
     </div>
-
   </Sidebar>
 
   <Sidebar v-model:visible="showDisciple" @hide="resetDiscipleFilters" position="bottom" modal header="Дисциплины" class="custom-sidebar h-auto"
     :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container">
-
+    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
       <auto-form v-model="discipleFormValues" v-model:errors="errors" :scheme="discipleScheme" class="custom-form">
       </auto-form>
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-2">
-        <ag-grid-vue 
-          class="ag-theme-alpine grid-compact" 
-          style="width: 100%; height: 100%;" 
+    <div style="height: 50vh"> <!-- Keep height for sidebar content -->
+      <div class="h-100"> <!-- Removed pt-2 -->
+        <ag-grid-vue
+          class="ag-theme-alpine grid-compact"
+          style="width: 100%; height: 100%;"
           :columnDefs="detailColumnDefs.value"
-          :rowData="filteredDiscipleDataForAllPrograms" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-          animateRows="true" 
-          :rowHeight="35" 
-          @cell-clicked="cellWasClicked" 
+          :rowData="filteredDiscipleDataForAllPrograms"
+          :defaultColDef="defaultColDef"
+          :localeText="localeText"
+          rowSelection="multiple"
+          animateRows="true"
+          :rowHeight="35"
+          @cell-clicked="cellWasClicked"
           @grid-ready="onGridReadyDetails"
-          @firstDataRendered="onFirstDataRendered" 
-          @filter-changed="onDetailFilterChanged" 
+          @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onDetailFilterChanged"
           :pagination="true"
           :paginationPageSize="paginationPageSize">
         </ag-grid-vue>
@@ -119,20 +161,28 @@
   <Sidebar v-model:visible="showArchive" @hide="resetArchiveFilters" position="bottom" modal header="Архив" class="custom-sidebar h-auto"
     :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container">
-
+    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
       <auto-form v-model="archiveFormValues" v-model:errors="errors" :scheme="archiveScheme" class="custom-form">
       </auto-form>
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="archiveColumnDefs.value"
-          :rowData="filteredRowDataArchive" 
-          :defaultColDef="archiveColumnDefs" :localeText="localeText"
-          rowSelection="multiple" animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady" @firstDataRendered="onFirstDataRendered" 
-          :pagination="true" :paginationPageSize="paginationPageSize">
+    <div style="height: 50vh"> <!-- Keep height for sidebar content -->
+      <div class="h-100"> <!-- Removed pt-5 -->
+        <ag-grid-vue
+          class="ag-theme-alpine"
+          style="width: 100%; height: 100%;"
+          :columnDefs="archiveColumnDefs.value"
+          :rowData="filteredRowDataArchive"
+          :defaultColDef="archiveColumnDefs"
+          :localeText="localeText"
+          rowSelection="multiple"
+          animateRows="true"
+          :rowHeight="40"
+          @cell-clicked="cellWasClicked"
+          @grid-ready="onGridReady"
+          @firstDataRendered="onFirstDataRendered"
+          :pagination="true"
+          :paginationPageSize="paginationPageSize">
         </ag-grid-vue>
       </div>
     </div>
@@ -141,43 +191,48 @@
   <Sidebar v-model:visible="showDetails" @hide="resetDetailsFilters" position="bottom" modal :header="`Программа ${selectedDisciplineCodeForTemplate}`"
     class="custom-sidebar h-auto" :style="{ width: '80%', maxHeight: '80vh', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container flex-grow-1 me-3">
-      <div class="d-inline-flex align-items-center flex-shrink-0">
-          <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
-            class="btn btn-sm btn-primary text-nowrap mx-2 d-flex align-items-center" type="button">
-            <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
-            Очистить фильтр
-          </button>
-          <input class="form-control form-control-sm" type="text"
-                 v-model="detailQuickFilterValue"
-                 id="detail-filter-text-box"
-                 v-on:input="onDetailFilterTextBoxChanged()"
-                 placeholder="Поиск по дисциплинам..."
-                 style="width: 200px;" />
-      </div>
-      <auto-form v-model="detailsFormValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
-      </auto-form>
+    <!-- Combine Filter and AutoForm in a flex container for better alignment -->
+    <div class="d-flex align-items-start mb-3"> <!-- Changed align-items to start -->
+        <div class="d-flex align-items-center flex-shrink-0 me-3"> <!-- Filter part -->
+            <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
+                    class="btn btn-sm btn-primary text-nowrap me-2 d-flex align-items-center" type="button">
+                <i class="material-icons-outlined" style="font-size: 18px; margin-right: 5px;">close</i>
+                Очистить фильтр
+            </button>
+            <input class="form-control form-control-sm" type="text"
+                    v-model="detailQuickFilterValue"
+                    id="detail-filter-text-box"
+                    v-on:input="onDetailFilterTextBoxChanged()"
+                    placeholder="Поиск по дисциплинам..."
+                    style="width: 200px;" />
+        </div>
+        <div class="flex-grow-1"> <!-- AutoForm part takes remaining space -->
+            <auto-form v-model="detailsFormValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
+            </auto-form>
+        </div>
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-2">
-        <ag-grid-vue 
-          class="ag-theme-alpine grid-compact" 
-          style="width: 100%; height: 100%;" 
+    <div style="height: 50vh"> <!-- Keep height for sidebar content -->
+      <div class="h-100"> <!-- Removed pt-2 -->
+        <ag-grid-vue
+          class="ag-theme-alpine grid-compact"
+          style="width: 100%; height: 100%;"
           :columnDefs="detailColumnDefs.value"
-          :rowData="detailRowData" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-          animateRows="true" 
-          :rowHeight="35" 
-          @cell-clicked="cellWasClicked" 
+          :rowData="detailRowData"
+          :defaultColDef="defaultColDef"
+          :localeText="localeText"
+          rowSelection="multiple"
+          animateRows="true"
+          :rowHeight="35"
+          @cell-clicked="cellWasClicked"
           @grid-ready="onGridReadyDetails"
-          @firstDataRendered="onFirstDataRendered" 
-          @filter-changed="onDetailFilterChanged" 
+          @firstDataRendered="onFirstDataRendered"
+          @filter-changed="onDetailFilterChanged"
           :pagination="true"
           :paginationPageSize="paginationPageSize">
         </ag-grid-vue>
       </div>
     </div>
-
   </Sidebar>
 
 </template>
@@ -358,7 +413,7 @@ const selectedCount = computed(() => {
         {
           field: "profile",
           headerName: 'Профиль',
-          minWidth: 800,
+          minWidth: 500,
         },
         {
           field: "years",
@@ -614,6 +669,7 @@ const selectedCount = computed(() => {
     const defaultColDef = {
       sortable: true,
       filter: true,
+      flex: 1,
       resizable: true,
       minWidth: 50,
       headerClass: 'wrap-header-text',
@@ -1705,10 +1761,26 @@ const resetDetailsFilters = () => {
 </script>
 
 <style scoped>
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .year-selector-container {
   display: flex;
   gap: 34px;
-  /* расстояние между элементами */
   justify-content: flex-end;
   align-items: center;
   padding: 5px;
@@ -1772,25 +1844,43 @@ const resetDetailsFilters = () => {
   justify-content: flex-end;
   align-items: center;
   padding: 5px;
-  /* Уменьшаем отступ */
 }
 
 .year-selector-container label {
   margin-right: 5px;
-  /* Уменьшаем отступ между текстом и селектором */
   font-size: 14px;
-  /* Делаем текст меньше */
   white-space: nowrap;
-  /* Предотвращаем перенос */
 }
 
 .year-selector-container select {
   width: 150px;
-  /* Уменьшаем ширину селектора */
   height: 30px;
-  /* Делаем его компактнее */
   font-size: 14px;
-  /* Уменьшаем размер шрифта */
   padding: 2px 5px;
+}
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.page-link {
+  height: 40px;
+  width: 40px;
+  margin: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>

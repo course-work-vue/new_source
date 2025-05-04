@@ -1,58 +1,75 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
-          <button
-            @click="openSidebar"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить договор
-          </button>
-        </div>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button 
-            @click="clearFilters" 
-            :disabled="!filters" 
-            class="btn btn-sm btn-primary text-nowrap mx-2" 
-            type="button">
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input 
-            class="form-control" 
-            type="text" 
-            v-model="quickFilterValue" 
-            id="filter-text-box" 
-            @input="onFilterTextBoxChanged" 
-            placeholder="Поиск...">
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <!-- Строка заголовка -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Список всех договоров</span>
       </div>
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%;"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"            
-          :paginationPageSize="paginationPageSize"
+    <!-- Первая строка: Поиск и Очистка фильтров -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска занимает оставшееся место -->
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          @input="onFilterTextBoxChanged"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить (авто ширина) -->
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
       </div>
     </div>
 
-    <!-- Sidebar используется так же, как в ListenerList.vue -->
+    <!-- Строка кнопки Добавить -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0"> <!-- Вы можете настроить ширину колонки (col-4, col-auto и т.д.) -->
+        <button
+          @click="openSidebar"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить договор
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка с AG Grid (занимает оставшееся место) -->
+    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания по высоте -->
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+          <ag-grid-vue
+            class="ag-theme-alpine" 
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            :rowHeight="40"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar остается без изменений структуры -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
@@ -168,6 +185,7 @@ export default {
         {
           field: "contr_number",
           headerName: "Номер договора",
+          maxWidth: 175,
         },
         {
           field: "program_name",
@@ -181,7 +199,6 @@ export default {
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300,
     };
 
     onMounted(() => {
@@ -462,6 +479,23 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .bigger {
   font-size: 30px;
   white-space: nowrap;
@@ -543,6 +577,23 @@ export default {
   box-shadow: inset 0 1px 1px rgba(6,215,29,0.075),
               0 0 8px rgba(6,215,29,0.6);
 }
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .page-link {
   height: 40px;
   width: 40px;

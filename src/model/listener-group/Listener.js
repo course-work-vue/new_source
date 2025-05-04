@@ -42,7 +42,7 @@ export default class Listener {
     const listenergroupStore = useListenergroupStore();
     const listenergroup = listenergroupStore.listenergroupMap[this.group_id];
 
-    const groupNumber = listenergroup?.group_number || listenergroup?.[[Target]]?.group_number; //Да, это глупо, но как по другому....
+    const groupNumber = listenergroup?.group_number || listenergroup?.[[Target]]?.group_number;
 
     console.log('group_number:', groupNumber);
 
@@ -51,9 +51,9 @@ export default class Listener {
 
 get listener_program() {
   const programStore = useProgramStore();
-  const programObj = programStore.programMap[this.program_id]; // используем program_id, а не group_id
+  const programObj = programStore.programMap[this.program_id];
 
-  const program = programObj?.program_name || programObj?.[[Target]]?.program_name; // если [[Target]] нужен, можно оставить, но лучше искать более явное решение
+  const program = programObj?.program_name || programObj?.[[Target]]?.program_name;
 
   console.log('Программа:', program);
 
@@ -64,10 +64,11 @@ get full_name() {
   
   const nameParts = [];
 
-  if (this.name) nameParts.push(this.name);
-  if (this.surname) nameParts.push(this.surname);
-  if (this.lastname) nameParts.push(this.lastname);
+  if (this.surname) nameParts.push(this.surname);  
+  if (this.name) nameParts.push(this.name);     
+  if (this.lastname) nameParts.push(this.lastname); 
 
   return nameParts.join(' ');
+  
 }
 }
