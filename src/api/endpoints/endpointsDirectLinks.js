@@ -14,6 +14,7 @@ export default Object.freeze({
     deleteTriggerUser: directPrefix + 'TriggerList/DeleteTriggerFromSql',
     updateTriggerFromSql: directPrefix + 'TriggerList/UpdateTriggerFromSql',
     registerUser: directPrefix + 'Auth/register',
+    getRolesFromToken:directPrefix + 'Auth/getRolesFromToken',
     updateUser: directPrefix + 'Auth/update',
 
 });

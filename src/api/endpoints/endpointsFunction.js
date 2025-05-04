@@ -7,6 +7,7 @@ export default Object.freeze({
     tableUser: prefix + 'ums.select_table_user',
     role: prefix + 'ums.select_roles',
     permission: prefix + 'ums.select_permissions',
+    globalPermission: prefix + 'ums.select_globalpermissions',
     user: prefix + 'ums.select_users',
     triggerUser: prefix + 'ums.select_trigger_user',
     functionUser:prefix+'ums.select_function_user',

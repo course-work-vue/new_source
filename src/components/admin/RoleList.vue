@@ -355,24 +355,83 @@ export default {
       }),
     ]);
     this.scheme2 = new FormScheme([
+      new ComboboxInput({
+        key: "schema_name",
+        label: "Схема",
+        placeholder: "Выберите схему",
+        options: [
+          { label: "public", value: "public" },
+          { label: "ums", value: "ums" },
+        ],
+      }),
       new CheckboxInput({
-        key: "create_grant",
-        label: "create",
+        key: "grant_create_db",
+        label: "CREATE DATABASE",
         binary: true,
       }),
       new CheckboxInput({
-        key: "create_table_grant",
-        label: "create_table",
+        key: "grant_create_obj",
+        label: "CREATE OBJECT",
         binary: true,
       }),
       new CheckboxInput({
-        key: "update_table_grant",
-        label: "update_table",
+        key: "grant_usage_schema",
+        label: "USAGE SCHEMA",
         binary: true,
       }),
       new CheckboxInput({
-        key: "delete_table_grant",
-        label: "delete_table",
+        key: "grant_update_tbl",
+        label: "UPDATE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_delete_tbl",
+        label: "DELETE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_select_tbl",
+        label: "SELECT TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_insert_tbl",
+        label: "INSERT TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_truncate_tbl",
+        label: "TRUNCATE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_references_tbl",
+        label: "REFERENCES TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_trigger_tbl",
+        label: "TRIGGER TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_usage_seq",
+        label: "USAGE SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_select_seq",
+        label: "SELECT SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_update_seq",
+        label: "UPDATE SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_execute_func",
+        label: "EXECUTE FUNCTION",
         binary: true,
       }),
     ]);
@@ -464,6 +523,9 @@ export default {
         globalPermission.roleid = response.id;
         await this.postGlobalPermission(globalPermission);
       }
+
+      await this.getRoleList();
+      await this.getGlobalPermissionList();
       this.formVisible = false;
       this.resetRole();
       this.loadRolesData();

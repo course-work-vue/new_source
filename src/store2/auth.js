@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import jwt_decode from 'jwt-decode';
 import AuthService from '../services/auth.service';
+import api from '@/api/api';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -23,7 +24,14 @@ export const useAuthStore = defineStore('auth', {
                 throw error;
             }
         },
-
+        async getRolesFromToken(token) {
+            try {
+                const roles = await api.getRolesFromToken(token);
+                this.user.roles = roles.roles;
+            } catch (error) {
+                throw error;
+            }
+        },
         logout() {
             AuthService.logout();
             this.user = null;

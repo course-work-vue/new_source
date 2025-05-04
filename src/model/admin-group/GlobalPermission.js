@@ -1,26 +1,52 @@
 export default class GlobalPermission {
-    permissionid;
-    roleid;
-    create_table_grant;
-    update_table_grant;
-    delete_table_grant;
-    create_grant;
+  permissionid;
+  roleid;
+  schema_name;
+  grant_create_db;
+  grant_create_obj;
+  grant_usage_schema;
+  grant_update_tbl;
+  grant_delete_tbl;
+  grant_select_tbl;
+  grant_insert_tbl;
+  grant_truncate_tbl;
+  grant_references_tbl;
+  grant_trigger_tbl;
+  grant_usage_seq;
+  grant_select_seq;
+  grant_update_seq;
+  grant_execute_func;
 
-    constructor(permission) {
-        this.permissionid = permission?.permissionid ?? null;
-        this.roleid = permission?.roleid ?? null;
-        this.create_table_grant = permission?.create_table_grant ?? false;
-        this.update_table_grant = permission?.update_table_grant ?? false;
-        this.delete_table_grant = permission?.delete_table_grant ?? false;
-        this.create_grant = permission?.create_grant ?? false;
-    }
+  constructor(permission) {
+    this.permissionid = permission?.permission_id ?? null;
+    this.roleid = permission?.role_id ?? null;
+    this.schema_name = permission?.schema_name ?? null;
+    this.grant_create_db = permission?.grant_create_db ?? false;
+    this.grant_create_obj = permission?.grant_create_obj ?? false;
+    this.grant_usage_schema = permission?.grant_usage_schema ?? false;
+    this.grant_update_tbl = permission?.grant_update_tbl ?? false;
+    this.grant_delete_tbl = permission?.grant_delete_tbl ?? false;
+    this.grant_select_tbl = permission?.grant_select_tbl ?? false;
+    this.grant_insert_tbl = permission?.grant_insert_tbl ?? false;
+    this.grant_truncate_tbl = permission?.grant_truncate_tbl ?? false;
+    this.grant_references_tbl = permission?.grant_references_tbl ?? false;
+    this.grant_trigger_tbl = permission?.grant_trigger_tbl ?? false;
+    this.grant_usage_seq = permission?.grant_usage_seq ?? false;
+    this.grant_select_seq = permission?.grant_select_seq ?? false;
+    this.grant_update_seq = permission?.grant_update_seq ?? false;
+    this.grant_execute_func = permission?.grant_execute_func ?? false;
+  }
 
-    // You can add helper methods here if needed, for example:
-    hasFullPermissions() {
-        return this.create_table_grant && this.update_table_grant && this.delete_table_grant && this.create_grant;
-    }
+  hasFullPermissions() {
+    return (
+      this.grant_create_obj &&
+      this.grant_update_tbl &&
+      this.grant_delete_tbl &&
+      this.grant_create_db
+    );
+  }
 
-    hasCreatePermissions() {
-        return this.create_table_grant || this.create_grant;
-    }
+  hasCreatePermissions() {
+    return this.grant_create_obj || this.grant_create_db;
+  }
 }
