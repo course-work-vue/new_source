@@ -84,189 +84,244 @@
             <div class="table-editor">
               <div class="form-group mb-3">
                 <label class="form-label">Название таблицы</label>
-                <input 
-                  v-model="tableEditor.tableName" 
-                  class="form-control" 
+                <input
+                  v-model="tableEditor.tableName"
+                  class="form-control"
                   placeholder="Имя таблицы"
                   @input="updateSqlFromVisualEditor"
                 />
               </div>
-              
+
               <div class="table-columns mb-3">
                 <h4>Колонки</h4>
                 <div class="column-list">
-                  <div v-for="(column, index) in tableEditor.columns" :key="index" class="column-item p-2 mb-2 border rounded">
+                  <div
+                    v-for="(column, index) in tableEditor.columns"
+                    :key="index"
+                    class="column-item p-2 mb-2 border rounded"
+                  >
                     <div class="d-flex mb-2 align-items-center">
                       <div class="flex-grow-1">
                         <label class="form-label mb-1">Имя колонки</label>
-                        <input 
-                          v-model="column.name" 
-                          class="form-control" 
+                        <input
+                          v-model="column.name"
+                          class="form-control"
                           placeholder="Имя колонки"
                           @input="updateSqlFromVisualEditor"
                         />
                       </div>
-                      <button class="btn btn-danger ms-2" style="height: auto" @click="removeColumn(index)">
+                      <button
+                        class="btn btn-danger ms-2"
+                        style="height: auto"
+                        @click="removeColumn(index)"
+                      >
                         <i class="material-icons-outlined">delete</i>
                       </button>
                     </div>
-                    
+
                     <div class="row mb-2">
                       <div class="col-md-4">
                         <label class="form-label mb-1">Тип данных</label>
-                        <select 
-                          v-model="column.type" 
+                        <select
+                          v-model="column.type"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                         >
-                          <option v-for="type in postgresTypes" :key="type.value" :value="type.value">
+                          <option
+                            v-for="type in postgresTypes"
+                            :key="type.value"
+                            :value="type.value"
+                          >
                             {{ type.label }}
                           </option>
                         </select>
                       </div>
-                      
-                      <div class="col-md-4" v-if="column.type.includes('character') || column.type.includes('varchar')">
+
+                      <div
+                        class="col-md-4"
+                        v-if="
+                          column.type.includes('character') ||
+                          column.type.includes('varchar')
+                        "
+                      >
                         <label class="form-label mb-1">Размер</label>
-                        <input 
-                          v-model="column.length" 
-                          type="number" 
+                        <input
+                          v-model="column.length"
+                          type="number"
                           class="form-control"
-                          placeholder="255" 
+                          placeholder="255"
                           @input="updateSqlFromVisualEditor"
                         />
                       </div>
 
                       <div class="col-md-4">
-                        <label class="form-label mb-1">Значение по умолчанию</label>
-                        <input 
-                          v-model="column.defaultValue" 
-                          class="form-control" 
+                        <label class="form-label mb-1"
+                          >Значение по умолчанию</label
+                        >
+                        <input
+                          v-model="column.defaultValue"
+                          class="form-control"
                           placeholder="Значение"
                           @input="updateSqlFromVisualEditor"
                         />
                       </div>
                     </div>
-                    
+
                     <div class="row constraints">
                       <div class="col-md-3">
                         <div class="form-check">
-                          <input 
-                            class="form-check-input" 
-                            type="checkbox" 
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
                             v-model="column.primaryKey"
                             @change="updateSqlFromVisualEditor"
-                          >
+                          />
                           <label class="form-check-label">Primary Key</label>
                         </div>
                       </div>
-                      
+
                       <div class="col-md-3">
                         <div class="form-check">
-                          <input 
-                            class="form-check-input" 
-                            type="checkbox" 
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
                             v-model="column.notNull"
                             @change="updateSqlFromVisualEditor"
-                          >
+                          />
                           <label class="form-check-label">Not Null</label>
                         </div>
                       </div>
-                      
+
                       <div class="col-md-3">
                         <div class="form-check">
-                          <input 
-                            class="form-check-input" 
-                            type="checkbox" 
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
                             v-model="column.unique"
                             @change="updateSqlFromVisualEditor"
-                          >
+                          />
                           <label class="form-check-label">Unique</label>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <button class="btn btn-primary mt-2" @click="addColumn">
-                  <i class="material-icons-outlined me-1">add</i>Добавить колонку
+                  <i class="material-icons-outlined me-1">add</i>Добавить
+                  колонку
                 </button>
               </div>
 
               <div class="foreign-keys mb-3">
                 <h4>Внешние ключи</h4>
                 <div class="fk-list">
-                  <div v-for="(fk, index) in tableEditor.foreignKeys" :key="index" class="fk-item p-2 mb-2 border rounded">
+                  <div
+                    v-for="(fk, index) in tableEditor.foreignKeys"
+                    :key="index"
+                    class="fk-item p-2 mb-2 border rounded"
+                  >
                     <div class="row mb-2">
                       <div class="col-md-5">
                         <label class="form-label mb-1">Колонка</label>
-                        <select 
-                          v-model="fk.columnName" 
+                        <select
+                          v-model="fk.columnName"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                         >
                           <option value="">Выберите колонку</option>
-                          <option v-for="column in tableEditor.columns" :key="column.name" :value="column.name">
+                          <option
+                            v-for="column in tableEditor.columns"
+                            :key="column.name"
+                            :value="column.name"
+                          >
                             {{ column.name }}
                           </option>
                         </select>
                       </div>
-                      
+
                       <div class="col-md-5">
                         <label class="form-label mb-1">Ссылка на таблицу</label>
-                        <select 
-                          v-model="fk.referencedTable" 
+                        <select
+                          v-model="fk.referencedTable"
                           class="form-select"
                           @change="onForeignTableChanged(index)"
                         >
                           <option value="">Выберите таблицу</option>
-                          <option v-for="table in tableUserList" :key="table.table_name" :value="table.table_name">
+                          <option
+                            v-for="table in tableUserList"
+                            :key="table.table_name"
+                            :value="table.table_name"
+                          >
                             {{ table.table_name }}
                           </option>
                         </select>
                       </div>
-                      
+
                       <div class="col-md-2">
-                        <button class="btn btn-danger ms-2 mt-4" @click="removeForeignKey(index)">
+                        <button
+                          class="btn btn-danger ms-2 mt-4"
+                          @click="removeForeignKey(index)"
+                        >
                           <i class="material-icons-outlined">delete</i>
                         </button>
                       </div>
                     </div>
-                    
+
                     <div class="row">
                       <div class="col-md-5">
                         <label class="form-label mb-1">Ссылка на колонку</label>
-                        <select 
-                          v-model="fk.referencedColumn" 
+                        <select
+                          v-model="fk.referencedColumn"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                           :disabled="!fk.referencedTable"
                         >
                           <option value="">Выберите колонку</option>
-                          <option v-for="column in getColumnsForTable(fk.referencedTable)" :key="column" :value="column">
+                          <option
+                            v-for="column in getColumnsForTable(
+                              fk.referencedTable
+                            )"
+                            :key="column"
+                            :value="column"
+                          >
                             {{ column }}
                           </option>
                         </select>
                       </div>
                       <div class="col-md-7">
-                        <div v-if="fk.referencedTable && getColumnsForTable(fk.referencedTable).length === 0" 
-                             class="alert alert-warning mt-2">
-                          Не удалось извлечь колонки из таблицы. Введите имя колонки вручную:
-                          <input 
-                            v-model="fk.referencedColumn" 
-                            class="form-control mt-1" 
+                        <div
+                          v-if="
+                            fk.referencedTable &&
+                            getColumnsForTable(fk.referencedTable).length === 0
+                          "
+                          class="alert alert-warning mt-2"
+                        >
+                          Не удалось извлечь колонки из таблицы. Введите имя
+                          колонки вручную:
+                          <input
+                            v-model="fk.referencedColumn"
+                            class="form-control mt-1"
                             placeholder="Имя колонки"
                             @input="updateSqlFromVisualEditor"
                           />
                         </div>
                       </div>
                     </div>
-                    
+
                     <!-- Foreign Key Behavior Options -->
-                    <div class="row mt-2" v-if="fk.columnName && fk.referencedTable && fk.referencedColumn">
+                    <div
+                      class="row mt-2"
+                      v-if="
+                        fk.columnName &&
+                        fk.referencedTable &&
+                        fk.referencedColumn
+                      "
+                    >
                       <div class="col-md-4">
                         <label class="form-label mb-1">MATCH</label>
-                        <select 
-                          v-model="fk.matchType" 
+                        <select
+                          v-model="fk.matchType"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                         >
@@ -275,11 +330,11 @@
                           <option value="PARTIAL">PARTIAL</option>
                         </select>
                       </div>
-                      
+
                       <div class="col-md-4">
                         <label class="form-label mb-1">ON UPDATE</label>
-                        <select 
-                          v-model="fk.onUpdate" 
+                        <select
+                          v-model="fk.onUpdate"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                         >
@@ -290,11 +345,11 @@
                           <option value="SET DEFAULT">SET DEFAULT</option>
                         </select>
                       </div>
-                      
+
                       <div class="col-md-4">
                         <label class="form-label mb-1">ON DELETE</label>
-                        <select 
-                          v-model="fk.onDelete" 
+                        <select
+                          v-model="fk.onDelete"
                           class="form-select"
                           @change="updateSqlFromVisualEditor"
                         >
@@ -308,14 +363,15 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <button class="btn btn-primary mt-2" @click="addForeignKey">
-                  <i class="material-icons-outlined me-1">add</i>Добавить внешний ключ
+                  <i class="material-icons-outlined me-1">add</i>Добавить
+                  внешний ключ
                 </button>
               </div>
             </div>
           </TabPanel>
-          
+
           <TabPanel header="SQL код">
             <Textarea
               v-model="tableUser.table_definition"
@@ -324,11 +380,11 @@
               @input="onSqlChanged"
             ></Textarea>
           </TabPanel>
-          
+
           <TabPanel header="Разрешения" v-if="tableUser.id">
             <div class="permissions-editor p-3">
               <h3 class="mb-3">Управление разрешениями</h3>
-              
+
               <div class="form-group mb-4">
                 <label class="form-label">Выберите роль</label>
                 <Dropdown
@@ -341,32 +397,36 @@
                   @change="loadPermissions"
                 />
               </div>
-              
+
               <div v-if="selectedRoleId" class="permissions-table mb-4">
                 <h4 class="mb-3">Разрешения для {{ getSelectedRoleName }}</h4>
                 <DataTable :value="operations" class="permissions-datatable">
                   <Column field="label" header="Операция"></Column>
-                  <Column header="Разрешено" class="text-center" style="width: 150px">
+                  <Column
+                    header="Разрешено"
+                    class="text-center"
+                    style="width: 150px"
+                  >
                     <template #body="slotProps">
-                      <Checkbox 
-                        v-model="selectedPermissions" 
-                        :value="slotProps.data.value" 
+                      <Checkbox
+                        v-model="selectedPermissions"
+                        :value="slotProps.data.value"
                         :binary="false"
                       />
                     </template>
                   </Column>
                 </DataTable>
               </div>
-              
+
               <div v-if="!selectedRoleId" class="p-3 bg-light rounded mb-4">
                 <p class="mb-0">Выберите роль для настройки разрешений.</p>
               </div>
-              
-              <Button 
+
+              <Button
                 v-if="selectedRoleId"
-                label="Сохранить разрешения" 
-                icon="pi pi-save" 
-                class="p-button-primary" 
+                label="Сохранить разрешения"
+                icon="pi pi-save"
+                class="p-button-primary"
                 @click="submitPermissions"
               />
             </div>
@@ -374,20 +434,20 @@
         </TabView>
       </div>
     </div>
-    
+
     <div class="dialog-footer mt-3">
-      <Button 
-        label="Сохранить" 
-        icon="pi pi-check" 
-        class="p-button-primary" 
+      <Button
+        label="Сохранить"
+        icon="pi pi-check"
+        class="p-button-primary"
         @click="submit"
         :disabled="!hasChanges"
       />
-      <Button 
+      <Button
         v-if="tableUser.id"
-        label="Удалить" 
-        icon="pi pi-trash" 
-        class="p-button-danger ml-2" 
+        label="Удалить"
+        icon="pi pi-trash"
+        class="p-button-danger ml-2"
         @click="deleteR"
       />
     </div>
@@ -403,13 +463,13 @@ import StudentHref from "@/components/student/StudentHrefCellRenderer.vue";
 import StudentHref2 from "@/components/student/StudentHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-import TabView from 'primevue/tabview';
-import TabPanel from 'primevue/tabpanel';
-import Dropdown from 'primevue/dropdown';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Checkbox from 'primevue/checkbox';
-import Button from 'primevue/button';
+import TabView from "primevue/tabview";
+import TabPanel from "primevue/tabpanel";
+import Dropdown from "primevue/dropdown";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import Checkbox from "primevue/checkbox";
+import Button from "primevue/button";
 
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
@@ -670,7 +730,7 @@ export default {
       tableEditor: {
         tableName: "",
         columns: [],
-        foreignKeys: []
+        foreignKeys: [],
       },
       postgresTypes: [
         { label: "integer", value: "integer" },
@@ -681,8 +741,14 @@ export default {
         { label: "text", value: "text" },
         { label: "date", value: "date" },
         { label: "timestamp", value: "timestamp" },
-        { label: "timestamp without time zone", value: "timestamp without time zone" },
-        { label: "timestamp with time zone", value: "timestamp with time zone" },
+        {
+          label: "timestamp without time zone",
+          value: "timestamp without time zone",
+        },
+        {
+          label: "timestamp with time zone",
+          value: "timestamp with time zone",
+        },
         { label: "boolean", value: "boolean" },
         { label: "decimal", value: "decimal" },
         { label: "numeric", value: "numeric" },
@@ -713,7 +779,7 @@ export default {
         { label: "path", value: "path" },
         { label: "polygon", value: "polygon" },
         { label: "circle", value: "circle" },
-      ]
+      ],
     };
   },
   async mounted() {
@@ -741,20 +807,20 @@ export default {
         defaultValue: "",
         primaryKey: false,
         notNull: false,
-        unique: false
+        unique: false,
       });
       this.updateSqlFromVisualEditor();
     },
-    
+
     removeColumn(index) {
       this.tableEditor.columns.splice(index, 1);
       // Also remove foreign keys that reference this column
       this.tableEditor.foreignKeys = this.tableEditor.foreignKeys.filter(
-        fk => fk.columnName !== this.tableEditor.columns[index]?.name
+        (fk) => fk.columnName !== this.tableEditor.columns[index]?.name
       );
       this.updateSqlFromVisualEditor();
     },
-    
+
     addForeignKey() {
       if (this.tableEditor.columns.length > 0) {
         this.tableEditor.foreignKeys.push({
@@ -763,249 +829,306 @@ export default {
           referencedColumn: "",
           matchType: "SIMPLE",
           onUpdate: "NO ACTION",
-          onDelete: "NO ACTION"
+          onDelete: "NO ACTION",
         });
         this.updateSqlFromVisualEditor();
       }
     },
-    
+
     removeForeignKey(index) {
       this.tableEditor.foreignKeys.splice(index, 1);
       this.updateSqlFromVisualEditor();
     },
-    
+
     updateSqlFromVisualEditor() {
       let sql = `CREATE TABLE ${this.tableEditor.tableName} (\n`;
-      
+
       // Add columns
-      const columnDefs = this.tableEditor.columns.map(column => {
+      const columnDefs = this.tableEditor.columns.map((column) => {
         // Handle column name (add quotes if needed)
-        const columnName = column.name.includes(' ') || /[A-Z]/.test(column.name) ? 
-          `"${column.name}"` : column.name;
-        
+        const columnName =
+          column.name.includes(" ") || /[A-Z]/.test(column.name)
+            ? `"${column.name}"`
+            : column.name;
+
         let colDef = `    ${columnName} ${column.type}`;
-        
+
         // Add length for character types
-        if ((column.type.includes('character') || column.type.includes('varchar')) && column.length) {
+        if (
+          (column.type.includes("character") ||
+            column.type.includes("varchar")) &&
+          column.length
+        ) {
           colDef += `(${column.length})`;
         }
-        
+
         // Add default value if present
         if (column.defaultValue) {
           colDef += ` DEFAULT ${column.defaultValue}`;
         }
-        
+
         // Add constraints
         if (column.notNull) {
-          colDef += ' NOT NULL';
+          colDef += " NOT NULL";
         }
-        
+
         // Add UNIQUE constraint directly to the column definition
         if (column.unique && !column.primaryKey) {
-          colDef += ' UNIQUE';
+          colDef += " UNIQUE";
         }
-        
+
         return colDef;
       });
-      
+
       // Add primary key constraint if any column is marked as PK
       const pkColumns = this.tableEditor.columns
-        .filter(c => c.primaryKey)
-        .map(c => c.name.includes(' ') || /[A-Z]/.test(c.name) ? `"${c.name}"` : c.name);
-      
+        .filter((c) => c.primaryKey)
+        .map((c) =>
+          c.name.includes(" ") || /[A-Z]/.test(c.name) ? `"${c.name}"` : c.name
+        );
+
       if (pkColumns.length > 0) {
-        columnDefs.push(`    CONSTRAINT ${this.getTableBaseName()}_pkey PRIMARY KEY (${pkColumns.join(', ')}) NOT DEFERRABLE INITIALLY IMMEDIATE`);
+        columnDefs.push(
+          `    CONSTRAINT ${this.getTableBaseName()}_pkey PRIMARY KEY (${pkColumns.join(
+            ", "
+          )}) NOT DEFERRABLE INITIALLY IMMEDIATE`
+        );
       }
-      
+
       // Add foreign key constraints
       const fkDefs = this.tableEditor.foreignKeys
-        .filter(fk => fk.columnName && fk.referencedTable && fk.referencedColumn)
+        .filter(
+          (fk) => fk.columnName && fk.referencedTable && fk.referencedColumn
+        )
         .map((fk, index) => {
           const constraintName = `fk_${fk.columnName}_${index}`;
-          return `    CONSTRAINT ${constraintName} FOREIGN KEY (${fk.columnName}) REFERENCES ${fk.referencedTable}(${fk.referencedColumn}) MATCH ${fk.matchType || 'SIMPLE'} ON UPDATE ${fk.onUpdate || 'NO ACTION'} ON DELETE ${fk.onDelete || 'NO ACTION'} NOT DEFERRABLE INITIALLY IMMEDIATE`;
+          return `    CONSTRAINT ${constraintName} FOREIGN KEY (${
+            fk.columnName
+          }) REFERENCES ${fk.referencedTable}(${fk.referencedColumn}) MATCH ${
+            fk.matchType || "SIMPLE"
+          } ON UPDATE ${fk.onUpdate || "NO ACTION"} ON DELETE ${
+            fk.onDelete || "NO ACTION"
+          } NOT DEFERRABLE INITIALLY IMMEDIATE`;
         });
-      
+
       // Combine all definitions
-      sql += [...columnDefs, ...fkDefs].join(',\n');
-      sql += '\n);\n';
-      
+      sql += [...columnDefs, ...fkDefs].join(",\n");
+      sql += "\n);\n";
+
       // Add basic index for primary key
       if (pkColumns.length > 0) {
-        sql += `\nCREATE UNIQUE INDEX ${this.getTableBaseName()}_pkey ON ${this.tableEditor.tableName} USING btree (${pkColumns.join(', ')});\n`;
+        sql += `\nCREATE UNIQUE INDEX ${this.getTableBaseName()}_pkey ON ${
+          this.tableEditor.tableName
+        } USING btree (${pkColumns.join(", ")});\n`;
       }
-      
+
       this.tableUser.table_definition = sql;
       this.checkForChanges(); // Check if changes were made
     },
-    
+
     // Helper method to get the base table name without schema
     getTableBaseName() {
-      const parts = this.tableEditor.tableName.split('.');
+      const parts = this.tableEditor.tableName.split(".");
       return parts.length > 1 ? parts[1] : parts[0];
     },
-    
+
     parseTableDefinition() {
       try {
         const sql = this.tableUser.table_definition;
-        if (!sql || !sql.toLowerCase().includes('create table')) {
+        if (!sql || !sql.toLowerCase().includes("create table")) {
           return;
         }
-        
+
         // Reset the editor
         this.tableEditor = {
           tableName: "",
           columns: [],
-          foreignKeys: []
+          foreignKeys: [],
         };
-        
+
         // Extract table name - now handling schema qualification (public.table_name)
-        const tableNameMatch = sql.match(/CREATE\s+TABLE\s+(?:(\w+)\.)?([^\s(]+)\s*\(/i);
+        const tableNameMatch = sql.match(
+          /CREATE\s+TABLE\s+(?:(\w+)\.)?([^\s(]+)\s*\(/i
+        );
         if (tableNameMatch) {
           // Use the full name (with schema if present)
-          this.tableEditor.tableName = tableNameMatch[1] ? 
-            `${tableNameMatch[1]}.${tableNameMatch[2]}` : 
-            tableNameMatch[2];
+          this.tableEditor.tableName = tableNameMatch[1]
+            ? `${tableNameMatch[1]}.${tableNameMatch[2]}`
+            : tableNameMatch[2];
         }
-        
+
         // Extract the CREATE TABLE statement
         const createTableMatch = sql.match(/(CREATE\s+TABLE\s+.+?);/is);
         if (!createTableMatch) return;
-        
+
         const createTableStatement = createTableMatch[1];
-        
+
         // Extract column definitions and constraints
         const tableBodyMatch = createTableStatement.match(/\(([\s\S]*)\)$/i);
         if (!tableBodyMatch || !tableBodyMatch[1]) return;
-        
+
         const tableBody = tableBodyMatch[1];
-        
+
         // Split by commas but be careful with commas in parentheses (for types)
         let depth = 0;
-        let currentStatement = '';
+        let currentStatement = "";
         const statements = [];
-        
+
         for (let i = 0; i < tableBody.length; i++) {
           const char = tableBody[i];
-          if (char === '(') {
+          if (char === "(") {
             depth++;
             currentStatement += char;
-          } else if (char === ')') {
+          } else if (char === ")") {
             depth--;
             currentStatement += char;
-          } else if (char === ',' && depth === 0) {
+          } else if (char === "," && depth === 0) {
             statements.push(currentStatement.trim());
-            currentStatement = '';
+            currentStatement = "";
           } else {
             currentStatement += char;
           }
         }
-        
+
         if (currentStatement) {
           statements.push(currentStatement.trim());
         }
-        
+
         // Process each statement
         for (const statement of statements) {
-          if (statement.toLowerCase().includes('constraint') && statement.toLowerCase().includes('primary key')) {
+          if (
+            statement.toLowerCase().includes("constraint") &&
+            statement.toLowerCase().includes("primary key")
+          ) {
             // Primary key constraint
             const pkMatch = statement.match(/PRIMARY\s+KEY\s+\(([^)]+)\)/i);
             if (pkMatch && pkMatch[1]) {
-              const pkColumns = pkMatch[1].split(',').map(col => col.trim().replace(/"/g, ''));
-              
+              const pkColumns = pkMatch[1]
+                .split(",")
+                .map((col) => col.trim().replace(/"/g, ""));
+
               // Mark columns as PKs
               for (const col of this.tableEditor.columns) {
-                if (pkColumns.includes(col.name) || pkColumns.includes(col.name.replace(/"/g, ''))) {
+                if (
+                  pkColumns.includes(col.name) ||
+                  pkColumns.includes(col.name.replace(/"/g, ""))
+                ) {
                   col.primaryKey = true;
                 }
               }
             }
-          } else if (statement.toLowerCase().includes('constraint') && statement.toLowerCase().includes('foreign key')) {
+          } else if (
+            statement.toLowerCase().includes("constraint") &&
+            statement.toLowerCase().includes("foreign key")
+          ) {
             // Foreign key constraint - now with more complex match for PostgreSQL's enhanced FK syntax
-            const fkMatch = statement.match(/FOREIGN\s+KEY\s+\(([^)]+)\)\s+REFERENCES\s+(?:(\w+)\.)?([^\s(]+)\s*\(([^)]+)\)/i);
+            const fkMatch = statement.match(
+              /FOREIGN\s+KEY\s+\(([^)]+)\)\s+REFERENCES\s+(?:(\w+)\.)?([^\s(]+)\s*\(([^)]+)\)/i
+            );
             if (fkMatch) {
-              const columnName = fkMatch[1].trim().replace(/"/g, '');
+              const columnName = fkMatch[1].trim().replace(/"/g, "");
               let referencedTable = fkMatch[3].trim();
-              
+
               // Add schema qualification if present
               if (fkMatch[2]) {
                 referencedTable = `${fkMatch[2]}.${referencedTable}`;
               }
-              
-              const referencedColumn = fkMatch[4].trim().replace(/"/g, '');
-              
+
+              const referencedColumn = fkMatch[4].trim().replace(/"/g, "");
+
               // Extract MATCH type
               let matchType = "SIMPLE"; // Default
-              const matchMatch = statement.match(/MATCH\s+(SIMPLE|FULL|PARTIAL)/i);
+              const matchMatch = statement.match(
+                /MATCH\s+(SIMPLE|FULL|PARTIAL)/i
+              );
               if (matchMatch) {
                 matchType = matchMatch[1].toUpperCase();
               }
-              
+
               // Extract ON UPDATE action
               let onUpdate = "NO ACTION"; // Default
-              const onUpdateMatch = statement.match(/ON\s+UPDATE\s+(NO\s+ACTION|RESTRICT|CASCADE|SET\s+NULL|SET\s+DEFAULT)/i);
+              const onUpdateMatch = statement.match(
+                /ON\s+UPDATE\s+(NO\s+ACTION|RESTRICT|CASCADE|SET\s+NULL|SET\s+DEFAULT)/i
+              );
               if (onUpdateMatch) {
                 onUpdate = onUpdateMatch[1].toUpperCase();
               }
-              
+
               // Extract ON DELETE action
               let onDelete = "NO ACTION"; // Default
-              const onDeleteMatch = statement.match(/ON\s+DELETE\s+(NO\s+ACTION|RESTRICT|CASCADE|SET\s+NULL|SET\s+DEFAULT)/i);
+              const onDeleteMatch = statement.match(
+                /ON\s+DELETE\s+(NO\s+ACTION|RESTRICT|CASCADE|SET\s+NULL|SET\s+DEFAULT)/i
+              );
               if (onDeleteMatch) {
                 onDelete = onDeleteMatch[1].toUpperCase();
               }
-              
+
               this.tableEditor.foreignKeys.push({
                 columnName,
                 referencedTable,
                 referencedColumn,
                 matchType,
                 onUpdate,
-                onDelete
+                onDelete,
               });
             }
           } else {
             // Regular column definition
             // Handle quoted identifiers with regex that accepts either quoted or unquoted names
-            const columnNameMatch = statement.match(/^\s*(?:"([^"]+)"|(\w+))\s+/);
+            const columnNameMatch = statement.match(
+              /^\s*(?:"([^"]+)"|(\w+))\s+/
+            );
             if (!columnNameMatch) continue;
-            
+
             // Get column name, preferring the quoted version if present
             const columnName = columnNameMatch[1] || columnNameMatch[2];
-            
+
             // Get the remaining part after column name - adjust for quoted identifiers
-            let remainingDef = statement.slice(columnNameMatch[0].length).trim();
-            
+            let remainingDef = statement
+              .slice(columnNameMatch[0].length)
+              .trim();
+
             // Extract data type - handle special cases for types with spaces
             let dataType = "";
             let length = "";
-            
+
             // Common constraints to identify where the data type ends
             const constraintKeywords = [
-              "NOT NULL", "NULL", "DEFAULT", "UNIQUE", "PRIMARY KEY", 
-              "CHECK", "REFERENCES", "CONSTRAINT"
+              "NOT NULL",
+              "NULL",
+              "DEFAULT",
+              "UNIQUE",
+              "PRIMARY KEY",
+              "CHECK",
+              "REFERENCES",
+              "CONSTRAINT",
             ];
-            
+
             // Find where the data type ends by looking for constraint keywords
             let typeEndIndex = remainingDef.length;
             for (const keyword of constraintKeywords) {
               // Check for keyword with space before it
-              const keywordIndex = remainingDef.toUpperCase().indexOf(` ${keyword}`);
+              const keywordIndex = remainingDef
+                .toUpperCase()
+                .indexOf(` ${keyword}`);
               if (keywordIndex > 0 && keywordIndex < typeEndIndex) {
                 typeEndIndex = keywordIndex;
               }
-              
+
               // Also check for keyword at the start (for cases without space)
               if (remainingDef.toUpperCase().startsWith(keyword)) {
                 typeEndIndex = 0;
                 break;
               }
             }
-            
+
             // Extract just the data type part
             const dataTypePart = remainingDef.substring(0, typeEndIndex).trim();
-            
+
             // Try to match a type with a length specification: "type(length)"
-            const typeWithLengthMatch = dataTypePart.match(/^(\w+(?:\s+\w+)*)\(([^)]+)\)/);
+            const typeWithLengthMatch = dataTypePart.match(
+              /^(\w+(?:\s+\w+)*)\(([^)]+)\)/
+            );
             if (typeWithLengthMatch) {
               dataType = typeWithLengthMatch[1].trim();
               length = typeWithLengthMatch[2];
@@ -1013,32 +1136,40 @@ export default {
               // If no length is specified, the whole string is the data type
               dataType = dataTypePart;
             }
-            
+
             // Find the best matching PostgreSQL type from our list
             const matchedType = this.findMatchingPostgresType(dataType);
             if (matchedType) {
               dataType = matchedType;
             }
-            
+
             // Check for constraints
-            const notNull = statement.toLowerCase().includes('not null');
-            const unique = statement.toLowerCase().includes('unique');
-            
+            const notNull = statement.toLowerCase().includes("not null");
+            const unique = statement.toLowerCase().includes("unique");
+
             // Extract default value if present - handle complex default expressions
             let defaultValue = "";
-            const defaultMatch = statement.match(/DEFAULT\s+([^,]+?)(?:\s+(?:NOT NULL|NULL|UNIQUE|PRIMARY KEY|CHECK|REFERENCES|CONSTRAINT)|$)/i);
+            const defaultMatch = statement.match(
+              /DEFAULT\s+([^,]+?)(?:\s+(?:NOT NULL|NULL|UNIQUE|PRIMARY KEY|CHECK|REFERENCES|CONSTRAINT)|$)/i
+            );
             if (defaultMatch) {
               defaultValue = defaultMatch[1].trim();
             }
-            
+
             // Check if this column is explicitly mentioned in any UNIQUE constraint
-            const isPartOfUniqueConstraint = statements.some(stmt => {
-              return stmt.toLowerCase().includes('unique') && 
-                     (stmt.toLowerCase().includes(`(${columnName.toLowerCase()})`) ||
-                      stmt.toLowerCase().includes(`( ${columnName.toLowerCase()} )`) ||
-                      stmt.toLowerCase().includes(`("${columnName.toLowerCase()}")`));
+            const isPartOfUniqueConstraint = statements.some((stmt) => {
+              return (
+                stmt.toLowerCase().includes("unique") &&
+                (stmt.toLowerCase().includes(`(${columnName.toLowerCase()})`) ||
+                  stmt
+                    .toLowerCase()
+                    .includes(`( ${columnName.toLowerCase()} )`) ||
+                  stmt
+                    .toLowerCase()
+                    .includes(`("${columnName.toLowerCase()}")`))
+              );
             });
-            
+
             this.tableEditor.columns.push({
               name: columnName,
               type: dataType,
@@ -1046,18 +1177,18 @@ export default {
               defaultValue: defaultValue,
               primaryKey: false, // Will be set in PK constraint processing
               notNull: notNull,
-              unique: unique || isPartOfUniqueConstraint
+              unique: unique || isPartOfUniqueConstraint,
             });
           }
         }
-        
+
         // Check if changes were made
         this.checkForChanges();
       } catch (error) {
-        console.error('Error parsing SQL:', error);
+        console.error("Error parsing SQL:", error);
       }
     },
-    
+
     async loadPermissions() {
       // Загружаем разрешения для выбранной роли
       const rolePermissions = this.permissionList.filter(
@@ -1077,9 +1208,7 @@ export default {
           perm.tablename === this.tableUser.table_name
       );
 
-      for (const perm of existingPermissions) {
-        await this.deletePermission(perm);
-      }
+      await this.deletePermission({ roleid: this.selectedRoleId });
 
       // Добавляем новые разрешения для выбранной роли
       for (const operation of this.selectedPermissions) {
@@ -1140,7 +1269,7 @@ export default {
       this.tableEditor = {
         tableName: "",
         columns: [],
-        foreignKeys: []
+        foreignKeys: [],
       };
       this.originalTableDefinition = null;
       this.hasChanges = false;
@@ -1166,16 +1295,18 @@ export default {
       // Initialize with an empty table structure
       this.tableEditor = {
         tableName: "new_table",
-        columns: [{
-          name: "id",
-          type: "integer",
-          length: "",
-          defaultValue: "",
-          primaryKey: true,
-          notNull: true,
-          unique: false
-        }],
-        foreignKeys: []
+        columns: [
+          {
+            name: "id",
+            type: "integer",
+            length: "",
+            defaultValue: "",
+            primaryKey: true,
+            notNull: true,
+            unique: false,
+          },
+        ],
+        foreignKeys: [],
       };
       this.updateSqlFromVisualEditor();
       this.originalTableDefinition = null; // New table doesn't have original definition
@@ -1346,53 +1477,59 @@ export default {
       const fk = this.tableEditor.foreignKeys[index];
       // Reset referenced column when table changes
       fk.referencedColumn = "";
-      
+
       // Force Vue to refresh columns by cloning and reassigning the foreign key object
       this.$nextTick(() => {
         // This helps trigger reactivity for the column dropdown
         this.tableEditor.foreignKeys[index] = { ...fk };
       });
-      
+
       this.updateSqlFromVisualEditor();
     },
-    
+
     getColumnsForTable(tableName) {
       if (!tableName) return [];
-      
+
       console.log("Getting columns for table:", tableName);
-      console.log("Available tables:", this.tableUserList.map(t => t.table_name));
-      
+      console.log(
+        "Available tables:",
+        this.tableUserList.map((t) => t.table_name)
+      );
+
       // Find the referenced table in the tableUserList
       // Handle schema-qualified names by comparing just the table part if needed
-      const referencedTable = this.tableUserList.find(t => {
-        if (tableName.includes('.')) {
+      const referencedTable = this.tableUserList.find((t) => {
+        if (tableName.includes(".")) {
           // If the searched table has a schema, compare full names
-          const match = t.table_name === tableName || 
-                 // Or try comparing with "public." prefix
-                 `public.${t.table_name}` === tableName;
-          if (match) console.log("Found table by qualified name:", t.table_name);
+          const match =
+            t.table_name === tableName ||
+            // Or try comparing with "public." prefix
+            `public.${t.table_name}` === tableName;
+          if (match)
+            console.log("Found table by qualified name:", t.table_name);
           return match;
         } else {
           // If no schema in search, match either simple name or extract from schema.table
-          const match = t.table_name === tableName || 
-                 t.table_name.split('.').pop() === tableName;
+          const match =
+            t.table_name === tableName ||
+            t.table_name.split(".").pop() === tableName;
           if (match) console.log("Found table by simple name:", t.table_name);
           return match;
         }
       });
-      
+
       if (!referencedTable) {
         console.warn("Referenced table not found:", tableName);
         return [];
       }
-      
+
       if (!referencedTable.table_definition) {
         console.warn("Table definition missing for:", tableName);
         return [];
       }
-      
+
       console.log("Table definition:", referencedTable.table_definition);
-      
+
       // Parse the table definition to extract columns
       try {
         const sqlDef = referencedTable.table_definition;
@@ -1409,36 +1546,38 @@ export default {
 
         // Split table body by commas, taking care of parentheses
         let depth = 0;
-        let currentStatement = '';
+        let currentStatement = "";
         const statements = [];
-        
+
         for (let i = 0; i < tableBody.length; i++) {
           const char = tableBody[i];
-          if (char === '(') {
+          if (char === "(") {
             depth++;
             currentStatement += char;
-          } else if (char === ')') {
+          } else if (char === ")") {
             depth--;
             currentStatement += char;
-          } else if (char === ',' && depth === 0) {
+          } else if (char === "," && depth === 0) {
             statements.push(currentStatement.trim());
-            currentStatement = '';
+            currentStatement = "";
           } else {
             currentStatement += char;
           }
         }
-        
+
         if (currentStatement) {
           statements.push(currentStatement.trim());
         }
-        
+
         // Extract column names
         const columns = [];
         for (const statement of statements) {
           // Skip constraints, only look for column definitions
-          if (!statement.toLowerCase().includes('constraint')) {
+          if (!statement.toLowerCase().includes("constraint")) {
             // Extract the column name, supporting both quoted and unquoted names
-            const columnNameMatch = statement.match(/^\s*(?:"([^"]+)"|([a-zA-Z0-9_]+))\s+/);
+            const columnNameMatch = statement.match(
+              /^\s*(?:"([^"]+)"|([a-zA-Z0-9_]+))\s+/
+            );
             if (columnNameMatch) {
               // Use the match from either the quoted or unquoted group
               const columnName = columnNameMatch[1] || columnNameMatch[2];
@@ -1448,30 +1587,36 @@ export default {
             }
           }
         }
-        
-        console.log(`Found ${columns.length} columns for ${tableName}:`, columns);
+
+        console.log(
+          `Found ${columns.length} columns for ${tableName}:`,
+          columns
+        );
         return columns;
       } catch (error) {
-        console.error('Error parsing table for columns:', error);
+        console.error("Error parsing table for columns:", error);
         return [];
       }
     },
     findMatchingPostgresType(dataType) {
       // Normalize the dataType by trimming and converting to lowercase
       const normalizedType = dataType.trim().toLowerCase();
-      
+
       // First try for exact match
-      const exactMatch = this.postgresTypes.find(type => type.value.toLowerCase() === normalizedType);
+      const exactMatch = this.postgresTypes.find(
+        (type) => type.value.toLowerCase() === normalizedType
+      );
       if (exactMatch) {
         return exactMatch.value;
       }
-      
+
       // If no exact match, try partial match
-      const partialMatch = this.postgresTypes.find(type => 
-        normalizedType.includes(type.value.toLowerCase()) || 
-        type.value.toLowerCase().includes(normalizedType)
+      const partialMatch = this.postgresTypes.find(
+        (type) =>
+          normalizedType.includes(type.value.toLowerCase()) ||
+          type.value.toLowerCase().includes(normalizedType)
       );
-      
+
       return partialMatch ? partialMatch.value : dataType;
     },
     onDialogHide() {
@@ -1484,9 +1629,10 @@ export default {
         this.hasChanges = true;
         return;
       }
-      
+
       // Compare current with original
-      this.hasChanges = this.tableUser.table_definition !== this.originalTableDefinition;
+      this.hasChanges =
+        this.tableUser.table_definition !== this.originalTableDefinition;
     },
     onSqlChanged() {
       // Called when SQL is directly edited in the textarea
@@ -1665,29 +1811,31 @@ var filterParams = {
 }
 
 .table-editor {
-  .column-item, .fk-item {
+  .column-item,
+  .fk-item {
     background-color: #f8f9fa;
     transition: all 0.2s;
-    
+
     &:hover {
       background-color: #e9ecef;
     }
   }
-  
-  .column-list, .fk-list {
+
+  .column-list,
+  .fk-list {
     max-height: 400px;
     overflow-y: auto;
   }
-  
+
   h4 {
     margin-bottom: 0.75rem;
     font-size: 1.15rem;
   }
-  
+
   .btn-danger {
     background-color: #dc3545;
     border-color: #dc3545;
-    
+
     &:hover {
       background-color: #c82333;
       border-color: #bd2130;
@@ -1698,7 +1846,7 @@ var filterParams = {
 // Make sure TabView takes full width
 :deep(.p-tabview) {
   width: 100%;
-  
+
   .p-tabview-panels {
     padding: 1.25rem;
   }

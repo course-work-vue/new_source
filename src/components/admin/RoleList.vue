@@ -460,8 +460,8 @@ export default {
         await this.putRole(role);
         await this.putGlobalPermission(globalPermission);
       } else {
-        globalPermission.roleid = await this.postRole(role);
-
+        const response = await this.postRole(role);
+        globalPermission.roleid = response.id;
         await this.postGlobalPermission(globalPermission);
       }
       this.formVisible = false;
