@@ -342,6 +342,27 @@ getAllTeachGruz(){
   return fr;
 }
 
+getQuery(q){
+  const query = {
+    query: q,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getDisciples(){
+  const query = {
+    query: `SELECT * from import_disciples;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getPrograms_imp(){
+  const query = {
+    query: `SELECT * from import_programs;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
 
   
 // ВЗАИМОДЕЙСТВИЕ С ТАБЛИЦЕЙ SUBJECTS
