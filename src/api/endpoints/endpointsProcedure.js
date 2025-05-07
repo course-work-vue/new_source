@@ -8,17 +8,17 @@ export default Object.freeze({
     courseWork: prefix + 'delete_course_work',
     role: prefix + 'ums.delete_roles',
     deleteProcedureUser: prefix + 'ums.delete_procedure_user',
-    insertRole: prefix + 'ums.insert_role',
     deleteFunctionUser: prefix + 'ums.delete_function_user',
     deleteUserRoleByUserId: prefix + 'ums.delete_user_role_by_user_id',
     deleteUser: prefix + 'ums.delete_users',
     deleteTriggerUser: prefix + 'ums.delete_trigger_user',
     insertUserRole: prefix + 'ums.insert_user_role',
     postGlobalPermission: prefix + 'ums.insert_globalpermissions',
+    putGlobalPermission: prefix + 'ums.update_globalpermissions',
     deleteTableFromSql: prefix + 'ums.delete_table_user',
     postPermission: prefix + 'ums.insert_permissions',
     deletePermissions: prefix + 'ums.delete_permissions',
-
+    updateRole:prefix + 'ums.update_roles',
     listener: prefix + 'delete_listeners',
     contract: prefix + 'delete_contracts',
     l_group: prefix + 'delete_l_groups',
@@ -28,4 +28,7 @@ export default Object.freeze({
     uploaded_file: prefix + 'delete_uploaded_files',
 
     deauth_user: prefix + 'update_user_auth_tokens',
+
+    dropSchema: prefix + 'ums.drop_schema',
+    postSchema: prefix + 'ums.create_schema',
 });

@@ -1196,7 +1196,7 @@ export default {
           perm.roleid === this.selectedRoleId &&
           perm.tablename === this.tableUser.table_name
       );
-
+      console.log(rolePermissions);
       this.selectedPermissions = rolePermissions.map((perm) => perm.operation);
     },
 
@@ -1209,7 +1209,7 @@ export default {
       );
 
       await this.deletePermission({ roleid: this.selectedRoleId });
-
+      console.log(this.selectedPermissions);
       // Добавляем новые разрешения для выбранной роли
       for (const operation of this.selectedPermissions) {
         const newPermission = new Permission({
@@ -1824,7 +1824,8 @@ var filterParams = {
   .column-list,
   .fk-list {
     max-height: 400px;
-    overflow-y: auto;
+    overflow-x: clip;
+    overflow-y: scroll;
   }
 
   h4 {

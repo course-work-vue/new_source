@@ -3,7 +3,7 @@
     <!-- Title Row -->
     <div class="row g-2">
       <div class="col-12 p-0 title-container">
-        <span v-if="!spisok">Список всех ролей</span>
+        <span v-if="!spisok">Список всех схем</span>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
           class="btn btn-primary w-100"
           type="button"
         >
-          <i class="material-icons-outlined me-1">add</i>Добавить роль
+          <i class="material-icons-outlined me-1">add</i>Добавить схему
         </button>
       </div>
     </div>
@@ -69,23 +69,15 @@
     </div>
   </div>
 
-  <Dialog v-model:visible="formVisible" modal header="Форма ролей">
+  <Dialog v-model:visible="formVisible" modal header="Форма схем">
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
-          v-model="role"
+          v-model="schema"
           v-model:valid="valid"
           v-model:errors="errors"
           item-class="form__item"
           :scheme="scheme"
-        >
-        </auto-form>
-        <auto-form
-          v-model="globalPermission"
-          v-model:valid="valid"
-          v-model:errors="errors"
-          item-class="form__item"
-          :scheme="scheme2"
         >
         </auto-form>
       </div>
@@ -94,13 +86,14 @@
     <Button
       class="btn btn-primary float-start"
       :disabled="!valid"
+      v-if="!this.schema.fromdb"
       @click="submit"
     >
       Сохранить
     </Button>
     <Button
       class="btn btn-primary float-end"
-      v-if="this.role.roleid"
+      v-if="this.schema.fromdb"
       @click="deleteR"
     >
       Удалить
@@ -121,6 +114,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useRoleStore } from "@/store2/admingroup/role";
+import { useSchemaStore } from "@/store2/admingroup/schema";
 import { useGlobalPermissionStore } from "@/store2/admingroup/globalPermission";
 import { useStudentStore } from "@/store2/studentgroup/student";
 import { useGroupStore } from "@/store2/studentgroup/group";
@@ -143,9 +137,10 @@ import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Student from "@/model/student-group/Student";
 import Role from "@/model/admin-group/Role";
 import GlobalPermission from "@/model/admin-group/GlobalPermission";
+import Schema from "@/model/admin-group/Schema";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-import { useSchemaStore } from "@/store2/admingroup/schema";
+
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
@@ -203,8 +198,8 @@ export default {
         },
 
         {
-          field: "rolename",
-          headerName: "Название роли",
+          field: "schemaname",
+          headerName: "Название схемы",
           minWidth: 250,
         },
       ],
@@ -336,115 +331,18 @@ export default {
       errors: {},
       valid: false,
       scheme: null,
-      scheme2: null,
+      schema: new Schema(),
       docPreview: false,
       filePath: null,
-      schemaPermissions: {}, // Store permissions for each schema
-      selectedSchema: null, // Track the currently selected schema
     };
   },
   async mounted() {
+    await this.getSchemaList();
     await this.getRoleList();
     await this.getGlobalPermissionList();
-    await this.getSchemaList();
-    this.loadRolesData();
-    this.scheme = new FormScheme([
-      new TextInput({
-        key: "rolename",
-        label: "Название роли",
-        placeholder: "Название роли",
-        icon: "pi pi-id-card",
-        validation: [],
-      }),
-    ]);
-    this.scheme2 = new FormScheme([
-      new ComboboxInput({
-        key: "schema_name",
-        label: "Схема",
-        placeholder: "Выберите схему",
-        options: this.schemaList.map((el) => ({
-          label: el.schemaname,
-          value: el.schemaname,
-        })),
-      }),
-
-      new CheckboxInput({
-        key: "grant_create_db",
-        label: "CREATE DATABASE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_create_obj",
-        label: "CREATE OBJECT",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_usage_schema",
-        label: "USAGE SCHEMA",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_update_tbl",
-        label: "UPDATE TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_delete_tbl",
-        label: "DELETE TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_select_tbl",
-        label: "SELECT TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_insert_tbl",
-        label: "INSERT TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_truncate_tbl",
-        label: "TRUNCATE TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_references_tbl",
-        label: "REFERENCES TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_trigger_tbl",
-        label: "TRIGGER TABLE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_usage_seq",
-        label: "USAGE SEQUENCE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_select_seq",
-        label: "SELECT SEQUENCE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_update_seq",
-        label: "UPDATE SEQUENCE",
-        binary: true,
-      }),
-      new CheckboxInput({
-        key: "grant_execute_func",
-        label: "EXECUTE FUNCTION",
-        binary: true,
-      }),
-    ]);
-    
-    // Add a watcher for schema_name changes
-    this.$watch('globalPermission.schema_name', this.handleSchemaChange);
+    this.loadSchemasData();
   },
   methods: {
-    ...mapActions(useSchemaStore, ["getSchemaList"]),
     ...mapActions(useRoleStore, [
       "getRoleList",
       "postRole",
@@ -452,6 +350,11 @@ export default {
       "putRole",
       "deleteRole",
       "uploadGeneratedFile",
+    ]),
+    ...mapActions(useSchemaStore, [
+      "getSchemaList",
+      "postSchema",
+      "deleteSchema",
     ]),
     ...mapActions(useGlobalPermissionStore, [
       "getGlobalPermissionList",
@@ -475,35 +378,23 @@ export default {
         this.edit(event);
       }
     },
-    resetRole() {
-      this.role = new Role();
-      this.globalPermission = new GlobalPermission();
-      this.schemaPermissions = {};
-      this.selectedSchema = null;
+    resetSchema() {
+      this.schema = new Schema();
     },
     edit(event) {
-      this.resetRole();
-      this.role = event.data;
-      
-      // Store all permissions for this role by schema
-      this.schemaPermissions = {};
-      const rolePermissions = this.globalPermissionsByRole[event.data.roleid] || [];
-      
-      rolePermissions.forEach(permission => {
-        this.schemaPermissions[permission.schema_name] = permission;
-      });
-      
-      // Set initial schema and permission
-      if (rolePermissions.length > 0) {
-        this.selectedSchema = rolePermissions[0].schema_name;
-        this.globalPermission = { ...rolePermissions[0] };
-      } else {
-        this.globalPermission = new GlobalPermission();
-        this.globalPermission.roleid = event.data.roleid;
-        this.selectedSchema = this.schemaList.length > 0 ? this.schemaList[0].schemaname : null;
-      }
-      
+      this.resetSchema();
+      this.schema = event.data;
       this.formVisible = true;
+      this.scheme = new FormScheme([
+        new TextInput({
+          key: "schemaname",
+          label: "Название схемы",
+          disabled: true,
+          placeholder: "Название схемы",
+          icon: "pi pi-id-card",
+          validation: [],
+        }),
+      ]);
     },
     async previewDocx() {
       await this.createDocx();
@@ -511,22 +402,24 @@ export default {
       this.docPreview = true;
     },
     openCreatingForm() {
-      this.resetRole();
-      
-      // Initialize with the first schema if available
-      if (this.schemaList.length > 0) {
-        this.globalPermission.schema_name = this.schemaList[0].schemaname;
-        this.selectedSchema = this.schemaList[0].schemaname;
-      }
-      
+      this.resetSchema();
       this.formVisible = true;
+      this.scheme = new FormScheme([
+        new TextInput({
+          key: "schemaname",
+          label: "Название схемы",
+          placeholder: "Название схемы",
+          icon: "pi pi-id-card",
+          validation: [],
+        }),
+      ]);
     },
     async validateForm() {
       let isValid = true;
       const errors = {};
 
       for (const item of this.scheme.items) {
-        const result = item.validate(this.role[item.key]);
+        const result = item.validate(this.schema[item.key]);
 
         if (result !== true) {
           // Check for `true`, which means the field is valid
@@ -546,52 +439,33 @@ export default {
         console.error("Form validation failed", this.errors);
         return;
       }
-      
-      let role = { ...this.role };
-      
-      // Update the current schema's permissions in the schemaPermissions object
-      this.schemaPermissions[this.globalPermission.schema_name] = { ...this.globalPermission };
-      
-      if (role.roleid) {
-        await this.putRole(role);
-        // Save permissions for each schema
-        for (const schemaName in this.schemaPermissions) {
-          const permission = this.schemaPermissions[schemaName];
-          permission.schema_name=schemaName;
-          await this.putGlobalPermission(permission);
-        }
-      } else {
-        const response = await this.postRole(role);
-        
-        // For new roles, save permissions for all schemas
-        for (const schemaName in this.schemaPermissions) {
-          const permission = { ...this.schemaPermissions[schemaName] };
-          permission.roleid = response.id;
-          await this.postGlobalPermission(permission);
-        }
+      let schema = { ...this.schema };
+      if (!schema.fromdb) {
+        const response = await this.postSchema(schema);
       }
 
-      await this.getRoleList();
-      await this.getGlobalPermissionList();
+      await this.getSchemaList();
+
       this.formVisible = false;
-      this.resetRole();
-      this.loadRolesData();
+      this.resetSchema();
+      this.loadSchemasData();
     },
 
     async deleteR() {
-      let role = { ...this.role };
+      let schema = { ...this.schema };
 
-      await this.deleteRole(role);
+      await this.deleteSchema(schema);
+      await this.getSchemaList();
       this.formVisible = false;
-      this.resetRole();
-      this.loadRolesData();
+      this.resetSchema();
+      this.loadSchemasData();
     },
 
-    async loadRolesData() {
+    async loadSchemasData() {
       try {
-        if (Array.isArray(this.roleList)) {
+        if (Array.isArray(this.schemaList)) {
           // Filter out roles where deleted_at is not null and sort by full_name
-          this.rowData.value = this.roleList;
+          this.rowData.value = this.schemaList;
         } else {
           // Handle case where roleList is not an array
 
@@ -894,27 +768,6 @@ export default {
 
       this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
-    handleSchemaChange(newSchema) {
-      // Save current permissions for the current schema
-      if (this.selectedSchema) {
-        this.schemaPermissions[this.selectedSchema] = { ...this.globalPermission };
-      }
-      
-      // Get selected schema
-      this.selectedSchema = newSchema;
-      
-      // If we have permissions for this schema, load them
-      if (this.schemaPermissions[this.selectedSchema]) {
-        this.globalPermission = { ...this.schemaPermissions[this.selectedSchema] };
-      } else {
-        // Create new permissions for this schema
-        const newPermission = new GlobalPermission();
-        newPermission.roleid = this.role.roleid;
-        newPermission.schema_name = this.selectedSchema;
-        this.globalPermission = newPermission;
-        this.schemaPermissions[this.selectedSchema] = newPermission;
-      }
-    },
   },
   computed: {
     ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
@@ -925,20 +778,6 @@ export default {
       "globalPermissionMap",
     ]),
     ...mapState(useGroupStore, ["groupList"]),
-    globalPermissionsByRole() {
-      const permissionsByRole = {};
-      
-      if (Array.isArray(this.globalPermissionList)) {
-        this.globalPermissionList.forEach(permission => {
-          if (!permissionsByRole[permission.roleid]) {
-            permissionsByRole[permission.roleid] = [];
-          }
-          permissionsByRole[permission.roleid].push(permission);
-        });
-      }
-      
-      return permissionsByRole;
-    },
   },
   async created() {},
 };
@@ -1078,7 +917,7 @@ var filterParams = {
 
 .form {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   gap: 10px;
   margin-bottom: 10px;
 

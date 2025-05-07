@@ -21,7 +21,7 @@ class RequestExecutor {
             'Content-Type': 'application/json;charset=UTF-8',
         };
 
-        // Check for user and accessToken in localStorage
+
         const user = JSON.parse(localStorage.getItem('user'));
         if (user && user.accessToken) {
             headers['Authorization'] = 'Bearer ' + user.accessToken;

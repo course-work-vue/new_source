@@ -14,13 +14,15 @@ export class TextInput extends BaseInput {
     iconRight = false;
 
     placeholder;
-
+    disabled;
     constructor(props) {
         super(props);
-        const { size = 'md', icon, iconRight = false, placeholder } = props;
+        const { size = 'md', icon, iconRight = false, placeholder, disabled } = props;
         this.size = size;
         this.icon = icon;
         this.iconRight = iconRight;
         this.placeholder = placeholder;
+
+        this.disabled= disabled;
     }
 }

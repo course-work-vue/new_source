@@ -72,7 +72,7 @@ export const useCourseWorkStore = defineStore('courseWork', {
                 formData.append('file', fileBlob, fileName);
 
                 const response = await api.uploadFile(formData);
-                return response.filePath;
+                return response.fileName;
             } catch (error) {
                 console.error('Error uploading file:', error);
             }

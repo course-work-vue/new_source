@@ -1,6 +1,6 @@
 import endpoints from '@/api/endpoints';
 import ReqExec from '@/services/RequestExecutor';
-ReqExec.baseUrl = 'https://ncatbird.ru/server';
+ReqExec.baseUrl = 'https://ncatbird.ru/ums/containers/prod/server';
 
 
 
@@ -142,12 +142,12 @@ export default {
   //role
   getRoleList: () => ReqExec.get(endpoints.function_end.selectRole, null, true),
   postRole: (role) => ReqExec.post(endpoints.function_end.postRole, role), 
-  putRole: (roleid, role) => ReqExec.put(endpoints.rest.role, roleid, role),
+  putRole: (roleid, role) => ReqExec.put(endpoints.procedure.updateRole, roleid, role),
   deleteRole: (role) => ReqExec.put(endpoints.procedure.role, role.roleid, role),
   //globalPermission
-  getGlobalPermissionList: () => ReqExec.get(endpoints.rest.globalPermission, null, true),
+  getGlobalPermissionList: () => ReqExec.get(endpoints.function_end.globalPermission, null, true),
   postGlobalPermission: (globalPermission) => ReqExec.post(endpoints.procedure.postGlobalPermission, globalPermission),
-  putGlobalPermission: (permissionid, globalPermission) => ReqExec.put(endpoints.rest.globalPermission, permissionid, globalPermission),
+  putGlobalPermission: (permissionid, globalPermission) => ReqExec.put(endpoints.procedure.putGlobalPermission, permissionid, globalPermission),
   deleteGlobalPermission: (globalPermission) => ReqExec.put(endpoints.procedure.globalPermission, globalPermission.permissionid, globalPermission),
   //functionUser
   getFunctionUserList: () => ReqExec.get(endpoints.function_end.functionUser, null, true),
@@ -175,14 +175,17 @@ export default {
   putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),//to:do
   deleteUser: (user) => ReqExec.put(endpoints.procedure.deleteUser, user.id, user),//to:do
   deauthUser: (user) => ReqExec.post(endpoints.procedure.deauth_user, user),
-  
+  getRolesFromToken: (token) => ReqExec.post(endpoints.directLinks.getRolesFromToken, token),
   //userRole
   getUserRoleList: () => ReqExec.get(endpoints.function_end.userRole, null, true),
   postUserRole: (userRole) => ReqExec.post(endpoints.procedure.insertUserRole, userRole),
   deleteUserRole: (userRole) => ReqExec.post(endpoints.procedure.deleteUserRoleByUserId, userRole),
   //permission
-  getPermissionList: () => ReqExec.get(endpoints.rest.permission, null, true),
+  getPermissionList: () => ReqExec.get(endpoints.function_end.permission, null, true),
   postPermission: (permission) => ReqExec.post(endpoints.procedure.postPermission, permission),
   deletePermission: (permission) => ReqExec.post(endpoints.procedure.deletePermissions, permission, permission),
-
+  //schema
+  getSchemaList: () => ReqExec.get(endpoints.function_end.getSchemas, null, true),
+  postSchema: (schema) => ReqExec.post(endpoints.procedure.postSchema, schema, true),
+  deleteSchema: (schema) => ReqExec.post(endpoints.procedure.dropSchema, schema, true),
 };

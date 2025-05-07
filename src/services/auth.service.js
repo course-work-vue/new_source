@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://ncatbird.ru/server/api/Auth/';
+const API_URL = 'https://ncatbird.ru/ums/containers/prod/server/api/Auth/';
 
 class AuthService {
   login(user) {
