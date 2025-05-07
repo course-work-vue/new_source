@@ -1,78 +1,81 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
-          <button
-            @click="openSidebar"
-            class="btn btn-primary float-start"
-            type="button"
-          >
-            <i class="material-icons-outlined">add</i>Добавить слушателя
-          </button>
-        </div>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Список всех слушателей</span>
       </div>
     </div>
 
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%;"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          :rowHeight="40"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"
-          :paginationPageSize="paginationPageSize"
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0"> 
+        <button
+          @click="openSidebar"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить слушателя
+        </button>
+      </div>
+      <div class="col"></div> <!-- Пустая колонка, чтобы кнопка не растягивалась, если не w-100 -->
+    </div>
+
+    <!-- Строка с AG Grid -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :rowHeight="40"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
+        </div>
       </div>
     </div>
   </div>
 
-  <Sidebar
-    v-model:visible="showSidebar"
-    position="bottom"
-    modal
-    header="Данные слушателя"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
+  <Sidebar v-model:visible="showSidebar" position="bottom" modal header="Данные слушателя" class="custom-sidebar h-auto"
+    :style="mainSidebarStyle">
     <div class="card flex flex-row">
       <div class="form card__form">
-        <auto-form
-          v-if="scheme"
-          v-model="listener"
-          v-model:errors="errors"
+        <auto-form v-if="scheme" v-model="listener" v-model:errors="errors"
+          item-class="form__item" 
           :scheme="scheme"
-          class="custom-form"
-        ></auto-form>
+          class="custom-form"></auto-form>
       </div>
     </div>
     <div class="d-flex justify-content-between align-items-center mt-3">
@@ -90,97 +93,79 @@
     </div>
   </Sidebar>
 
-  <Sidebar
-  v-model:visible="showWishes"
-  position="bottom"
-  modal
-  header="Пожелания слушателя"
-  class="custom-sidebar h-auto"
-  :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
->
-  <div class="card">
-    <div class="row"> 
-    <div class="col-md-5" style="margin-right: auto;">
-      <h5>Дни и время</h5> 
+  <Sidebar v-model:visible="showWishes" position="bottom" modal header="Пожелания слушателя"
+    class="custom-sidebar h-auto" :style="wishesSidebarStyle">
+    <div class="card">
+      <div class="row">
+        <div class="col-md-5" style="margin-right: auto;">
+          <h5>Дни и время</h5>
 
-      <table class="table table-bordered table-sm">
-        <thead>
-          <tr>
-            <th style="min-width: 100px;">День</th>
-            <th>Время начала</th>
-            <th>Время окончания</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th style="min-width: 100px;">День</th>
+                <th>Время начала</th>
+                <th>Время окончания</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
 
-          <tr v-for="(entry, index) in tableData" :key="entry.l_wish_day_id || `new-${index}`"> 
-            <td>
-              <select class="form-select form-select-sm" v-model="entry.day_id">
-                 <option :value="null" disabled>Выберите день</option> 
-                 <option v-for="day in days" :key="day.day_id" :value="day.day_id">
-                   {{ day.dayofweek }}
-                 </option>
-              </select>
-            </td>
-            <td>
-              <input class="form-control form-control-sm" type="time" v-model="entry.starttime" />
-            </td>
-            <td>
-              <input class="form-control form-control-sm" type="time" v-model="entry.endtime" />
-            </td>
-            <td>
-              <button
-                type="button"
-                class="btn btn-danger btn-sm"
-                @click="removeRow(index)"
-              >
-                <i class="material-icons-outlined" style="font-size: 1rem;">delete</i>
-              </button>
-            </td>
-          </tr>
+              <tr v-for="(entry, index) in tableData" :key="entry.l_wish_day_id || `new-${index}`">
+                <td>
+                  <select class="form-select form-select-sm" v-model="entry.day_id">
+                    <option :value="null" disabled>Выберите день</option>
+                    <option v-for="day in days" :key="day.day_id" :value="day.day_id">
+                      {{ day.dayofweek }}
+                    </option>
+                  </select>
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="time" v-model="entry.starttime" />
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="time" v-model="entry.endtime" />
+                </td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" @click="removeRow(index)">
+                    <i class="material-icons-outlined" style="font-size: 1rem;">delete</i>
+                  </button>
+                </td>
+              </tr>
 
-           <tr v-if="!tableData || tableData.length === 0">
+              <tr v-if="!tableData || tableData.length === 0">
                 <td colspan="4" class="text-center text-muted">Нет записей о предпочтительном времени</td>
-           </tr>
-        </tbody>
-      </table>
+              </tr>
+            </tbody>
+          </table>
 
-      <button type="button" class="btn btn-primary btn-sm mt-2" @click="addRowInWishForm">
-         <i class="material-icons-outlined" style="font-size: 1rem;">add</i> Добавить время
-      </button>
-    </div>
+          <button type="button" class="btn btn-primary btn-sm mt-2" @click="addRowInWishForm">
+            <i class="material-icons-outlined" style="font-size: 1rem;">add</i> Добавить время
+          </button>
+        </div>
 
-    <div class="col-7">
-       <h5>Прочие пожелания</h5> 
-      <div class="form2 card__form mb-3">
+        <div class="col-7">
+          <h5>Прочие пожелания</h5>
+          <div class="form2 card__form mb-3">
 
-        <auto-form
-          v-model="listener_wish"
-          v-model:errors="errorsWish"
-          :scheme="secondScheme"
-          class="custom-form"
-        ></auto-form>
-      </div>
-      <div class="form3">
+            <auto-form v-model="listener_wish" v-model:errors="errorsWish" :scheme="secondScheme"
+              class="custom-form"></auto-form>
+          </div>
+          <div class="form3">
 
-        <auto-form
-          v-model="listener_wish"
-          v-model:errors="errorsWish"
-          :scheme="thirdScheme"
-          class="custom-form"
-        ></auto-form>
+            <auto-form v-model="listener_wish" v-model:errors="errorsWish" :scheme="thirdScheme"
+              class="custom-form"></auto-form>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-  </div>
 
-  <div class="mt-3 d-flex justify-content-end">
+    <div class="mt-3 d-flex justify-content-end">
       <Button class="btn btn-primary" @click="submitWishes">
-      Сохранить пожелания
+        Сохранить пожелания
       </Button>
-  </div>
-</Sidebar>
+    </div>
+  </Sidebar>
 
 
 </template>
@@ -203,8 +188,8 @@ import { useDayStore } from "@/store2/listenergroup/day";
 import { useListener_WishStore } from "@/store2/listenergroup/listenerwish";
 import { useL_Wish_DayStore } from "@/store2/listenergroup/l_wish_day"
 
-import L_Wish_Day from "@/model/listener-group/L_Wish_Day"; 
-import Listener_Wish from "@/model/listener-group/Listener_Wish"; 
+import L_Wish_Day from "@/model/listener-group/L_Wish_Day";
+import Listener_Wish from "@/model/listener-group/Listener_Wish";
 
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
@@ -231,25 +216,25 @@ export default {
   setup() {
     const localeText = AG_GRID_LOCALE_RU;
     const tableData = reactive([]);
-    
+
 
     const addRow = (listenerId) => {
-      console.log('Adding new wish day row for listener:', listenerId); 
+      console.log('Adding new wish day row for listener:', listenerId);
       const newRow = new L_Wish_Day({
-          l_wish_day_id: null,
-          day_id: null,
-          starttime: '09:00', 
-          endtime: '18:00', 
-          listener_id: listenerId 
+        l_wish_day_id: null,
+        day_id: null,
+        starttime: '09:00',
+        endtime: '18:00',
+        listener_id: listenerId
       });
       tableData.push(newRow);
-      console.log('tableData after add:', tableData.value); 
+      console.log('tableData after add:', tableData.value);
     };
 
     const removeRow = (index) => {
-      console.log('Removing wish day row at index:', index); 
+      console.log('Removing wish day row at index:', index);
       tableData.splice(index, 1);
-      console.log('tableData after remove:', tableData.value); 
+      console.log('tableData after remove:', tableData.value);
     };
 
     const gridApi = ref(null);
@@ -288,14 +273,14 @@ export default {
           field: "listenergroup_number",
           headerName: "Группа",
           valueFormatter: params => {
-        // params.value содержит значение из поля 'listenergroup_number'
-        // Проверяем, есть ли значение (не null, не undefined, не пустая строка)
-        if (params.value === null || params.value === undefined || params.value === '') {
-          return "Нет группы"; // Возвращаем текст, если группы нет
-        } else {
-          return params.value; // Возвращаем номер группы, если он есть
-        }
-      }
+            // params.value содержит значение из поля 'listenergroup_number'
+            // Проверяем, есть ли значение (не null, не undefined, не пустая строка)
+            if (params.value === null || params.value === undefined || params.value === '') {
+              return "Нет группы"; // Возвращаем текст, если группы нет
+            } else {
+              return params.value; // Возвращаем номер группы, если он есть
+            }
+          }
         },
         {
           field: "people_count",
@@ -330,7 +315,6 @@ export default {
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300,
     };
 
     onMounted(() => {
@@ -372,6 +356,10 @@ export default {
 
       listener_wish: new Listener_Wish(),
       errorsWish: {},
+
+      mainSidebarStyle: {}, // Стиль для основного сайдбара
+      wishesSidebarStyle: {}, // Стиль для сайдбара пожеланий
+      isSmallScreen: false // Флаг для маленького экрана
     };
   },
   async mounted() {
@@ -379,11 +367,14 @@ export default {
       await this.fetchInitialData();
       this.loadListenersData();
       this.loadListenerWishesData();
+
+      this.updateSidebarStyles();
+      window.addEventListener('resize', this.updateSidebarStyles);
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
 
-    
+
     this.scheme = new FormScheme([
       new TextInput({
         key: "surname",
@@ -488,15 +479,19 @@ export default {
       }),
     ]);
     this.thirdScheme = new FormScheme([
-    new TextareaInput({ 
+      new TextareaInput({
         key: "listener_comment",
         label: "Комментарий слушателя:",
         className: "wish_description",
         rows: 3
-    }),
-]);
+      }),
+    ]);
   },
-  
+
+  beforeUnmount() {
+  window.removeEventListener('resize', this.updateSidebarStyles);
+},
+
 
   methods: {
     ...mapActions(useListenerStore, [
@@ -555,28 +550,28 @@ export default {
     },
 
     async fetchInitialData() {
-   console.log("Fetching initial data...");
-   try {
-       await Promise.all([
-           this.getListenerList(),
-           this.getListenergroupList(),
-           this.getListener_WishList(),
-           this.getDayList(),
-           this.getL_Wish_DayList(),
-           this.getProgramList()
-       ]);
-       console.log("Initial data fetched successfully.");
+      console.log("Fetching initial data...");
+      try {
+        await Promise.all([
+          this.getListenerList(),
+          this.getListenergroupList(),
+          this.getListener_WishList(),
+          this.getDayList(),
+          this.getL_Wish_DayList(),
+          this.getProgramList()
+        ]);
+        console.log("Initial data fetched successfully.");
 
-       await this.loadDaysData(); 
-   } catch (error) {
-       console.error("Ошибка при первичной загрузке данных:", error);
-   }
-},
+        await this.loadDaysData();
+      } catch (error) {
+        console.error("Ошибка при первичной загрузке данных:", error);
+      }
+    },
 
-    async loadDaysData(){
+    async loadDaysData() {
       try {
         if (!this.dayList || this.dayList.length === 0) {
-           await this.getDayList();
+          await this.getDayList();
         }
         if (Array.isArray(this.dayList)) {
           this.days = this.dayList
@@ -588,7 +583,7 @@ export default {
         this.days.value = [];
       }
     },
-    async loadListenerWishesData(){
+    async loadListenerWishesData() {
       try {
         if (Array.isArray(this.listener_wishList)) {
           this.listener_wishes = this.listener_wishList
@@ -602,11 +597,12 @@ export default {
     },
     async loadListenersData() {
       try {
-        console.log(this.listenerList)
         if (Array.isArray(this.listenerList)) {
           this.rowData.value = this.listenerList
             .filter((listener) => listener.deleted_at === null)
             .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+            
         } else if (this.listenerList && this.listenerList.deleted_at === null) {
           this.rowData.value = [this.listenerList];
         } else {
@@ -659,76 +655,105 @@ export default {
       this.resetLst();
       this.showSidebar = true;
     },
-    openWishesForm() {
+    async openWishesForm() {
 
       if (!this.listener || !this.listener.id) {
-        console.error("Cannot open wishes form: Listener ID is missing.");
-        this.$toast.add({severity:'warn', summary: 'Внимание', detail:'Сначала сохраните данные слушателя', life: 3000});
+        let listener = { ...this.listener };
+        await this.postListener(listener);
+        this.resetLst();
+        this.loadListenersData();
+        this.showWishes = true;
         return;
       }
 
       console.log("Opening wishes form for listener:", this.listener.id);
-      this.errorsWish = {}; 
+      this.errorsWish = {};
 
       try {
         const existingWish = this.listener_wishList.find(
-            (wish) => wish.listener_id === this.listener.id && !wish.deleted_at
+          (wish) => wish.listener_id === this.listener.id && !wish.deleted_at
         );
         this.listener_wish = new Listener_Wish(existingWish ? JSON.parse(JSON.stringify(existingWish)) : { listener_id: this.listener.id });
         const currentWishDays = this.l_wish_dayList.filter(
-            (dayWish) => dayWish.listener_id === this.listener.id && !dayWish.deleted_at
+          (dayWish) => dayWish.listener_id === this.listener.id && !dayWish.deleted_at
         );
         const newTableDataContent = currentWishDays.map(dw => new L_Wish_Day(JSON.parse(JSON.stringify(dw))));
-        this.tableData.length = 0; 
+        this.tableData.length = 0;
         newTableDataContent.forEach(item => this.tableData.push(item));
 
         console.log("L_Wish_Day data loaded into reactive tableData:", this.tableData)
 
         this.showWishes = true;
-    } catch(error) {
-         console.error("Error loading wishes data:", error);
-         this.$toast.add({severity:'error', summary: 'Ошибка', detail:'Не удалось загрузить данные пожеланий', life: 3000});
-    }
-  },
+      } catch (error) {
+        console.error("Error loading wishes data:", error);
+        this.$toast.add({ severity: 'error', summary: 'Ошибка', detail: 'Не удалось загрузить данные пожеланий', life: 3000 });
+      }
+    },
 
-  addRowInWishForm() {
-    if (!this.listener || !this.listener.id) {
+    addRowInWishForm() {
+      if (!this.listener || !this.listener.id) {
         console.error("Cannot add row, listener ID is missing.");
-        this.$toast.add({severity:'warn', summary: 'Внимание', detail:'Невозможно добавить строку без ID слушателя', life: 3000});
+        this.$toast.add({ severity: 'warn', summary: 'Внимание', detail: 'Невозможно добавить строку без ID слушателя', life: 3000 });
         return;
-    }
-    this.addRow(this.listener.id);
- },
+      }
+      //Метод add Wish_Day
+      this.addRow(this.listener.id);
+    },
 
-    
+
     closeSidebar() {
       this.showSidebar = false;
     },
     async submitWishes() {
       let listener_wish = { ...this.listener_wish };
-      listener_wish.listener_id=this.listener.id;
+      listener_wish.listener_id = this.listener.id;
       console.log(listener_wish)
       if (listener_wish.id) {
+        console.log("TRY TO PUT")
         await this.putListener_Wish(listener_wish);
       } else {
+        console.log("TRY TO POST")
         await this.postListener_Wish(listener_wish);
       }
-      
-      const currentListenerId = this.listener.id;
       try {
-        await this.syncLWishDays(currentListenerId);
+        //await this.syncLWishDays(currentListenerId);
       } catch (error) {
         console.error("Error during L_Wish_Day sync, caught in submitWishes:", error);
       }
       this.showWishes = false;
     },
 
+
+    updateSidebarStyles() {
+    const minWidthValue = 820;
+    const screenWidth = window.innerWidth;
+
+    const isScreenWideEnough = screenWidth >= minWidthValue;
+
+    this.mainSidebarStyle = {
+      width: isScreenWideEnough ? '820px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '750px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
+
+    this.wishesSidebarStyle = {
+      width: isScreenWideEnough ? '840px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '750px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
+  },
+
+
     //Дописываю
     async syncLWishDays(listenerId) {
       console.log(`Starting manual L_Wish_Day sync for listener ${listenerId}...`)
     },
 
-    
+
   },
   computed: {
     ...mapState(useListenerStore, ["listenerList"]),
@@ -748,15 +773,34 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .bigger {
   font-size: 30px;
   white-space: nowrap;
 }
+
 .ag-row .ag-cell {
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -766,27 +810,34 @@ export default {
   border-radius: 4px;
   margin: 0.2em 0;
 }
+
 .text-center * {
   justify-content: center;
   display: flex;
 }
+
 @keyframes skeletonShimmer {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
+
 @keyframes skeletonFade {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
 }
+
 @media (max-width: 769px) {
   .list {
     padding-left: 100px;
@@ -794,21 +845,25 @@ export default {
     max-width: 1100px;
   }
 }
+
 @media (max-width: 1023px) {
   .list {
     padding-left: 100px;
     font-size: 13px;
   }
 }
+
 @media (min-width: 1023px) {
   .list {
     padding-left: 100px;
     padding-right: 5px;
   }
 }
+
 .nmbr {
   height: 44px;
 }
+
 .btn-primary {
   --bs-btn-bg: rgb(68, 99, 52);
   border: none;
@@ -820,16 +875,35 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .page-link {
   height: 40px;
   width: 40px;
@@ -838,6 +912,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .active {
   .page-link {
     background-color: rgb(68, 99, 52);
@@ -846,23 +921,28 @@ export default {
     --bs-btn-hover-border-color: rgb(6, 215, 29);
   }
 }
+
 .card {
   &__form {
     margin-right: 30px;
   }
+
   &__image {
     margin-left: auto;
   }
 }
+
 .form {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 10px;
+
   &__item {
     padding: 5px;
     margin-right: 10px;
   }
+
   &__item:nth-child(2n) {
     margin-right: 0;
     border-right: none;
@@ -875,14 +955,15 @@ export default {
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin-bottom: 10px;
+
   &__item {
     padding: 5px;
     margin-right: 10px;
   }
+
   &__item:nth-child(2n) {
     margin-right: 0;
     border-right: none;
   }
 }
-
 </style>

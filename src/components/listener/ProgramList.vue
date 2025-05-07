@@ -1,94 +1,110 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
-          <button
-            @click="openSidebar"
-            class="btn btn-primary float-start"
-            type="button"
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <!-- Строка заголовка -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Список всех программ</span>
+      </div>
+    </div>
+
+    <!-- Первая строка: Поиск и Очистка фильтров -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска -->
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          @input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить -->
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn" 
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка кнопки Добавить -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0"> <!-- Настройте ширину (col-4, col-auto...) -->
+        <button
+          @click="openSidebar"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить программу
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка с AG Grid (занимает оставшееся место) -->
+    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания -->
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            :rowHeight="40"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
           >
-            <i class="material-icons-outlined">add</i>Добавить программу
-          </button>
-        </div>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button 
-            @click="clearFilters" 
-            :disabled="!filters" 
-            class="btn btn-sm btn-primary text-nowrap mx-2" 
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input 
-            class="form-control" 
-            type="text" 
-            v-model="quickFilterValue" 
-            id="filter-text-box" 
-            @input="onFilterTextBoxChanged()" 
-            placeholder="Поиск..."
-          > 
+          </ag-grid-vue>
         </div>
       </div>
     </div>
 
-    <!-- Таблица с программами -->
-    <div style="height: 50vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%;"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"            
-          :paginationPageSize="paginationPageSize"  
-        >
-        </ag-grid-vue>
+    <!-- Sidebar для редактирования/добавления программы (структура без изменений) -->
+    <Sidebar
+      v-model:visible="showSidebar"
+      position="bottom"
+      modal
+      header="Данные программы"
+      class="custom-sidebar h-auto"
+      :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+    >
+      <div class="card flex flex-row">
+        <div class="form card__form">
+          <auto-form
+            v-model="program"
+            v-model:errors="errors"
+            :scheme="scheme"
+            class="custom-form"
+          >
+          </auto-form>
+        </div>
       </div>
-    </div>
-  </div>
+      <!-- Футер сайдбара можно оставить как есть или обернуть в div, если нужно -->
+      <div class="form-footer mt-3"> <!-- Добавлен отступ сверху для разделения -->
+        <Button class="btn btn-primary float-start" @click="submit">
+          Сохранить
+        </Button>
+        <Button
+          class="btn btn-primary float-end"
+          v-if="program.id"
+          @click="deleteProgram"
+        >
+          Удалить
+        </Button>
+      </div>
+    </Sidebar>
 
-  <!-- Окно редактирования/добавления программы -->
-  <Sidebar
-    v-model:visible="showSidebar"
-    position="bottom"
-    modal
-    header="Данные программы"
-    class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
-  >
-    <div class="card flex flex-row">
-      <div class="form card__form">
-        <auto-form
-          v-model="program"
-          v-model:errors="errors"
-          :scheme="scheme"
-          class="custom-form"
-        >
-        </auto-form>
-      </div>
-    </div>
-    <div class="form-footer">
-      <Button class="btn btn-primary float-start" @click="submit">
-        Сохранить
-      </Button>
-      <Button 
-        class="btn btn-primary float-end" 
-        v-if="program.id" 
-        @click="deleteProgram"
-      >
-        Удалить
-      </Button>
-    </div>
-  </Sidebar>
+  </div> <!-- Закрывающий тег для container-fluid -->
 </template>
 
 <script>
@@ -172,7 +188,7 @@ export default {
         },
         { field: "hours", headerName: "Часы" },
         { field: "start_date", headerName: "Начало обучения", hide: true },
-        { field: "end_date", headerName: "Конец обучения", hide: true },
+        { field: "end_date", headerName: "Окончание обучения", hide: true },
       ],
     });
 
@@ -181,7 +197,6 @@ export default {
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300,
     };
 
     const onGridReady = (params) => {
@@ -295,7 +310,7 @@ export default {
       }),
       new DateInput({
         key: "end_date",
-        label: "Конец обучения",
+        label: "Окончание обучения",
         dateFormat: "dd/mm/yy",
         size: "sm",
         validation: [requiredRule],
@@ -384,6 +399,23 @@ export default {
 
 
 <style lang="scss" scoped>
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .bigger {
   font-size: 30px;
   white-space: nowrap;
@@ -473,6 +505,22 @@ export default {
 .form-select:focus {
   border-color: rgba(1,20,8,0.815);
   box-shadow: inset 0 1px 1px rgba(6,215,29,0.075), 0 0 8px rgba(6,215,29,0.6);
+}
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .page-link {

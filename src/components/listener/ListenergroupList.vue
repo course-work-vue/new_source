@@ -1,45 +1,99 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <!-- Строка заголовка -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Список всех групп</span>
+      </div>
+    </div>
 
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
-          <button @click="openGenAddSidebar" class="btn btn-primary float-start position-relative" type="button">
-            <i class="material-icons-outlined">add</i>Создать группу
-            <span v-if="!canClickButton"
-              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-              !
-              <span class="visually-hidden">Уведомление</span>
-            </span>
-          </button>
-        </div>
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button @click="clearFilters" :disabled="!filters" class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button">
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input class="form-control" type="text" v-model="quickFilterValue" id="filter-text-box"
-            @input="onFilterTextBoxChanged" placeholder="Поиск..." />
+    <!-- Первая строка: Поиск и Очистка фильтров -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска -->
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          @input="onFilterTextBoxChanged"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить -->
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка кнопки Добавить/Создать -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0"> <!-- Или col-auto, если ширина не должна быть фиксированной -->
+        <button
+          @click="openGenAddSidebar"
+          class="btn btn-primary w-100 position-relative"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Создать группу
+          <!-- Значок уведомления остается привязанным к кнопке -->
+          <span
+            v-if="!canClickButton"
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          >
+            !
+            <span class="visually-hidden">Уведомление</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка с основной AG Grid (занимает оставшееся место) -->
+    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания -->
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            :rowHeight="40"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
         </div>
       </div>
     </div>
 
-    <div style="height: 95vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefs.value"
-          :rowData="rowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-          animateRows="true" @cell-clicked="cellWasClicked" @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
-          :paginationPageSize="paginationPageSize">
-        </ag-grid-vue>
-      </div>
-    </div>
-
-    <Sidebar v-model:visible="showSidebar" position="bottom" modal header="Данные Группы" class="custom-sidebar h-auto"
-      :style="{ width: '40%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
+    <!-- Sidebar для редактирования данных Группы (структура без изменений) -->
+    <Sidebar
+      v-model:visible="showSidebar"
+      position="bottom"
+      modal
+      header="Данные Группы"
+      class="custom-sidebar h-auto"
+      :style="{ width: '40%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+    >
       <div class="card flex flex-row">
         <div class="form card__form">
-          <auto-form v-model="listenergroup" v-model:errors="errors" :scheme="scheme" class="custom-form">
+          <auto-form
+            v-model="listenergroup"
+            v-model:errors="errors"
+            :scheme="scheme"
+            class="custom-form"
+          >
           </auto-form>
         </div>
       </div>
@@ -51,43 +105,56 @@
       </Button>
     </Sidebar>
 
-    <Sidebar v-model:visible="showGenAddSidebar" position="bottom" modal :header="`Создать группу`"
-      class="custom-sidebar h-auto" :style="{ width: '20%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
-      <div class="form-row-with-button d-flex align-items-end justify-content-between mb-4">
-        <auto-form v-model="listenergroup" v-model:errors="errors"
-          :scheme="addScheme"
-          class="custom-form me-3"
-          >
-        </auto-form>
-        <button type="button" class="btn btn-primary ms-5" @click="openAddSidebar"
-        style="white-space: nowrap;"
-        :disabled="!listenergroup.program_id">
-          Создать
-        </button>
-      </div>
-      <div class="filter-checkbox-container mb-3">
-       <div class="form-check">
-         <input class="form-check-input" type="checkbox" id="sufficientListenersCheckbox"
-           v-model="filterOnlySufficient">
-         <label class="form-check-label" for="sufficientListenersCheckbox">
-           Показывать все программы
-         </label>
+    <!-- Sidebar для выбора программы перед созданием (структура без изменений) -->
+    <Sidebar
+      v-model:visible="showGenAddSidebar"
+      position="bottom"
+      modal
+      :header="`Создать группу`"
+      class="custom-sidebar h-auto"
+      :style="{ width: '20%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+    >
+        <div class="form-row-with-button d-flex align-items-end justify-content-between mb-4">
+          <auto-form v-model="listenergroup" v-model:errors="errors"
+            :scheme="addScheme"
+            class="custom-form me-3"
+            >
+          </auto-form>
+          <button type="button" class="btn btn-primary ms-5" @click="openAddSidebar"
+          style="white-space: nowrap;"
+          :disabled="!listenergroup.program_id">
+            Создать
+          </button>
+        </div>
+        <div class="filter-checkbox-container mb-3">
+         <div class="form-check">
+           <input class="form-check-input" type="checkbox" id="sufficientListenersCheckbox"
+             v-model="filterOnlySufficient">
+           <label class="form-check-label" for="sufficientListenersCheckbox">
+             Показывать все программы
+           </label>
+         </div>
        </div>
-     </div>
     </Sidebar>
 
-    <Sidebar v-model:visible="showAddSidebar" position="bottom" modal
-        :header="`Создать группу по программе ${creatingProgramF}`" class="custom-sidebar h-auto"
-        :style="{ width: '75%', maxHeight: '85vh', height: 'auto', margin: 'auto' }">
-
-        <div class="card flex flex-row gap-4 mb-3">
-          <div class="form card__form" style="flex: 1;">
-            <auto-form v-model="listenergroup" v-model:errors="errors" :scheme="scheme" class="custom-form">
-            </auto-form>
-          </div>
-          <div class="schedule-section" style="flex: 1;">
-            <h5>Расписание</h5>
-            <table class="table table-bordered table-sm mb-2">
+    <!-- Sidebar для детального создания группы со слушателями (структура без изменений) -->
+    <Sidebar
+      v-model:visible="showAddSidebar"
+      position="bottom"
+      modal
+      :header="`Создать группу по программе ${creatingProgram || '...'}`"
+      class="custom-sidebar h-auto"
+      :style="{ width: '75%', maxHeight: '85vh', height: 'auto', margin: 'auto' }"
+    >
+      <!-- Содержимое этого сайдбара остается без изменений -->
+      <div class="card flex flex-row gap-4 mb-3">
+        <div class="form card__form" style="flex: 1;">
+          <auto-form v-model="listenergroup" v-model:errors="errors" :scheme="scheme" class="custom-form">
+          </auto-form>
+        </div>
+        <div class="schedule-section" style="flex: 1;">
+          <h5>Расписание</h5>
+          <table class="table table-bordered table-sm mb-2">
               <thead>
                 <tr>
                   <th style="min-width: 100px;">День</th>
@@ -131,10 +198,10 @@
             <button type="button" class="btn btn-primary btn-sm" @click="addRowInWishForm">
               <i class="material-icons-outlined" style="font-size: 1rem;">add</i> Добавить время
             </button>
-          </div>
         </div>
+      </div>
 
-        <div class="d-flex align-items-center mb-2" style="gap: 1rem;">
+      <div class="d-flex align-items-center mb-2" style="gap: 1rem;">
              <div style="flex: 1;" class="d-flex justify-content-between align-items-center">
                  <h5>Подходящие слушатели</h5>
                  <button class="btn btn-secondary btn-sm" @click="findSuitableListeners">
@@ -148,66 +215,66 @@
              </div>
         </div>
 
-        <div style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 30px;">
+      <div style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 30px;">
 
-          <div style="flex: 1; height: 50vh">
-            <div class="h-100 pt-5">
-              <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
-                :rowData="suitableListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-                animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked" 
-                @grid-ready="onGridReadySuitable"
-                @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
-                :paginationPageSize="paginationPageSize">
-              </ag-grid-vue>
-            </div>
-            <div class="d-flex align-items-center flex-wrap gap-2 mt-2" style="min-height: 2rem;">
-                 <span class="field-checkbox d-flex align-items-center">
-                     <Checkbox inputId="chk-ignore-count" v-model="ignoreCountWish" :binary="true" />
-                     <label for="chk-ignore-count" class="ms-1 small">игнорировать кол-во</label>
-                 </span>
-                 <span class="field-checkbox d-flex align-items-center">
-                     <Checkbox inputId="chk-ignore-schedule" v-model="ignoreScheduleWish" :binary="true" />
-                     <label for="chk-ignore-schedule" class="ms-1 small">игнорировать расписание</label>
-                 </span>
-                 <span class="field-checkbox d-flex align-items-center">
-                     <Checkbox inputId="chk-ignore-all" v-model="ignoreAllWishes" :binary="true" />
-                     <label for="chk-ignore-all" class="ms-1 small">игнорировать всё</label>
-                 </span>
-             </div>
+        <div style="flex: 1; height: 50vh">
+          <div class="h-100 pt-5">
+            <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
+              :rowData="suitableListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+              animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
+              @grid-ready="onGridReadySuitable"
+              @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
+              :paginationPageSize="paginationPageSize">
+            </ag-grid-vue>
           </div>
-
-          <div class="d-flex flex-column align-items-center justify-content-center px-2" style="align-self: center;">
-             <button class="btn btn-light btn-sm mb-2" @click="moveSelectedToGroup" title="Добавить выбранных в группу" :disabled="!canMoveToGroup"><i class="material-icons-outlined">chevron_right</i></button>
-             <button class="btn btn-light btn-sm mb-2" @click="moveAllToGroup" title="Добавить всех в группу" :disabled="!canMoveAllToGroup"><i class="material-icons-outlined">double_arrow</i></button>
-             <button class="btn btn-light btn-sm mb-2" @click="moveSelectedFromGroup" title="Убрать выбранных из группы" :disabled="!canMoveFromGroup"><i class="material-icons-outlined">chevron_left</i></button>
-             <button class="btn btn-light btn-sm" @click="moveAllFromGroup" title="Убрать всех из группы" :disabled="!canMoveAllFromGroup"><i class="material-icons-outlined" style="transform: rotate(180deg);">double_arrow</i></button>
-          </div>
-
-          <div style="flex: 1; height: 50vh">
-            <div class="h-100 pt-5">
-              <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
-                :rowData="groupListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
-                animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked" 
-                @grid-ready="onGridReadyGroup"
-                @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
-                :paginationPageSize="paginationPageSize">
-              </ag-grid-vue>
-            </div>
-          </div>
-
+          <div class="d-flex align-items-center flex-wrap gap-2 mt-2" style="min-height: 2rem;">
+               <span class="field-checkbox d-flex align-items-center">
+                   <Checkbox inputId="chk-ignore-count" v-model="ignoreCountWish" :binary="true" />
+                   <label for="chk-ignore-count" class="ms-1 small">игнорировать кол-во</label>
+               </span>
+               <span class="field-checkbox d-flex align-items-center">
+                   <Checkbox inputId="chk-ignore-schedule" v-model="ignoreScheduleWish" :binary="true" />
+                   <label for="chk-ignore-schedule" class="ms-1 small">игнорировать расписание</label>
+               </span>
+               <span class="field-checkbox d-flex align-items-center">
+                   <Checkbox inputId="chk-ignore-all" v-model="ignoreAllWishes" :binary="true" />
+                   <label for="chk-ignore-all" class="ms-1 small">игнорировать всё</label>
+               </span>
+           </div>
         </div>
 
-        <div class="pt-3 mt-3 d-flex justify-content-between">
-          <Button class="btn btn-primary" @click="submit">
-            Сохранить
-          </Button>
-          <Button class="btn btn-danger" v-if="listenergroup.id" @click="deleteLgr">
-            Удалить
-          </Button>
+        <div class="d-flex flex-column align-items-center justify-content-center px-2" style="align-self: center;">
+           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedToGroup" title="Добавить выбранных в группу" :disabled="!canMoveToGroup"><i class="material-icons-outlined">chevron_right</i></button>
+           <button class="btn btn-light btn-sm mb-2" @click="moveAllToGroup" title="Добавить всех в группу" :disabled="!canMoveAllToGroup"><i class="material-icons-outlined">double_arrow</i></button>
+           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedFromGroup" title="Убрать выбранных из группы" :disabled="!canMoveFromGroup"><i class="material-icons-outlined">chevron_left</i></button>
+           <button class="btn btn-light btn-sm" @click="moveAllFromGroup" title="Убрать всех из группы" :disabled="!canMoveAllFromGroup"><i class="material-icons-outlined" style="transform: rotate(180deg);">double_arrow</i></button>
         </div>
-  </Sidebar>
 
-  </div> 
+        <div style="flex: 1; height: 50vh">
+          <div class="h-100 pt-5">
+            <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
+              :rowData="groupListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+              animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
+              @grid-ready="onGridReadyGroup"
+              @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
+              :paginationPageSize="paginationPageSize">
+            </ag-grid-vue>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-3 mt-3 d-flex justify-content-between">
+        <Button class="btn btn-primary" @click="submit">
+          Сохранить
+        </Button>
+        <Button class="btn btn-danger" v-if="listenergroup.id" @click="deleteLgr">
+          Удалить
+        </Button>
+      </div>
+    </Sidebar>
+
+  </div> <!-- Закрывающий тег для container-fluid -->
 </template>
 
 <script>
@@ -334,10 +401,6 @@ export default {
     const rowDataAdd = reactive({})
     const l_group_status = reactive([]);
 
-    const creatingProgramF = computed(() => {
-        return instance?.data.creatingProgram ?? null;
-    });
-
     const columnDefs = reactive({
       value: [
         {
@@ -371,7 +434,6 @@ export default {
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300,
     };
 
     const canClickButton = computed(() => {
@@ -437,8 +499,6 @@ export default {
       dataFromApi,
       dataLoaded,
 
-      creatingProgramF,
-
       addRow,
       tableData,
 
@@ -460,7 +520,6 @@ export default {
       
       quickFilterValue: "",
       filters: false,
-      listenergroup: new Listenergroup(),
       errors: {},
 
       filterOnlySufficient: false,
@@ -668,8 +727,9 @@ export default {
       this.showSidebar = true;
     },
     openAddSidebar() {
-      const selectedProgramId = this.listenergroup.program_id;
 
+      const selectedProgramId = this.listenergroup.program_id;
+      
       if (!selectedProgramId) {
         console.error("Ошибка: Невозможно продолжить без выбранной программы!");
         return; 
@@ -814,7 +874,23 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* Стили для скелетона и других элементов остаются без изменений */
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
 .skeleton {
   width: 100%;
   height: 1.2em;
@@ -910,6 +986,22 @@ export default {
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
+}
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .page-link {

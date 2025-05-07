@@ -1,59 +1,72 @@
 <template>
-  <div class="col col-xs-9 col-lg-12 mt-4 list">
-    <div class="col col-12">
-      <div class="mb-3 col col-12">
-        <div class="col col-6 float-start d-inline-flex align-items-center mb-2">
-          <button @click="openSidebar" class="btn btn-primary float-start" type="button">
-            <i class="material-icons-outlined">add</i>Добавить платёж
-          </button>
-        </div>
-
-        <div class="col col-6 float-end d-inline-flex align-items-center mb-2">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            @input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1">
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span>Список всех платежей</span>
       </div>
     </div>
 
-    <br />
-
-    <div style="height: 90vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%;"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
-          :pagination="true"
-          :paginationPageSize="paginationPageSize"
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3"> 
+        <input
+          class="form-control" 
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          @input="onFilterTextBoxChanged()" 
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn" 
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
       </div>
     </div>
 
-    <!-- Sidebar для добавления/редактирования -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0"> 
+        <button
+          @click="openSidebar"
+          class="btn btn-primary w-100" 
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить платёж
+        </button>
+      </div>
+    </div>
+
+    <!-- Строка: AG Grid (занимает оставшееся место) -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container"> <!-- Обертка для грида -->
+          <ag-grid-vue
+            class="ag-theme-alpine" 
+            :columnDefs="columnDefs.value"
+            :rowData="rowData.value"
+            :rowHeight="40" 
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+            :pagination="true"
+            :paginationPageSize="paginationPageSize"
+          >
+          </ag-grid-vue>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar для добавления/редактирования (остается без изменений по структуре) -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
@@ -74,10 +87,10 @@
         </div>
       </div>
 
+      <!-- Кнопки внутри сайдбара - можно тоже привести к единому стилю, если нужно -->
       <Button class="btn btn-primary float-start" @click="submit">
         Сохранить
       </Button>
-
       <Button
         v-if="payment.id"
         class="btn btn-primary float-end"
@@ -86,6 +99,7 @@
         Удалить
       </Button>
     </Sidebar>
+
   </div>
 </template>
 
@@ -196,7 +210,6 @@ export default {
       filter: true,
       flex: 1,
       resizable: true,
-      minWidth: 300,
     };
 
     const onFilterTextBoxChanged = () => {
@@ -408,9 +421,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.list {
-  padding-left: 100px;
-  padding-right: 5px;
+
+.ag-theme-alpine {
+  flex: 1; 
+}
+
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
+  display: flex;
+  margin-bottom: 5px;
+}
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
 }
 
 /* Кнопки, инпуты и прочее в вашем стиле */
@@ -429,5 +454,21 @@ export default {
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
+}
+
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>
