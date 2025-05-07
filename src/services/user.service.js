@@ -1,8 +1,8 @@
 import axios from 'axios';
 import authHeader from './auth-header';
-const API_URL = 'https://ncatbird.ru/server/api/Query/';
+const API_URL = 'https://ncatbird.ru/ums/containers/prod/server/api/Query/';
 
-const API = 'https://ncatbird.ru/server/api';
+const API = 'https://ncatbird.ru/ums/containers/prod/server/api';
 
 class UserService {
   getPublicContent() {
