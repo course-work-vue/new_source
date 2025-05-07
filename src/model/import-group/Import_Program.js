@@ -9,6 +9,7 @@ export default class Import_Program {
   selected;
   actualization_year;
   start_year;
+  program_name;
 
   constructor(import_program) {
     this.id = import_program?.id ?? null;
@@ -19,5 +20,6 @@ export default class Import_Program {
     this.selected = import_program?.selected ?? null;
     this.actualization_year = import_program?.actualization_year ?? null;
     this.start_year = import_program?.start_year ?? null;
+    this.program_name = import_program?.program_name ?? null;
   }
 }

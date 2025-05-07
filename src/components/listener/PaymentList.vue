@@ -41,10 +41,9 @@
       </div>
     </div>
 
-    <!-- Строка: AG Grid (занимает оставшееся место) -->
     <div class="row g-2 flex-1">
       <div class="col-12 p-0 h-100">
-        <div class="grid-container"> <!-- Обертка для грида -->
+        <div class="grid-container"> 
           <ag-grid-vue
             class="ag-theme-alpine" 
             :columnDefs="columnDefs.value"
@@ -66,14 +65,13 @@
       </div>
     </div>
 
-    <!-- Sidebar для добавления/редактирования (остается без изменений по структуре) -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
       modal
       header="Данные платежа"
       class="custom-sidebar h-auto"
-      :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+      :style="mainSidebarStyle"
     >
       <div class="card flex flex-row">
         <div class="form card__form">
@@ -236,19 +234,22 @@ export default {
       payment: new Payment(),
       errors: {},
       scheme: null,
+
+      mainSidebarStyle: {},
+      isSmallScreen: false 
     };
   },
   async mounted() {
-    // Загрузка списка платежей
     try {
       await this.getPaymentList();
       console.log(this.paymentList)
       this.loadPaymentsData();
+
+      this.updateSidebarStyles();
+      window.addEventListener('resize', this.updateSidebarStyles);
     } catch (error) {
       console.error("Ошибка при загрузке данных платежей:", error);
     }
-
-    // Схема формы (примерная, подставьте поля и правила валидации по вашим требованиям)
     this.scheme = new FormScheme([
       new TextInput({
         key: "contract_id",
@@ -292,6 +293,9 @@ export default {
       }),
     ]);
   },
+  beforeUnmount() {
+  window.removeEventListener('resize', this.updateSidebarStyles);
+},
   methods: {
     ...mapActions(usePaymentStore, [
       "getPaymentList",
@@ -409,9 +413,23 @@ export default {
       this.quickFilterValue = "";
       this.filters = false;
     },
+
+    updateSidebarStyles() {
+    const minWidthValue = 820;
+    const screenWidth = window.innerWidth;
+
+    const isScreenWideEnough = screenWidth >= minWidthValue;
+
+    this.mainSidebarStyle = {
+      width: isScreenWideEnough ? '820px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '700px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
+  },
   },
   created() {
-    // При создании сразу грузим данные
     this.loadPaymentsData();
   },
   computed: {
@@ -421,6 +439,22 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+
+  &__item {
+    padding: 5px;
+    margin-right: 10px;
+  }
+
+  &__item:nth-child(2n) {
+    margin-right: 0;
+    border-right: none;
+  }
+}
 
 .ag-theme-alpine {
   flex: 1; 
@@ -438,7 +472,6 @@ export default {
   display: flex;
 }
 
-/* Кнопки, инпуты и прочее в вашем стиле */
 .btn-primary {
   --bs-btn-bg: rgb(68, 99, 52);
   border: none;

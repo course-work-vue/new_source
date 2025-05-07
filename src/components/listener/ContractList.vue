@@ -69,14 +69,13 @@
       </div>
     </div>
 
-    <!-- Sidebar остается без изменений структуры -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
       modal
       header="Данные договора"
       class="custom-sidebar h-auto"
-      :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto'}"
+      :style="mainSidebarStyle"
     >
       <div class="card flex flex-row">
         <div class="form card__form">
@@ -114,6 +113,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { useRoute } from "vue-router";
 
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
+import ButtonCell2 from "@/components/listener/ContractButtonCell.vue";
 import ContractHrefCellRenderer from "@/components/listener/ContractHrefCellRenderer.vue";
 import ContractHrefCellRenderer2 from "@/components/listener/ContractHrefCellRenderer2.vue";
 import ContractHrefCellRenderer3 from "@/components/listener/ContractHrefCellRenderer3.vue";
@@ -139,6 +139,7 @@ export default {
   components: {
     AgGridVue,
     ButtonCell,
+    ButtonCell2,
     ContractHrefCellRenderer,
     ContractHrefCellRenderer2,
     ContractHrefCellRenderer3,
@@ -191,6 +192,17 @@ export default {
           field: "program_name",
           headerName: "Программа",
         },
+        {
+          sortable: false,
+          filter: false,
+          headerName: "Договор",
+          headerClass: "text-center",
+          cellRenderer: "ButtonCell2",
+          cellRendererParams: {
+          },
+          maxWidth: 120,
+          resizable: false,
+        },
       ],
     });
 
@@ -240,12 +252,17 @@ export default {
       errors: {},
       showSidebar: false,
       scheme: null,
+
+      mainSidebarStyle: {}, 
+      isSmallScreen: false 
     };
   },
   async mounted() {
     try {
       await this.fetchInitialData();
       
+      this.updateSidebarStyles();
+      window.addEventListener('resize', this.updateSidebarStyles);
       this.loadContractsData();
     } catch (error) {
       console.error("Ошибка при загрузке данных договоров:", error);
@@ -254,7 +271,7 @@ export default {
     this.scheme = new FormScheme([
       new ComboboxInput({
         key: "listener_id",
-        label: "Слушатель",
+        label: "\nСлушатель",
         placeholder: "Выберите слушателя",
         options: this.listenerOptions,
       }),
@@ -266,13 +283,13 @@ export default {
       }),
       new TextInput({
         key: "contr_number",
-        label: "Номер договора",
+        label: "\nНомер договора",
         placeholder: "Номер договора",
         validation: [requiredRule],
       }),
       new ComboboxInput({
         key: "program_id",
-        label: "Программа",
+        label: "\nПрограмма",
         placeholder: "Выберите программу",
         options: this.programOptions,
       }),
@@ -284,23 +301,27 @@ export default {
       }),
       new TextInput({
         key: "listened_hours",
-        label: "Прослушанные часы",
+        label: "\nПрослушанные часы",
         placeholder: "Часы",
         validation: [requiredRule],
       }),
       new DateInput({
         key: "date_enroll",
-        label: "Дата зачисления",
+        label: "\nДата зачисления",
         dateFormat: "dd/mm/yy",
         validation: [requiredRule],
       }),
       new DateInput({
         key: "date_kick",
-        label: "Дата отчисления",
+        label: "\nДата отчисления",
         dateFormat: "dd/mm/yy",
       }),
     ]);
   },
+
+  beforeUnmount() {
+  window.removeEventListener('resize', this.updateSidebarStyles);
+},
   
   methods: {
     ...mapActions(useContractStore, [
@@ -444,6 +465,29 @@ export default {
       this.resetContract();
       this.showSidebar = true;
     },
+
+    updateSidebarStyles() {
+    const minWidthValue = 820;
+    const screenWidth = window.innerWidth;
+
+    const isScreenWideEnough = screenWidth >= minWidthValue;
+
+    this.mainSidebarStyle = {
+      width: isScreenWideEnough ? '820px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '700px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
+
+    this.wishesSidebarStyle = {
+      width: isScreenWideEnough ? '840px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '750px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
+  },
     
   },
   computed: {

@@ -689,32 +689,25 @@ const selectedCount = computed(() => {
     const rowDataForComparison = computed(() => {
   console.log("[Computed] Пересчет rowDataForComparison");
 
-  // 1. Получаем ID ТОЛЬКО ВЫБРАННЫХ программ
-  const selectedProgramIds = (rowData.value || []) // Используем rowData.value
+  const selectedProgramIds = (rowData.value || []) 
                               .filter(program => program.selected === true)
-                              .map(program => program.id); // Нам нужны только их ID
+                              .map(program => program.id); 
 
   console.log(`[Computed] rowDataForComparison: ID выбранных программ:`, selectedProgramIds);
 
   if (selectedProgramIds.length < 2) {
-      // Если выбрано менее 2 программ, нет смысла показывать пересечение
-      // Хотя кнопка и так должна быть заблокирована
       console.log("[Computed] rowDataForComparison: Менее 2 программ выбрано, возвращаем пустой массив.");
       return [];
   }
 
-  // 2. Получаем ВСЕ дисциплины из хранилища
   const allDisciples = importDiscipleStore.import_discipleList || [];
   console.log(`[Computed] rowDataForComparison: Всего дисциплин в store: ${allDisciples.length}`);
 
-  // 3. Фильтруем дисциплины: оставляем только те, что принадлежат ВЫБРАННЫМ программам
   const relevantDisciples = allDisciples.filter(disciple =>
     disciple.program_id !== undefined && selectedProgramIds.includes(disciple.program_id)
   );
   console.log(`[Computed] rowDataForComparison: Дисциплин, относящихся к выбранным программам: ${relevantDisciples.length}`);
 
-  // 4. Передаем отфильтрованные дисциплины в функцию трансформации
-  // Функция transformDisciples сама сгруппирует их и создаст hoursByProgram ТОЛЬКО для нужных ID
   const transformedData = transformDisciples(relevantDisciples);
   console.log("[Computed] rowDataForComparison: Трансформированные данные для таблицы:", transformedData);
 
@@ -1235,15 +1228,24 @@ const resetDetailsFilters = () => {
               }
 
               let extractedData = {
+                program_name: "Не найден",
                 code: "Не найден",
                 profile: "Не найден",
                 years: "Не найден",
               };
 
+              const rawProgramName = sheet["D29"] ? sheet["D29"].v : null;
+              extractedData.program_name = rawProgramName
+                ? rawProgramName
+                    .replace(/[\r\n]+/g, " ")                      // убираем переводы строк
+                    .replace(/^Направление подготовки\s*\d+\.\d+\.\d+\s*/i, "") // удаляем "Направление подготовки 01.03.02 "
+                    .trim()
+                : null;
               extractedData.code = sheet["D27"] ? sheet["D27"].v : null;
               extractedData.profile = sheet["D30"] ? sheet["D30"].v : null;
               extractedData.years = sheet["W41"] ? sheet["W41"].v : null;
 
+              console.log(extractedData);
               await this.postImport_Program(extractedData);
               await this.getImport_ProgramList(); 
 
@@ -1599,42 +1601,6 @@ const resetDetailsFilters = () => {
     },
 
     async deleteSelected() {
-       console.warn("Логика для deleteSelected() еще не реализована или не показана.");
-       const selectedNodes = this.gridApi.value.getSelectedNodes();
-       const selectedIds = selectedNodes.map(node => node.data.id);
-
-       if (selectedIds.length === 0) {
-         this.errorMessage = "Сначала выберите программы для удаления.";
-         return;
-       }
-
-       if (!window.confirm(`Вы уверены, что хотите удалить ${selectedIds.length} выбранных программ и связанные с ними дисциплины?`)) {
-          return;
-       }
-
-       this.isLoading = true;
-       this.successMessage = '';
-       this.errorMessage = '';
-
-       try {
-         // Вызываем стандартный DELETE для каждого ID
-         const deletePromises = selectedIds.map(id => axios.delete(`/api/v1/import-programs/${id}`));
-         await Promise.all(deletePromises);
-
-         this.successMessage = `${selectedIds.length} программ(ы) успешно удалены (логически).`;
-         // Обновляем данные в таблице
-         await this.loadImportPrograms();
-         // Возможно, потребуется обновить и дисциплины
-         // await this.loadImportDisciples();
-
-       } catch (error) {
-          console.error("Ошибка при удалении выбранных программ:", error);
-          // Обработка ошибок (аналогично deleteAllActiveProgramsApiCall)
-          // ... (добавьте обработку ошибок) ...
-          this.errorMessage = "Произошла ошибка при удалении выбранных программ.";
-       } finally {
-          this.isLoading = false;
-       }
     },
 
     async saveData() {

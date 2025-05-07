@@ -19,6 +19,8 @@ export default class Listener {
   deleted_at;
   program_id;
 
+  program_ids;
+  group_ids;
 
   constructor(listener) {
     this.id = listener?.id ?? null;
@@ -36,6 +38,9 @@ export default class Listener {
     this.group_id = listener?.group_id ?? null;
     this.deleted_at = listener?.deleted_at ?? null;
     this.program_id = listener?.program_id ?? null;
+
+    this.program_ids = Array.isArray(listener?.program_ids) ? listener.program_ids : [];
+    this.group_ids = Array.isArray(listener?.group_ids) ? listener.group_ids : [];
   }
 
   get listenergroup_number() {
@@ -43,8 +48,6 @@ export default class Listener {
     const listenergroup = listenergroupStore.listenergroupMap[this.group_id];
 
     const groupNumber = listenergroup?.group_number || listenergroup?.[[Target]]?.group_number;
-
-    console.log('group_number:', groupNumber);
 
     return groupNumber ? groupNumber : null;
 }

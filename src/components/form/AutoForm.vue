@@ -118,12 +118,29 @@
         :class-name="item.className"  
         @update:value="update($event, item.key)"
       ></textarea-input>
+
+      <multi-select-input
+        v-if="item instanceof MULTISELECT"
+        :item-key="item.key"
+        :value="modelValue[item.key]"
+        :error="errors[item.key]"
+        :label="item.label"
+        :options="item.options"
+        :placeholder="item.placeholder"
+        :filter="item.filter"
+        :display="item.display"
+        :optionLabel="item.optionLabel"
+        :optionValue="item.optionValue"
+        :class-name="item.className"
+        @update:value="update($event, item.key)"
+      ></multi-select-input>
       
     </slot>
   </div>
 </template>
 
 <script>
+
 import TextInput from "@/components/form/inputs/TextInput.vue";
 import TextareaInput from "@/components/form/inputs/TextareaInput.vue";
 import TimePickerInput from "@/components/form/inputs/TimePickerInput.vue";
@@ -133,6 +150,7 @@ import CheckboxInput from "@/components/form/inputs/CheckboxInput.vue";
 import RadioInput from "@/components/form/inputs/RadioEdit.vue";
 import ToggleInput from "@/components/form/inputs/ToggleInput.vue";
 import ComboboxInput from "@/components/form/inputs/ComboboxInput.vue";
+import MultiSelectInput from "@/components/form/inputs/MultiSelectInput.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 
 import { TextInput as TextInputModel } from "@/model/form/inputs/TextInput";
@@ -144,6 +162,7 @@ import { CheckboxInput as CheckboxInputModel } from "@/model/form/inputs/Checkbo
 import { RadioInput as RadioInputModel } from "@/model/form/inputs/RadioInput";
 import { ToggleInput as ToggleInputModel } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput as ComboboxInputModel } from "@/model/form/inputs/ComboboxInput";
+import { MultiSelectInput as MultiSelectInputModel } from "@/model/form/inputs/MultiSelectInput";
 
 export default {
   name: "AutoForm",
@@ -157,6 +176,7 @@ export default {
     RadioInput,
     ToggleInput,
     ComboboxInput,
+    MultiSelectInput,
   },
   props: {
     scheme: {
@@ -188,6 +208,7 @@ export default {
       RADIO: RadioInputModel,
       TOGGLE: ToggleInputModel,
       COMBOBOX: ComboboxInputModel,
+      MULTISELECT: MultiSelectInputModel,
     };
   },
   methods: {

@@ -1,15 +1,13 @@
 <template>
   <div class="container-fluid p-0 d-flex flex-column flex-1">
-    <!-- Строка заголовка -->
     <div class="row g-2">
       <div class="col-12 p-0 title-container">
         <span>Список всех групп</span>
       </div>
     </div>
 
-    <!-- Первая строка: Поиск и Очистка фильтров -->
     <div class="row g-2 mb-2">
-      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска -->
+      <div class="col ps-0 py-0 pe-3"> 
         <input
           class="form-control"
           type="text"
@@ -19,7 +17,7 @@
           placeholder="Поиск..."
         />
       </div>
-      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить -->
+      <div class="col-auto p-0"> 
         <button
           @click="clearFilters"
           :disabled="!filters"
@@ -31,16 +29,14 @@
       </div>
     </div>
 
-    <!-- Строка кнопки Добавить/Создать -->
     <div class="row g-2 mb-2">
-      <div class="col-4 p-0"> <!-- Или col-auto, если ширина не должна быть фиксированной -->
+      <div class="col-4 p-0"> 
         <button
           @click="openGenAddSidebar"
           class="btn btn-primary w-100 position-relative"
           type="button"
         >
           <i class="material-icons-outlined me-1">add</i>Создать группу
-          <!-- Значок уведомления остается привязанным к кнопке -->
           <span
             v-if="!canClickButton"
             class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -52,10 +48,9 @@
       </div>
     </div>
 
-    <!-- Строка с основной AG Grid (занимает оставшееся место) -->
-    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания -->
+    <div class="row g-2 flex-1"> 
       <div class="col-12 p-0 h-100">
-        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+        <div class="grid-container"> 
           <ag-grid-vue
             class="ag-theme-alpine"
             :columnDefs="columnDefs.value"
@@ -77,7 +72,6 @@
       </div>
     </div>
 
-    <!-- Sidebar для редактирования данных Группы (структура без изменений) -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
@@ -105,7 +99,6 @@
       </Button>
     </Sidebar>
 
-    <!-- Sidebar для выбора программы перед созданием (структура без изменений) -->
     <Sidebar
       v-model:visible="showGenAddSidebar"
       position="bottom"
@@ -137,7 +130,6 @@
        </div>
     </Sidebar>
 
-    <!-- Sidebar для детального создания группы со слушателями (структура без изменений) -->
     <Sidebar
       v-model:visible="showAddSidebar"
       position="bottom"
@@ -146,7 +138,6 @@
       class="custom-sidebar h-auto"
       :style="{ width: '75%', maxHeight: '85vh', height: 'auto', margin: 'auto' }"
     >
-      <!-- Содержимое этого сайдбара остается без изменений -->
       <div class="card flex flex-row gap-4 mb-3">
         <div class="form card__form" style="flex: 1;">
           <auto-form v-model="listenergroup" v-model:errors="errors" :scheme="scheme" class="custom-form">
@@ -227,6 +218,7 @@
               :paginationPageSize="paginationPageSize">
             </ag-grid-vue>
           </div>
+
           <div class="d-flex align-items-center flex-wrap gap-2 mt-2" style="min-height: 2rem;">
                <span class="field-checkbox d-flex align-items-center">
                    <Checkbox inputId="chk-ignore-count" v-model="ignoreCountWish" :binary="true" />
@@ -238,6 +230,7 @@
                </span>
                <span class="field-checkbox d-flex align-items-center">
                    <Checkbox inputId="chk-ignore-all" v-model="ignoreAllWishes" :binary="true" />
+                   
                    <label for="chk-ignore-all" class="ms-1 small">игнорировать всё</label>
                </span>
            </div>
@@ -264,6 +257,8 @@
 
       </div>
 
+      <br>
+
       <div class="pt-3 mt-3 d-flex justify-content-between">
         <Button class="btn btn-primary" @click="submit">
           Сохранить
@@ -274,7 +269,7 @@
       </div>
     </Sidebar>
 
-  </div> <!-- Закрывающий тег для container-fluid -->
+  </div>
 </template>
 
 <script>
@@ -312,58 +307,6 @@ export default {
   },
   setup() {
 
-    const listenerStore = useListenerStore();
-    const listenergroup = ref(new Listenergroup());
-    const groupListenersRowData = ref([]);
-
-     const suitableListenersRowData = computed(() => {
-     const currentProgramId = listenergroup.value?.group_program_id;
-     console.log(`[Computed] Фильтруем подходящих для программы ID: ${currentProgramId}`);
-
-    // 1. Если программа не выбрана в форме группы, не можем найти подходящих
-    if (!currentProgramId) {
-      console.log("[Computed] Программа не выбрана, результат: []");
-      return [];
-    }
-
-    // 2. Получаем ID слушателей, которые УЖЕ добавлены в правую таблицу (в этой сессии)
-    const idsInCurrentGroup = new Set(groupListenersRowData.value.map(listener => listener.id));
-    console.log("[Computed] ID слушателей уже в группе:", Array.from(idsInCurrentGroup));
-
-    const allListeners = listenerStore.listenerList || [];
-    console.log(`[Computed] Всего слушателей для проверки: ${allListeners.length}`);
-
-    // 4. Фильтруем общий список
-    const filteredListeners = allListeners.filter(listener => {
-      // а) Слушатель не удален?
-      const isNotDeleted = listener.deleted_at === null;
-
-      // б) Слушатель СВОБОДЕН (не состоит в ДРУГОЙ группе)?
-      //    !!! ВАЖНО: Адаптируйте 'listener.group_id === null' под вашу модель !!!
-      //    Возможно, поле называется иначе или логика проверки другая.
-      //const hasNoGroup = listener.group_id === null; // <-- ПРОВЕРЬТЕ ЭТО ПОЛЕ В ВАШЕЙ МОДЕЛИ СЛУШАТЕЛЯ
-
-      // в) Программа слушателя совпадает с программой ГРУППЫ?
-      //    !!! ВАЖНО: Адаптируйте 'listener.program_id === currentProgramId' под вашу модель !!!
-      //    Возможно, у слушателя массив program_ids, или связь идет через заявку (wish).
-      //const matchesProgram = listener.program_id === currentProgramId; // <-- ПРОВЕРЬТЕ ЭТО ПОЛЕ/ЛОГИКУ
-
-      const notInCurrentGroup = !idsInCurrentGroup.has(listener.id);
-
-      //
-      //return isNotDeleted && hasNoGroup && matchesProgram && notInCurrentGroup;
-      
-      return isNotDeleted;
-    });
-
-    console.log(`[Computed] Найдено подходящих слушателей: ${filteredListeners.length}`);
-
-    return filteredListeners.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
-  });
-
-    const instance = getCurrentInstance();
-    const localeText = AG_GRID_LOCALE_RU;
-
     const tableData = reactive([]);
 
     const addRow = (listenerId) => {
@@ -378,6 +321,21 @@ export default {
       tableData.push(newRow);
       console.log('tableData after add:', tableData.value); 
     };
+
+    const removeRow = (index) => {
+      console.log('Removing wish day row at index:', index);
+      tableData.splice(index, 1);
+      console.log('tableData after remove:', tableData.value);
+    };
+
+    const listenerStore = useListenerStore();
+    const listenergroup = ref(new Listenergroup());
+    const groupListenersRowData = ref([]);
+
+    const instance = getCurrentInstance();
+    const localeText = AG_GRID_LOCALE_RU;
+
+
 
     const gridApi = ref(null);
     const gridColumnApi = ref(null);
@@ -398,7 +356,7 @@ export default {
     };
 
     const rowData = reactive({});
-    const rowDataAdd = reactive({})
+    const suitableListenersRowData = reactive({});
     const l_group_status = reactive([]);
 
     const columnDefs = reactive({
@@ -482,7 +440,7 @@ export default {
       columnDefs,
       columnDefsAdd,
       rowData,
-      rowDataAdd,
+      suitableListenersRowData,
       groupListenersRowData,
       l_group_status,
       defaultColDef,
@@ -500,6 +458,7 @@ export default {
       dataLoaded,
 
       addRow,
+      removeRow,
       tableData,
 
       gridApiSuitable, 
@@ -508,7 +467,6 @@ export default {
       onGridReadyGroup,    
 
       listenergroup,
-      suitableListenersRowData,
       groupListenersRowData,
     };
   },
@@ -525,7 +483,6 @@ export default {
       filterOnlySufficient: false,
       scheme: null,
       creatingProgram: '',
-      tableData: [],
       days: [],
     };
   },
@@ -592,7 +549,28 @@ export default {
     edit(event) {
       this.resetLgr();
       this.listenergroup = event.data;
-      console.log(this.listenergroup);
+
+      const selectedProgramId = this.listenergroup.group_program_id;
+      
+      if (!selectedProgramId) {
+        console.error("Ошибка: Невозможно продолжить без выбранной программы!");
+        return; 
+      }
+
+      const programStore = useProgramStore();
+      const programMap = programStore.programMap;
+      let programName = 'Не найдена'; 
+
+      if (programMap && programMap[selectedProgramId]) {
+        programName = programMap[selectedProgramId].program_name; 
+      } else {
+        console.warn(`Программа с ID ${selectedProgramId} не найдена в programMap.`);
+      }
+
+      console.log(`Переход к созданию группы для программы: "${programName}" (ID: ${selectedProgramId})`);
+      this.creatingProgram = programName;
+      console.log(this.creatingProgram)
+      
       this.showAddSidebar = true;
     },
     async submit() {
@@ -629,7 +607,7 @@ export default {
           this.getListenerList(),
           //this.getReady_ListenerList(),
           this.getL_Group_StatusList(),
-          this.getL_Ready_GroupList(),
+          //this.getL_Ready_GroupList(),
        ]);
        console.log("Initial data fetched successfully.");
    } catch (error) {
@@ -661,14 +639,14 @@ export default {
       try {
         console.log(this.listenerList)
         if (Array.isArray(this.listenerList)) {
-          this.rowDataAdd.value = this.listenerList
+          this.suitableListenersRowData.value = this.listenerList
             .filter((listener) => listener.deleted_at === null)
             .sort((a, b) => a.full_name.localeCompare(b.full_name));
-          console.log(this.rowDataAdd.value)
+          console.log(this.suitableListenersRowData.value)
         } else if (this.listenerList && this.listenerList.deleted_at === null) {
-          this.rowDataAdd.value = [this.listenerList];
+          this.suitableListenersRowData.value = [this.listenerList];
         } else {
-          this.rowDataAdd.value = [];
+          this.suitableListenersRowData.value = [];
         }
       } catch (error) {
         console.error("Ошибка при загрузке данных слушателей:", error);
@@ -727,9 +705,7 @@ export default {
       this.showSidebar = true;
     },
     openAddSidebar() {
-
       const selectedProgramId = this.listenergroup.program_id;
-      
       if (!selectedProgramId) {
         console.error("Ошибка: Невозможно продолжить без выбранной программы!");
         return; 

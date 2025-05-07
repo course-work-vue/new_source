@@ -16,7 +16,6 @@ export const usePayerStore = defineStore('payer', {
     },
     actions: {
         async getPayerList() {
-            console.log("Я в плательщиках")
             const responseData = await api.getPayerList();
             this.payerList = responseData.map((payer) => {
                 return new Payer(payer);
@@ -29,6 +28,7 @@ export const usePayerStore = defineStore('payer', {
 
         async postPayer(payer) {
             const response = await api.postPayer(payer);
+            console.log(response);
 
             if (response.success === true) {
 

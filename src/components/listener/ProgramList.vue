@@ -1,15 +1,13 @@
 <template>
   <div class="container-fluid p-0 d-flex flex-column flex-1">
-    <!-- Строка заголовка -->
     <div class="row g-2">
       <div class="col-12 p-0 title-container">
         <span>Список всех программ</span>
       </div>
     </div>
 
-    <!-- Первая строка: Поиск и Очистка фильтров -->
     <div class="row g-2 mb-2">
-      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска -->
+      <div class="col ps-0 py-0 pe-3"> 
         <input
           class="form-control"
           type="text"
@@ -19,7 +17,7 @@
           placeholder="Поиск..."
         />
       </div>
-      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить -->
+      <div class="col-auto p-0"> 
         <button
           @click="clearFilters"
           :disabled="!filters"
@@ -31,9 +29,8 @@
       </div>
     </div>
 
-    <!-- Строка кнопки Добавить -->
     <div class="row g-2 mb-2">
-      <div class="col-4 p-0"> <!-- Настройте ширину (col-4, col-auto...) -->
+      <div class="col-4 p-0"> 
         <button
           @click="openSidebar"
           class="btn btn-primary w-100"
@@ -44,10 +41,9 @@
       </div>
     </div>
 
-    <!-- Строка с AG Grid (занимает оставшееся место) -->
-    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания -->
+    <div class="row g-2 flex-1"> 
       <div class="col-12 p-0 h-100">
-        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+        <div class="grid-container"> 
           <ag-grid-vue
             class="ag-theme-alpine"
             :columnDefs="columnDefs.value"
@@ -69,14 +65,13 @@
       </div>
     </div>
 
-    <!-- Sidebar для редактирования/добавления программы (структура без изменений) -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
       modal
       header="Данные программы"
       class="custom-sidebar h-auto"
-      :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+      :style="mainSidebarStyle"
     >
       <div class="card flex flex-row">
         <div class="form card__form">
@@ -89,8 +84,7 @@
           </auto-form>
         </div>
       </div>
-      <!-- Футер сайдбара можно оставить как есть или обернуть в div, если нужно -->
-      <div class="form-footer mt-3"> <!-- Добавлен отступ сверху для разделения -->
+      <div class="form-footer mt-3"> 
         <Button class="btn btn-primary float-start" @click="submit">
           Сохранить
         </Button>
@@ -104,7 +98,7 @@
       </div>
     </Sidebar>
 
-  </div> <!-- Закрывающий тег для container-fluid -->
+  </div> 
 </template>
 
 <script>
@@ -274,30 +268,36 @@ export default {
       program: new Program(),
       errors: {},
       scheme: null,
+
+      mainSidebarStyle: {},
+      isSmallScreen: false 
     };
   },
   async mounted() {
     try {
       await this.loadProgramsData();
+
+      this.updateSidebarStyles();
+      window.addEventListener('resize', this.updateSidebarStyles);
     } catch (error) {
       console.error("Ошибка при загрузке данных программ:", error);
     }
     this.scheme = new FormScheme([
       new TextInput({
         key: "required_amount",
-        label: "Стоимость обучения",
+        label: "\nСтоимость обучения",
         placeholder: "Стоимость обучения",
         validation: [requiredRule],
       }),
       new TextInput({
         key: "program_name",
-        label: "Название программы",
+        label: "\nНазвание программы",
         placeholder: "Название программы",
         validation: [requiredRule],
       }),
       new TextInput({
         key: "hours",
-        label: "Часы",
+        label: "\nЧасы",
         placeholder: "Часы",
         validation: [requiredRule],
       }),
@@ -317,6 +317,9 @@ export default {
       }),
     ]);
   },
+  beforeUnmount() {
+  window.removeEventListener('resize', this.updateSidebarStyles);
+},
   methods: {
     ...mapActions(useProgramStore, [
       "getProgramList",
@@ -393,7 +396,24 @@ export default {
     closeSidebar() {
       this.showSidebar = false;
     },
+
+    updateSidebarStyles() {
+    const minWidthValue = 820;
+    const screenWidth = window.innerWidth;
+
+    const isScreenWideEnough = screenWidth >= minWidthValue;
+
+    this.mainSidebarStyle = {
+      width: isScreenWideEnough ? '820px' : '100%', 
+      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
+      maxHeight: '700px',
+      height: 'auto',
+      margin: isScreenWideEnough ? 'auto' : '0' 
+    };
   },
+  },
+
+
 };
 </script>
 

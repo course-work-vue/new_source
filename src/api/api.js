@@ -74,6 +74,12 @@ export default {
   putL_Wish_Day: (id, l_wish_day) =>
       ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
 
+  saveL_Wish_DaysViaProcedure(data) {
+    return ReqExec.put(endpoints.rest.l_wish_day, {
+      parameters: data
+    });
+  },    //Пока разбираюсь
+
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),
   putContract: (id, contract) =>

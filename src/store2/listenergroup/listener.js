@@ -18,6 +18,7 @@ export const useListenerStore = defineStore('listener', {
     actions: {
         async getListenerList() {
             const responseData = await api.getListenerList();
+            console.log(responseData);
             this.listenerList = responseData.map((listener) => {
                 return new Listener(listener);
             });

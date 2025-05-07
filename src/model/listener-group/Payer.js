@@ -34,8 +34,8 @@ export default class Payer {
   get full_name() {
     const nameParts = [];
   
-    if (this.name) nameParts.push(this.name);
     if (this.surname) nameParts.push(this.surname);
+    if (this.name) nameParts.push(this.name);
     if (this.lastname) nameParts.push(this.lastname);
   
     return nameParts.join(' ');

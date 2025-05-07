@@ -9,7 +9,7 @@
 
     <!-- Первая строка: Поиск и Очистка фильтров -->
     <div class="row g-2 mb-2">
-      <div class="col ps-0 py-0 pe-3"> <!-- Колонка для поиска -->
+      <div class="col ps-0 py-0 pe-3">
         <input
           class="form-control"
           type="text"
@@ -19,11 +19,11 @@
           placeholder="Поиск..."
         />
       </div>
-      <div class="col-auto p-0"> <!-- Колонка для кнопки Очистить -->
+      <div class="col-auto p-0">
         <button
           @click="clearFilters"
           :disabled="!filters"
-          class="btn btn-primary clear-filters-btn" 
+          class="btn btn-primary clear-filters-btn"
           type="button"
         >
           <i class="material-icons-outlined me-1">close</i>Очистить фильтры
@@ -33,21 +33,22 @@
 
     <!-- Строка кнопки Добавить -->
     <div class="row g-2 mb-2">
-      <div class="col-4 p-0"> <!-- Настройте ширину (col-4, col-auto...) -->
+      <div class="col-4 p-0">
         <button
           @click="openSidebar"
-          class="btn btn-primary w-100" 
+          class="btn btn-primary w-100"
           type="button"
         >
           <i class="material-icons-outlined me-1">add</i>Добавить плательщика
         </button>
       </div>
+      <div class="col"></div> <!-- Пустая колонка, если кнопка не w-100, для выравнивания -->
     </div>
 
-    <!-- Строка с AG Grid (занимает оставшееся место) -->
-    <div class="row g-2 flex-1"> <!-- flex-1 для растягивания -->
+    <!-- Строка с AG Grid -->
+    <div class="row g-2 flex-1">
       <div class="col-12 p-0 h-100">
-        <div class="grid-container"> <!-- Обертка для стилизации grid -->
+        <div class="grid-container">
           <ag-grid-vue
             class="ag-theme-alpine"
             :columnDefs="columnDefs.value"
@@ -69,43 +70,41 @@
       </div>
     </div>
 
-    <!-- Sidebar остается без изменений структуры -->
     <Sidebar
       v-model:visible="showSidebar"
       position="bottom"
       modal
       header="Данные плательщика"
       class="custom-sidebar h-auto"
-      :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto'}"
+      :style="mainSidebarStyle"
     >
       <div class="card flex flex-row">
-        <div class="form card__form">
+        <div class="form card__form"> 
           <auto-form
+            v-if="scheme"
             v-model="payer"
             v-model:errors="errors"
             :scheme="scheme"
             class="custom-form"
+            item-class="form__item"
           >
           </auto-form>
         </div>
       </div>
-      <Button
-        class="btn btn-primary float-start"
-        @click="submit"
-      >
-        Сохранить
-      </Button>
-      <Button
-        class="btn btn-primary float-end"
-        v-if="this.payer.id"
-        @click="deletePay"
-      >
-        Удалить
-      </Button>
+      <!-- Обновленная структура кнопок, как в слушателях (без кнопки "Пожелания") -->
+      <div class="d-flex justify-content-end align-items-center mt-3">
+        <div>
+          <Button class="btn btn-primary float-start me-3" @click="submit">
+            Сохранить
+          </Button>
+          <Button class="btn btn-primary float-end" v-if="payer.id" @click="deletePay">
+            Удалить
+          </Button>
+        </div>
+      </div>
     </Sidebar>
-  </div> <!-- Закрывающий тег для container-fluid -->
+  </div>
 </template>
-
 <script>
 
 import { AgGridVue } from "ag-grid-vue3";  // the AG Grid Vue Component
@@ -243,6 +242,7 @@ export default {
     payer: new Payer(),
     errors: {},
     scheme: null,
+    mainSidebarStyle: {},
   };
 },
 
@@ -257,19 +257,19 @@ async mounted() {
   
   new TextInput({
     key: "name",
-    label: "Имя",
+    label: "\nИмя",
     placeholder: "Имя",
     validation: [requiredRule],
   }),
   new TextInput({
     key: "surname",
-    label: "Фамилия",
+    label: "\nФамилия",
     placeholder: "Фамилия",
     validation: [requiredRule],
   }),
   new TextInput({
     key: "lastname",
-    label: "Отчество",
+    label: "\nОтчество",
     placeholder: "Отчество",
     validation: [requiredRule],
   }),
@@ -312,12 +312,19 @@ async mounted() {
   }),
   new TextInput({
     key: "email",
-    label: "Email",
+    label: "Электронная почта",
     placeholder: "Электронная почта",
     validation: [emailRule],
   }),
 ]);
 
+    this.updateSidebarStyles(); 
+    window.addEventListener('resize', this.updateSidebarStyles);
+
+  },
+
+  beforeUnmount() { 
+    window.removeEventListener('resize', this.updateSidebarStyles);
   },
 
   methods: {
@@ -442,8 +449,6 @@ onFirstDataRendered(params) {
 
   // Push the query parameters to the router
   this.$router.push({ query: queryParams });
-
-  // Do something with the filterModel or trigger other actions as needed.
 },
   clearFilters(){
 
@@ -454,12 +459,25 @@ onFirstDataRendered(params) {
     this.filters=false;
   },
   openSidebar() {
-      console.log("Открываю!")
       this.resetPayer();
-      this.showSidebar = true; // Открыть боковую панель
+      this.showSidebar = true; 
     },
     closeSidebar() {
-      this.showSidebar = false; // Закрыть боковую панель
+      this.showSidebar = false; 
+    },
+
+    updateSidebarStyles() { 
+      const minWidthValue = 820; 
+      const screenWidth = window.innerWidth;
+      const isScreenWideEnough = screenWidth >= minWidthValue;
+
+      this.mainSidebarStyle = {
+        width: isScreenWideEnough ? `${minWidthValue}px` : '100%',
+        minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto',
+        maxHeight: '750px', 
+        height: 'auto',     
+        margin: isScreenWideEnough ? 'auto' : '0' 
+      };
     },
 
 
@@ -582,30 +600,45 @@ onFirstDataRendered(params) {
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075), 0 0 8px rgba(6, 215, 29, 0.6);
 }
 
+.form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px; 
+  margin-bottom: 10px;
+
+
+  &__item {
+    padding: 5px;
+
+    & > label { 
+      display: block; 
+      margin-bottom: 4px; 
+      font-weight: 500; 
+    }
+  }
+
+  &__item--passport-label {
+    & > label { 
+      font-size: 10px; 
+      line-height: 1.2; 
+    }
+  }
+}
+
 .btn-primary,
 .form-control,
 .form-select {
-  height: 28px;
-  line-height: 28px;
-  padding-top: 0;
-  padding-bottom: 0;
+  height: 28px; /* Стандартная высота */
+  line-height: 1.2; /* Для лучшего вертикального выравнивания текста в инпутах */
+  padding-top: 0.25rem; /* Небольшой паддинг сверху и снизу */
+  padding-bottom: 0.25rem;
   font-size: 14px;
 }
 
-.form-control,
-.form-select {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.btn-primary,
-.form-control,
-.form-select {
-  height: 28px;
-  line-height: 28px;
-  padding-top: 0;
-  padding-bottom: 0;
-  font-size: 14px;
+.btn-primary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .form-control,
@@ -638,12 +671,6 @@ onFirstDataRendered(params) {
     --bs-btn-hover-bg:rgb(6 215 29);
     --bs-btn-hover-border-color: rgb(6 215 29);
   }
-}
-.form {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 10px;
 }
 
 </style>

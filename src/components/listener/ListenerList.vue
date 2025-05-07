@@ -69,7 +69,8 @@
   </div>
 
   <Sidebar v-model:visible="showSidebar" position="bottom" modal header="Данные слушателя" class="custom-sidebar h-auto"
-    :style="mainSidebarStyle">
+    :style="mainSidebarStyle"
+  >
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form v-if="scheme" v-model="listener" v-model:errors="errors"
@@ -172,7 +173,7 @@
 
 <script>
 import { AgGridVue } from "ag-grid-vue3";
-import { reactive, onMounted, ref, toRaw } from "vue";
+import { reactive, onMounted, ref, toRaw, watch } from "vue";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ListenerHref from "@/components/listener/ListenerHrefCellRenderer.vue";
 import ListenerHref2 from "@/components/listener/ListenerHrefCellRenderer2.vue";
@@ -201,6 +202,7 @@ import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import { TextareaInput } from "@/model/form/inputs/TextareaInput";
+import { MultiSelectInput } from '@/model/form/inputs/MultiSelectInput';
 import Listener from "@/model/listener-group/Listener";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
@@ -222,7 +224,7 @@ export default {
       console.log('Adding new wish day row for listener:', listenerId);
       const newRow = new L_Wish_Day({
         l_wish_day_id: null,
-        day_id: null,
+        day_id: 1,
         starttime: '09:00',
         endtime: '18:00',
         listener_id: listenerId
@@ -357,9 +359,9 @@ export default {
       listener_wish: new Listener_Wish(),
       errorsWish: {},
 
-      mainSidebarStyle: {}, // Стиль для основного сайдбара
-      wishesSidebarStyle: {}, // Стиль для сайдбара пожеланий
-      isSmallScreen: false // Флаг для маленького экрана
+      mainSidebarStyle: {},
+      wishesSidebarStyle: {}, 
+      isSmallScreen: false 
     };
   },
   async mounted() {
@@ -394,11 +396,12 @@ export default {
         placeholder: "Отчество",
         validation: [requiredRule],
       }),
-      new ComboboxInput({
-        key: "program_id",
-        label: "Программа",
-        placeholder: "Выберите программу",
-        options: this.programOptions,
+      new MultiSelectInput({
+        key: 'program_ids', 
+        label: 'Программы обучения',
+        options: this.programOptions, 
+        validation: [],
+        filter: true, 
       }),
       new TextInput({
         key: "passport",
@@ -408,20 +411,20 @@ export default {
       }),
       new DateInput({
         key: "issue_date",
-        label: "Дата выдачи",
+        label: "\nДата выдачи",
         dateFormat: "dd/mm/yy",
         size: "sm",
         validation: [requiredRule],
       }),
       new TextInput({
         key: "department_code",
-        label: "Код подразделения",
+        label: "\nКод подразделения",
         placeholder: "Код подразделения",
         validation: [requiredRule],
       }),
       new TextInput({
         key: "registration_address",
-        label: "Адрес регистрации",
+        label: "\nАдрес регистрации",
         placeholder: "Адрес регистрации",
         validation: [requiredRule],
       }),
@@ -446,6 +449,13 @@ export default {
         label: "Электронная почта",
         placeholder: "Электронная почта",
         validation: [emailRule],
+      }),
+      new MultiSelectInput({
+        key: 'group_ids', 
+        label: 'Группы',
+        options: this.groupOptions, 
+        validation: [],
+        filter: true, 
       }),
 
     ]);
@@ -512,6 +522,7 @@ export default {
       "postL_Wish_Day",
       "putL_Wish_Day",
       "deleteL_Wish_Day",
+      "syncWishDays",
     ]),
     ...mapActions(useProgramStore, ["getProgramList"]),
 
@@ -535,7 +546,11 @@ export default {
       if (listener.id) {
         await this.putListener(listener);
       } else {
-        await this.postListener(listener);
+        const payload = {
+          ...listener,
+          group_ids: `{${listener.group_ids.join(',')}}`  // ключевой момент
+        };
+        await this.postListener(payload);
       }
       this.showSidebar = false;
       this.resetLst();
@@ -709,14 +724,12 @@ export default {
       listener_wish.listener_id = this.listener.id;
       console.log(listener_wish)
       if (listener_wish.id) {
-        console.log("TRY TO PUT")
+        await this.syncWishDays(this.listener.id, this.tableData);
         await this.putListener_Wish(listener_wish);
       } else {
-        console.log("TRY TO POST")
         await this.postListener_Wish(listener_wish);
       }
       try {
-        //await this.syncLWishDays(currentListenerId);
       } catch (error) {
         console.error("Error during L_Wish_Day sync, caught in submitWishes:", error);
       }
@@ -733,13 +746,13 @@ export default {
     this.mainSidebarStyle = {
       width: isScreenWideEnough ? '820px' : '100%', 
       minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
-      maxHeight: '750px',
+      maxHeight: '700px',
       height: 'auto',
       margin: isScreenWideEnough ? 'auto' : '0' 
     };
 
     this.wishesSidebarStyle = {
-      width: isScreenWideEnough ? '840px' : '100%', 
+      width: isScreenWideEnough ? '900px' : '100%', 
       minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
       maxHeight: '750px',
       height: 'auto',
@@ -747,12 +760,9 @@ export default {
     };
   },
 
-
-    //Дописываю
     async syncLWishDays(listenerId) {
       console.log(`Starting manual L_Wish_Day sync for listener ${listenerId}...`)
     },
-
 
   },
   computed: {
@@ -767,6 +777,48 @@ export default {
         value: item.id,
         label: item.program_name,
       }));
+    },
+    groupOptions() {
+      const listenergroupStore = useListenergroupStore();
+      return Object.values(listenergroupStore.listenergroupMap || {}).map((item) => ({
+        value: item.id,
+        label: item.group_number,
+      }));
+    },
+
+  },
+  watch: {
+    'listener.program_ids': {
+      handler(newSelectedProgramIds, oldSelectedProgramIds) {
+        if (newSelectedProgramIds && Array.isArray(newSelectedProgramIds)) {
+          console.log('Выбранные ID программ:', newSelectedProgramIds);
+
+          if (this.programOptions && this.programOptions.length > 0) {
+            const selectedPrograms = this.programOptions.filter(option =>
+              newSelectedProgramIds.includes(option.value)
+            );
+            console.log('Выбранные программы:', selectedPrograms);
+          } else {
+            console.warn('programOptions еще не загружены или пусты, не могу показать полные объекты.');
+          }
+        }
+      },
+    },
+    'listener.group_ids': {
+      handler(newSelectedGroupIds, oldSelectedGroupIds) {
+        if (newSelectedGroupIds && Array.isArray(newSelectedGroupIds)) {
+          console.log('Выбранные ID программ:', newSelectedGroupIds);
+
+          if (this.groupOptions && this.groupOptions.length > 0) {
+            const selectedGroups = this.groupOptions.filter(option =>
+              newSelectedGroupIds.includes(option.value)
+            );
+            console.log('Выбранные программы:', selectedGroups);
+          } else {
+            console.warn('groupOptions еще не загружены или пусты, не могу показать полные объекты.');
+          }
+        }
+      },
     },
   },
 };
@@ -936,7 +988,6 @@ export default {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  margin-bottom: 10px;
 
   &__item {
     padding: 5px;
