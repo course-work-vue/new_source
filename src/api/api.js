@@ -178,5 +178,8 @@ export default {
   getPermissionList: () => ReqExec.get(endpoints.function_end.permission, null, true),
   postPermission: (permission) => ReqExec.post(endpoints.procedure.postPermission, permission),
   deletePermission: (permission) => ReqExec.post(endpoints.procedure.deletePermissions, permission, permission),
-
+  //schema
+  getSchemaList: () => ReqExec.get(endpoints.function_end.getSchemas, null, true),
+  postSchema: (schema) => ReqExec.post(endpoints.procedure.postSchema, schema, true),
+  deleteSchema: (schema) => ReqExec.post(endpoints.procedure.dropSchema, schema, true),
 };

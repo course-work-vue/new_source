@@ -67,6 +67,7 @@ const FunctionList = () => import("./components/admin/FunctionList.vue");
 const TriggerList = () => import("./components/admin/TriggerList.vue");
 const TableList = () => import("./components/admin/TableList.vue");
 const UserList = () => import("./components/admin/UserList.vue");
+const SchemaList = () => import("./components/admin/SchemaList.vue");
 const routes = [
   {
     path: "/",
@@ -233,6 +234,12 @@ const routes = [
         component: UserList,
         meta: { roles: ["super_admin", "superadmin"] },
       },
+      {
+        path: "/schemas",
+        name: "схемы",
+        component: SchemaList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
     ],
     // { path: '/AddStudent/:groupName', component: AddStudent },
   },
@@ -242,7 +249,6 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes,
 });
-
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   const publicPages = ["/login", "/register", "/home"];
@@ -250,52 +256,56 @@ router.beforeEach(async (to, from, next) => {
   const loggedIn = localStorage.getItem("user");
 
   if (authRequired && !loggedIn) {
-    next("/login");
-  } else if (loggedIn) {
-    const token = JSON.parse(loggedIn).accessToken;
-    document.title = to.name || "Application";
-    try {
-      const decodedToken = jwt_decode(token);
-      const currentTime = Date.now() / 1000;
-
-      if (decodedToken.exp < currentTime) {
-        // Если токен просрочен, выполняем логаут и переходим на страницу логина
-        authStore.login();
-        next("/login");
-      } else {
-        // Если для маршрута определены требуемые роли, выполняем проверку
-        await authStore.getRolesFromToken({
-          token: authStore.user.accessToken,
-        });
-        if (to.meta && to.meta.roles) {
-          // Получаем роли пользователя из authStore (убедитесь, что они сохраняются после логина)
-          const userRoles = authStore.user?.roles || [];
-          const requiredRoles = to.meta.roles;
-          const hasRole = userRoles.some((role) =>
-            requiredRoles.includes(role)
-          );
-          if (!hasRole) {
-            // Если роль не соответствует, устанавливаем флаг noAccess и (при желании) можно перенаправить на страницу "Нет доступа"
-            authStore.noAccess = true;
-            // Можно сделать редирект, например, next("/no-access");
-            next();
-            return;
-          } else {
-            // Если роль соответствует, сбрасываем флаг noAccess
-            authStore.noAccess = false;
-          }
-        }
-        authStore.noAccess = false;
-        next(); // Продолжаем переход
-      }
-    } catch (error) {
-      console.error("Ошибка декодирования токена:", error);
-      next();
-    }
-  } else {
-    next(); // Для публичных маршрутов
+    return next("/login");
   }
+
+  if (loggedIn) {
+    document.title = to.name || "Application";
+    const token = JSON.parse(loggedIn).accessToken;
+    let decodedToken;
+    try {
+      decodedToken = jwt_decode(token);
+    } catch (err) {
+      console.error("Ошибка декодирования токена:", err);
+      return next();
+    }
+
+    const currentTime = Date.now() / 1000;
+    if (decodedToken.exp < currentTime) {
+      authStore.login();      // или logout, как у вас принято
+      return next("/login");
+    }
+
+    // СРАВНИВАЕМ ИМЕНА МАРШРУТОВ (игнорим query)
+    const routeChanged = to.name !== from.name;
+    if (routeChanged) {
+      // получаем роли только при смене маршрута «по сути»
+      await authStore.getRolesFromToken({ token: authStore.user.accessToken });
+    }
+
+    // если в маршруте есть meta.roles — проверяем их
+    if (to.meta.roles) {
+      const userRoles = authStore.user?.roles || [];
+      const required  = to.meta.roles;
+      const hasRole   = userRoles.some(r => required.includes(r));
+      if (!hasRole) {
+        authStore.noAccess = true;
+        // можно редиректить на /no-access или просто next()
+      } else {
+        authStore.noAccess = false;
+      }
+    } else {
+      authStore.noAccess = false;
+    }
+
+    return next();
+  }
+
+  // публичные страницы
+  next();
 });
+
+
 
 /*
 на случай если мы не хотим проверять токен

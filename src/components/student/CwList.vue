@@ -139,7 +139,7 @@ import ButtonCell from "@/components/student/CWButtonCell.vue";
 import GroupHref from "@/components/student/GroupHrefCellRenderer.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-
+import ReqExec from "@/services/RequestExecutor";
 import CourseWork from "@/model/student-group/CourseWork";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
@@ -465,10 +465,10 @@ export default {
       // Устанавливаем необходимые параметры и отправляем Blob на сервер
       this.objectType = "excel";
       this.documentTitle = "Отчет по научным руководителям";
-      this.filePath = await this.uploadGeneratedFile(
-        blob,
-        "teacher_report.xlsx"
-      );
+      const respo = await this.uploadGeneratedFile(blob, "teacher_report.xlsx");
+      this.filePath =
+      ReqExec.baseUrl + "/api/Query/downloadFile/" +
+        respo;
       this.docPreview = true;
     },
 

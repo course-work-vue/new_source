@@ -16,6 +16,7 @@
         :icon-right="item.iconRight"
         :size="item.size"
         :placeholder="item.placeholder"
+        :disabled="item.disabled"
         @update:value="update($event, item.key)"
       ></text-input>
 

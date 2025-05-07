@@ -7,6 +7,7 @@
         v-model.lazy="model"
         :placeholder="placeholder"
         :class="inputClass"
+        :disabled="disabled"
         @input="handleInput"
       ></InputText>
     </input-with-icon>
@@ -53,6 +54,9 @@ export default {
     types: {
       type: String,
       default: "text",
+    },
+    disabled: {
+      type: Boolean,
     },
   },
   setup(props, { emit }) {

@@ -28,4 +28,7 @@ export default Object.freeze({
     uploaded_file: prefix + 'delete_uploaded_files',
 
     deauth_user: prefix + 'update_user_auth_tokens',
+
+    dropSchema: prefix + 'ums.drop_schema',
+    postSchema: prefix + 'ums.create_schema',
 });

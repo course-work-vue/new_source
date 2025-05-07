@@ -129,31 +129,7 @@
     </div>
 
     <!-- Underperforming Students Table -->
-    <div class="row g-2 mt-3">
-      <div class="col-12 p-0">
-        <div class="table-container">
-          <h5 class="mb-2">Список отстающих студентов</h5>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">First Name</th>
-                <th scope="col">Last Name</th>
-                <th scope="col">Sum</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, index) in dataFromApi" :key="index">
-                <th scope="row">{{ index }}</th>
-                <td>{{ item.first_name }}</td>
-                <td>{{ item.last_name }}</td>
-                <td>{{ item.sum }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+
   </div>
 
   <Dialog v-model:visible="formVisible" modal header="Форма студента">
@@ -214,7 +190,7 @@ import StudentHref from "@/components/student/StudentHrefCellRenderer.vue";
 import StudentHref2 from "@/components/student/StudentHrefCellRenderer2.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-
+import ReqExec from "@/services/RequestExecutor";
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { useStudentStore } from "@/store2/studentgroup/student";
@@ -753,7 +729,9 @@ export default {
       this.objectType = "excel";
       this.documentTitle = "Предпросмотр контингента";
       // Отправляем Blob на сервер
-      this.filePath = await this.uploadGeneratedFile(blob, "контингент.xlsx");
+
+      const respo = await this.uploadGeneratedFile(blob, "контингент.xlsx");
+      this.filePath = ReqExec.baseUrl + "/api/Query/downloadFile/" + respo;
       this.docPreview = true;
     },
     formatDataForExcel(data) {
@@ -1388,7 +1366,8 @@ export default {
       //saveAs(blob, "Report.docx");
       this.objectType = "docx";
       this.documentTitle = "Предпросмотр отчёта";
-      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
+      const respo = await this.uploadGeneratedFile(blob, "spravka.docx");
+      this.filePath = ReqExec.baseUrl + "/api/Query/downloadFile/" + respo;
     },
     async createDocx() {
       // Получаем список студентов
@@ -1576,7 +1555,8 @@ export default {
       //saveAs(blob, "Report.docx");
       this.objectType = "docx";
       this.documentTitle = "Предпросмотр отчёта";
-      this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
+      const respo = await this.uploadGeneratedFile(blob, "Report.docx");
+      this.filePath = ReqExec.baseUrl + "/api/Query/downloadFile/" + respo;
     },
   },
   computed: {

@@ -1824,7 +1824,8 @@ var filterParams = {
   .column-list,
   .fk-list {
     max-height: 400px;
-    overflow-y: auto;
+    overflow-x: clip;
+    overflow-y: scroll;
   }
 
   h4 {

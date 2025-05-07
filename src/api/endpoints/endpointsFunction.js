@@ -14,4 +14,5 @@ export default Object.freeze({
     userRole:prefix+'ums.select_userrole',
     selectRole:prefix+'ums.select_roles',
     postRole:prefix+'ums.insert_role',
+    getSchemas:prefix+'ums.get_schemas_json',
 });
