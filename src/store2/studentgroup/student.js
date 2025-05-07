@@ -71,6 +71,7 @@ export const useStudentStore = defineStore('student', {
                 } else {
                     console.error('File upload failed');
                 }
+   
             } catch (error) {
                 console.error('Error uploading file:', error);
             }
@@ -82,7 +83,7 @@ export const useStudentStore = defineStore('student', {
                 formData.append('file', fileBlob, fileName); // Append the file with key 'file'
 
                 const response = await api.uploadFile(formData); // Use the API method to upload the file
-                return response.filePath;
+                return response.fileName;
             } catch (error) {
                 console.error('Error uploading file:', error);
             }

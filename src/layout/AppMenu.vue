@@ -120,6 +120,11 @@ const model = ref([
             icon: "pi pi-fw pi-list",
             to: "/tables",
           },
+          {
+            label: "Схемы",
+            icon: "pi pi-fw pi-list",
+            to: "/schemas",
+          },
         ],
       },
       {
