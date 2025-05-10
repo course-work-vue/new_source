@@ -108,6 +108,7 @@ import { reactive, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { usePaymentStore } from "@/store2/listenergroup/payment";
+import { useContractStore } from "@/store2/listenergroup/contract";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -140,6 +141,7 @@ export default {
   },
   setup() {
     const localeText = AG_GRID_LOCALE_RU;
+    const contractStore = useContractStore();
 
     const route = useRoute();
 
@@ -241,7 +243,10 @@ export default {
   },
   async mounted() {
     try {
-      await this.getPaymentList();
+      await Promise.all([
+        this.getPaymentList(),
+        this.getContractList()
+      ]);
       console.log(this.paymentList)
       this.loadPaymentsData();
 
@@ -251,10 +256,11 @@ export default {
       console.error("Ошибка при загрузке данных платежей:", error);
     }
     this.scheme = new FormScheme([
-      new TextInput({
+      new ComboboxInput({
         key: "contract_id",
         label: "Номер договора",
-        placeholder: "Номер договора",
+        placeholder: "Выберите договор",
+        options: this.contractOptions,
         validation: [requiredRule],
       }),
       new DateInput({
@@ -303,6 +309,7 @@ export default {
       "putPayment",
       "deletePayment",
     ]),
+    ...mapActions(useContractStore, ["getContractList"]),
 
     cellWasClicked(event) {
         if (event.colDef && event.colDef.headerName === "") {
@@ -434,6 +441,15 @@ export default {
   },
   computed: {
     ...mapState(usePaymentStore, ["paymentList"]),
+    ...mapState(useContractStore, ["contractList"]),
+    contractOptions() {
+      return Object.values(this.contractList || {})
+        .filter(contract => contract.deleted_at === null)
+        .map(contract => ({
+          value: contract.id,
+          label: contract.contr_number
+        }));
+    }
   },
 };
 </script>

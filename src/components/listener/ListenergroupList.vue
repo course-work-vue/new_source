@@ -211,7 +211,7 @@
         <div style="flex: 1; height: 50vh">
           <div class="h-100 pt-5">
             <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
-              :rowData="suitableListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+              :rowData="suitableListeners" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
               animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
               @grid-ready="onGridReadySuitable"
               @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
@@ -222,17 +222,13 @@
           <div class="d-flex align-items-center flex-wrap gap-2 mt-2" style="min-height: 2rem;">
                <span class="field-checkbox d-flex align-items-center">
                    <Checkbox inputId="chk-ignore-count" v-model="ignoreCountWish" :binary="true" />
-                   <label for="chk-ignore-count" class="ms-1 small">игнорировать кол-во</label>
+                   <label for="chk-ignore-count" class="ms-1 small">игнорировать желания</label>
                </span>
                <span class="field-checkbox d-flex align-items-center">
                    <Checkbox inputId="chk-ignore-schedule" v-model="ignoreScheduleWish" :binary="true" />
                    <label for="chk-ignore-schedule" class="ms-1 small">игнорировать расписание</label>
                </span>
-               <span class="field-checkbox d-flex align-items-center">
-                   <Checkbox inputId="chk-ignore-all" v-model="ignoreAllWishes" :binary="true" />
-                   
-                   <label for="chk-ignore-all" class="ms-1 small">игнорировать всё</label>
-               </span>
+              
            </div>
         </div>
 
@@ -287,6 +283,7 @@ import { useL_Ready_GroupStore } from "@/store2/listenergroup/l_ready_group";
 import { useL_Group_StatusStore } from "@/store2/listenergroup/l_group_status";
 import { useListenerStore } from "@/store2/listenergroup/listener";
 import L_Wish_Day from "@/model/listener-group/L_Wish_Day"; 
+import { useDayStore } from "@/store2/listenergroup/day";
 
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
@@ -379,6 +376,28 @@ export default {
         },
         { field: "group_number", headerName: "Номер группы" },
         { field: "program_name", headerName: "Программа" },
+        { 
+          field: "group_formed", 
+          headerName: "Статус",
+          cellRenderer: (params) => {
+            const status = params.value;
+            let statusText = '';
+            let statusClass = '';
+            
+            if (status === true) {
+              statusText = 'Сформирована';
+              statusClass = 'text-success';
+            } else if (status === false) {
+              statusText = 'В процессе';
+              statusClass = 'text-warning';
+            } else {
+              statusText = 'Не определён';
+              statusClass = 'text-secondary';
+            }
+            
+            return `<span class="${statusClass}">${statusText}</span>`;
+          }
+        },
       ],
     });
 
@@ -399,7 +418,10 @@ export default {
       resizable: true,
     };
 
-    const canClickButton = true;
+    const canClickButton = computed(() => {
+      const groupStatuses = l_group_status.value || [];
+      return groupStatuses.some(status => status.group_formed === false);
+    });
 
     onMounted(async () => {
     });
@@ -415,7 +437,8 @@ export default {
         const store = useL_Group_StatusStore();
         await store.getL_Group_StatusList();
         l_group_status.value = store.l_group_statusList;
-        //console.log(l_group_status.value[0]?.group_formed);
+        console.log("MEOW!")
+        console.log(l_group_status.value[0]?.group_formed);
       } catch (error) {
         console.error("Ошибка при загрузке статуса группы:", error);
       }
@@ -467,6 +490,7 @@ export default {
 
       listenergroup,
       groupListenersRowData,
+      loadL_Group_StatusData,
     };
   },
   data() {
@@ -482,16 +506,17 @@ export default {
       filterOnlySufficient: false,
       scheme: null,
       creatingProgram: '',
+      creatingProgramId: null,
       days: [],
     };
   },
   async mounted() {
     try {
       await this.fetchInitialData();
+      await this.loadL_Group_StatusData();
       this.loadListenergroupData();
       this.loadListenersData();
-      //this.loadL_Group_StatusData();
-      //console.log(this.l_group_status[0].group_formed);
+      console.log("Статусы групп:", this.l_group_status);
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
@@ -534,6 +559,7 @@ export default {
     ...mapActions(useL_Ready_GroupStore, [
       "getL_Ready_GroupList",
     ]),
+    ...mapActions(useDayStore, ["getDayList"]),
 
     cellWasClicked(event) {
       if (event.colDef && event.colDef.headerName === "") {
@@ -544,6 +570,7 @@ export default {
       this.listenergroup = new Listenergroup();
       this.errors = {};
       this.creatingProgram = '';
+      this.creatingProgramId = null;
     },
     edit(event) {
       this.resetLgr();
@@ -568,6 +595,7 @@ export default {
 
       console.log(`Переход к созданию группы для программы: "${programName}" (ID: ${selectedProgramId})`);
       this.creatingProgram = programName;
+      this.creatingProgramId = selectedProgramId;
       console.log(this.creatingProgram)
       
       this.showAddSidebar = true;
@@ -607,8 +635,10 @@ export default {
           //this.getReady_ListenerList(),
           this.getL_Group_StatusList(),
           //this.getL_Ready_GroupList(),
+          this.getDayList(),
        ]);
        console.log("Initial data fetched successfully.");
+       await this.loadDaysData();
    } catch (error) {
        console.error("Ошибка при первичной загрузке данных:", error);
    }
@@ -617,15 +647,22 @@ export default {
     async loadListenergroupData() {
       try {
         if (Array.isArray(this.listenergroupList)) {
-          this.rowData.value = this.listenergroupList.filter(
-            (lgr) => lgr.deleted_at === null
-          );
-          //console.log("Все файлы (включая дубликаты):", this.rowData);;
-        } else if (
-          this.listenergroupList &&
-          this.listenergroupList.deleted_at === null
-        ) {
-          this.rowData.value = [this.listenergroupList];
+          // Получаем статусы групп
+          const groupStatuses = this.l_group_statusList || [];
+          const statusMap = new Map(groupStatuses.map(status => [status.group_id, status.group_formed]));
+
+          this.rowData.value = this.listenergroupList
+            .filter(lgr => lgr.deleted_at === null)
+            .map(lgr => ({
+              ...lgr,
+              group_formed: statusMap.get(lgr.id) || null
+            }));
+        } else if (this.listenergroupList && this.listenergroupList.deleted_at === null) {
+          const status = this.l_group_statusList?.find(s => s.group_id === this.listenergroupList.id);
+          this.rowData.value = [{
+            ...this.listenergroupList,
+            group_formed: status?.group_formed || null
+          }];
         } else {
           this.rowData.value = [];
         }
@@ -735,6 +772,21 @@ export default {
       this.showSidebar = false;
       this.showAddSidebar = false;
     },
+    async loadDaysData() {
+      try {
+        if (!this.dayList || this.dayList.length === 0) {
+          await this.getDayList();
+        }
+        if (Array.isArray(this.dayList)) {
+          this.days = this.dayList;
+        } else {
+          this.days = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных дней:", error);
+        this.days = [];
+      }
+    },
   },
   computed: {
     ...mapState(useListenergroupStore, ["listenergroupList"]),
@@ -744,6 +796,7 @@ export default {
     ...mapState(useListenerStore, [
       "listenerList"
     ]),
+    ...mapState(useDayStore, ["dayList"]),
     
     groupListenersInOpenGroup() {
 
@@ -768,18 +821,35 @@ export default {
             - deleted_at: ${listener.deleted_at} (isNotDeleted: ${isNotDeleted})
             - groups_ids существует и массив: ${hasValidGroupIds}
             - groups_ids значение: ${JSON.stringify(listener.group_ids)}
-            - Состоит в группе ${currentGroupId}: ${isInCurrentGroup}
-            - Итог для слушателя: ${isNotDeleted && isInCurrentGroup}`);
+            - Состоит в группе ${currentGroupId}: ${isInCurrentGroup}`);
       }
       return isNotDeleted && isInCurrentGroup; 
     });
 
-    console.log(`[groupListenersInOpenGroup] Фильтрация завершена. Обработано слушателей: ${processedCount}. Исходно: ${allListeners.length}. После фильтрации для группы ${currentGroupId}: ${filteredListeners.length} слушателей.`);
+    const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+
+    return sortedListeners;
+  },
+
+  suitableListeners() {
+    console.log("%c[suitableListeners] Вызвано", "color: green; font-weight: bold;");
+
+    const allListeners = this.listenerList || [];
+    const selectedProgramId = this.creatingProgramId;
+    
+    console.log(`[suitableListeners] ID выбранной программы для фильтрации: ${selectedProgramId}`);
+
+    let processedCount = 0;
+    const filteredListeners = allListeners.filter(listener => {
+      processedCount++;
+      const isNotDeleted = listener.deleted_at === null;
+      const hasValidProgramIds = listener.program_ids && Array.isArray(listener.program_ids);
+      const hasSelectedProgram = hasValidProgramIds && listener.program_ids.includes(selectedProgramId);
+
+      return isNotDeleted && hasSelectedProgram;
+    });
 
     const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
-    console.log(`[groupListenersInOpenGroup] Возвращаем отсортированный список из ${sortedListeners.length} слушателей.`);
-    console.log("[groupListenersInOpenGroup] Итоговый отсортированный список:", JSON.parse(JSON.stringify(sortedListeners)));
-
     return sortedListeners;
   },
 
@@ -868,8 +938,8 @@ export default {
         key: "program_id",
         label: "Программа",
         placeholder: "Выберите программу",
-        options: this.dynamicProgramOptions, // <-- Самое важное: используем динамические опции!
-        required: true // Делаем выбор программы обязательным
+        options: this.dynamicProgramOptions, 
+        required: true 
       }),
     ]);
   },

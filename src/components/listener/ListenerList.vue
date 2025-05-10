@@ -389,13 +389,12 @@ export default {
         placeholder: "Отчество",
         validation: [requiredRule],
       }),
-      new MultiSelectInput({
-        key: 'program_ids', 
-        label: 'Программы обучения',
-        options: this.programOptions, 
-        validation: [],
-        filter: true, 
+      new TextInput({
+        key: "phone_number",
+        label: "Номер телефона",
+        validation: [requiredRule],
       }),
+      
       new TextInput({
         key: "passport",
         label: "Серия и номер паспорта",
@@ -416,8 +415,13 @@ export default {
         validation: [requiredRule],
       }),
       new TextInput({
+        key: "issued_by",
+        label: "\nКем выдан",
+        validation: [requiredRule],
+      }),
+      new TextInput({
         key: "registration_address",
-        label: "\nАдрес регистрации",
+        label: "Адрес регистрации",
         placeholder: "Адрес регистрации",
         validation: [requiredRule],
       }),
@@ -427,21 +431,20 @@ export default {
         placeholder: "СНИЛС",
         validation: [requiredRule],
       }),
-      new TextInput({
-        key: "issued_by",
-        label: "Кем выдан",
-        validation: [requiredRule],
-      }),
-      new TextInput({
-        key: "phone_number",
-        label: "Номер телефона",
-        validation: [requiredRule],
-      }),
+      
+      
       new TextInput({
         key: "email",
         label: "Электронная почта",
         placeholder: "Электронная почта",
         validation: [emailRule],
+      }),
+      new MultiSelectInput({
+        key: 'program_ids', 
+        label: 'Программы обучения',
+        options: this.programOptions, 
+        validation: [],
+        filter: true, 
       }),
       new MultiSelectInput({
         key: 'group_ids', 
