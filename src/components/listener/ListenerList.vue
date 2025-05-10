@@ -272,17 +272,10 @@ export default {
           cellRenderer: "ListenerHref2",
         },
         {
-          field: "listenergroup_number",
-          headerName: "Группа",
-          valueFormatter: params => {
-            // params.value содержит значение из поля 'listenergroup_number'
-            // Проверяем, есть ли значение (не null, не undefined, не пустая строка)
-            if (params.value === null || params.value === undefined || params.value === '') {
-              return "Нет группы"; // Возвращаем текст, если группы нет
-            } else {
-              return params.value; // Возвращаем номер группы, если он есть
-            }
-          }
+          field: "group_names",
+          headerName: "Группы",
+          cellRenderer: null,       
+          valueFormatter: params => params.value || '–', 
         },
         {
           field: "people_count",
@@ -544,16 +537,23 @@ export default {
       let listener = { ...this.listener };
       console.log(listener)
       if (listener.id) {
-        await this.putListener(listener);
+        const payload = {
+          ...listener,
+          group_ids: `{${listener.group_ids.join(',')}}`,
+          program_ids: `{${listener.program_ids.join(',')}}`  
+        };
+        await this.putListener(payload);
       } else {
         const payload = {
           ...listener,
-          group_ids: `{${listener.group_ids.join(',')}}`  // ключевой момент
+          group_ids: `{${listener.group_ids.join(',')}}`,
+          program_ids: `{${listener.program_ids.join(',')}}`  
         };
         await this.postListener(payload);
       }
       this.showSidebar = false;
       this.resetLst();
+      await this.getListenerList(),
       this.loadListenersData();
     },
     async deleteLst() {
@@ -729,6 +729,7 @@ export default {
       } else {
         await this.postListener_Wish(listener_wish);
       }
+      await this.getL_Wish_DayList();
       try {
       } catch (error) {
         console.error("Error during L_Wish_Day sync, caught in submitWishes:", error);
@@ -780,10 +781,12 @@ export default {
     },
     groupOptions() {
       const listenergroupStore = useListenergroupStore();
-      return Object.values(listenergroupStore.listenergroupMap || {}).map((item) => ({
-        value: item.id,
-        label: item.group_number,
-      }));
+      return Object.values(listenergroupStore.listenergroupMap || {})
+        .filter(item => item.deleted_at === null)
+        .map((item) => ({
+          value: item.id,
+          label: item.group_number,
+        }));
     },
 
   },

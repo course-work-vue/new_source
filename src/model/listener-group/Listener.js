@@ -15,9 +15,7 @@ export default class Listener {
   registration_address;
   phone_number;
   email;
-  group_id;
   deleted_at;
-  program_id;
 
   program_ids;
   group_ids;
@@ -35,9 +33,7 @@ export default class Listener {
     this.registration_address = listener?.registration_address ?? null;
     this.phone_number = listener?.phone_number ?? null;
     this.email = listener?.email ?? null;
-    this.group_id = listener?.group_id ?? null;
     this.deleted_at = listener?.deleted_at ?? null;
-    this.program_id = listener?.program_id ?? null;
 
     this.program_ids = Array.isArray(listener?.program_ids) ? listener.program_ids : [];
     this.group_ids = Array.isArray(listener?.group_ids) ? listener.group_ids : [];
@@ -73,5 +69,22 @@ get full_name() {
 
   return nameParts.join(' ');
   
+}
+
+get group_names() {
+  const store = useListenergroupStore();
+  const namesArray = this.group_ids
+    .map(id => {
+      const num = store.listenergroupMap[id]?.group_number;
+      return num;
+    })
+    .filter(name => {
+      const keep = Boolean(name);
+      return keep;
+    });
+
+  const result = namesArray.join(', ');
+
+  return result;
 }
 }

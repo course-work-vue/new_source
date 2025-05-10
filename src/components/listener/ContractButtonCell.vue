@@ -12,7 +12,6 @@
     },
     methods: {
       onClick() {
-        this.$router.push(`/contracts/${this.params.data.id}`);
       },
     },
   };

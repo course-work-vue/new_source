@@ -246,7 +246,8 @@
         <div style="flex: 1; height: 50vh">
           <div class="h-100 pt-5">
             <ag-grid-vue class="ag-theme-alpine" style="width: 100%; height: 100%;" :columnDefs="columnDefsAdd.value"
-              :rowData="groupListenersRowData.value" :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
+              :rowData="groupListenersInOpenGroup" 
+              :defaultColDef="defaultColDef" :localeText="localeText" rowSelection="multiple"
               animateRows="true" :rowHeight="40" @cell-clicked="cellWasClicked"
               @grid-ready="onGridReadyGroup"
               @firstDataRendered="onFirstDataRendered" @filter-changed="onFilterChanged" :pagination="true"
@@ -330,7 +331,7 @@ export default {
 
     const listenerStore = useListenerStore();
     const listenergroup = ref(new Listenergroup());
-    const groupListenersRowData = ref([]);
+    
 
     const instance = getCurrentInstance();
     const localeText = AG_GRID_LOCALE_RU;
@@ -356,7 +357,11 @@ export default {
     };
 
     const rowData = reactive({});
-    const suitableListenersRowData = reactive({});
+    
+    
+    const suitableListenersRowData = ref([]);
+    const groupListenersRowData = ref([]);
+
     const l_group_status = reactive([]);
 
     const columnDefs = reactive({
@@ -394,13 +399,7 @@ export default {
       resizable: true,
     };
 
-    const canClickButton = computed(() => {
-      return Array.isArray(l_group_status.value) &&
-        l_group_status.value.length &&
-        l_group_status.value[0]?.group_formed !== undefined
-        ? !l_group_status.value[0].group_formed
-        : false;
-    });
+    const canClickButton = true;
 
     onMounted(async () => {
     });
@@ -639,10 +638,12 @@ export default {
       try {
         console.log(this.listenerList)
         if (Array.isArray(this.listenerList)) {
+
           this.suitableListenersRowData.value = this.listenerList
             .filter((listener) => listener.deleted_at === null)
             .sort((a, b) => a.full_name.localeCompare(b.full_name));
           console.log(this.suitableListenersRowData.value)
+
         } else if (this.listenerList && this.listenerList.deleted_at === null) {
           this.suitableListenersRowData.value = [this.listenerList];
         } else {
@@ -743,6 +744,48 @@ export default {
     ...mapState(useListenerStore, [
       "listenerList"
     ]),
+    
+    groupListenersInOpenGroup() {
+
+    console.log("%c[groupListenersInOpenGroup] Вызвано", "color: blue; font-weight: bold;");
+
+    const allListeners = this.listenerList || [];
+    console.log(allListeners)
+
+    const currentGroupId = this.listenergroup.id;
+    console.log(`[groupListenersInOpenGroup] ID текущей группы для фильтрации (currentGroupId): ${currentGroupId}`);
+
+    let processedCount = 0;
+    const filteredListeners = allListeners.filter(listener => {
+      processedCount++;
+      const isNotDeleted = listener.deleted_at === null;
+      const hasValidGroupIds = listener.group_ids && Array.isArray(listener.group_ids);
+      const isInCurrentGroup = hasValidGroupIds && listener.group_ids.includes(currentGroupId);
+
+
+      if (listener.id === 54 || processedCount <= 5) {
+          console.log(`[groupListenersInOpenGroup] Проверка слушателя ID ${listener.id} (${listener.full_name || 'N/A'}):
+            - deleted_at: ${listener.deleted_at} (isNotDeleted: ${isNotDeleted})
+            - groups_ids существует и массив: ${hasValidGroupIds}
+            - groups_ids значение: ${JSON.stringify(listener.group_ids)}
+            - Состоит в группе ${currentGroupId}: ${isInCurrentGroup}
+            - Итог для слушателя: ${isNotDeleted && isInCurrentGroup}`);
+      }
+      return isNotDeleted && isInCurrentGroup; 
+    });
+
+    console.log(`[groupListenersInOpenGroup] Фильтрация завершена. Обработано слушателей: ${processedCount}. Исходно: ${allListeners.length}. После фильтрации для группы ${currentGroupId}: ${filteredListeners.length} слушателей.`);
+
+    const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+    console.log(`[groupListenersInOpenGroup] Возвращаем отсортированный список из ${sortedListeners.length} слушателей.`);
+    console.log("[groupListenersInOpenGroup] Итоговый отсортированный список:", JSON.parse(JSON.stringify(sortedListeners)));
+
+    return sortedListeners;
+  },
+
+  groupListenersCount() {
+    return this.groupListenersInOpenGroup.length;
+  },
 
     allProgramOptions() {
     const programStore = useProgramStore();
@@ -828,7 +871,6 @@ export default {
         options: this.dynamicProgramOptions, // <-- Самое важное: используем динамические опции!
         required: true // Делаем выбор программы обязательным
       }),
-      // Здесь могут быть другие поля для этого сайдбара, если нужно
     ]);
   },
 

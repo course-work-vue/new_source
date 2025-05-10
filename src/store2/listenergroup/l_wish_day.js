@@ -56,9 +56,8 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
             for (const day of toUpdate) {
               //await this.putL_Wish_Day(day);
             }
-            // 4. Удалить удалённые
             for (const day of toDelete) {
-              //await this.deleteL_Wish_Day(day);
+              await this.deleteL_Wish_Day(day);
             }
           
             // 5. Обновить локальный список
@@ -67,6 +66,7 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
 
         async deleteL_Wish_Day(l_wish_day) {
             const response = await api.deleteL_Wish_Day(l_wish_day);
+            console.log(response);
             if (response.success === true) {
                 const index = this.l_wish_dayList.findIndex(s => s.id === l_wish_day.id);
                 if (index !== -1) {

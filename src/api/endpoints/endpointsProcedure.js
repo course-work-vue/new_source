@@ -20,6 +20,7 @@ export default Object.freeze({
     deletePermissions: prefix + 'ums.delete_permissions',
     updateRole:prefix + 'ums.update_roles',
     listener: prefix + 'delete_listeners',
+    l_wish_day: prefix + 'delete_l_wish_days',
     contract: prefix + 'delete_contracts',
     l_group: prefix + 'delete_l_groups',
     payer: prefix + "delete_payers",

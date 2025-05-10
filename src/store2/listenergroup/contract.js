@@ -56,5 +56,31 @@ export const useContractStore = defineStore('contract', {
                 }
             }
         },
+
+        async uploadStudentFile(file) {
+            try {
+                const response = await api.uploadFile(file);
+                if (response.success) {
+                    console.log('File uploaded successfully');
+                } else {
+                    console.error('File upload failed');
+                }
+   
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        },
+        
+        async uploadGeneratedFile(fileBlob, fileName) {
+            try {
+                const formData = new FormData();
+                formData.append('file', fileBlob, fileName); 
+
+                const response = await api.uploadFile(formData); 
+                return response.fileName;
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        }
     },
 });

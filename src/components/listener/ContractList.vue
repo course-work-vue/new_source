@@ -103,6 +103,25 @@
       </Button>
     </Sidebar>
   </div>
+
+
+  <Dialog
+    v-model:visible="docPreview"
+    header="Предпросмотр"
+    maximizable
+    ref="maxDialog"
+    @show="biggifyDialog"
+    :header="documentTitle"
+    class="w-full h-full"
+    :style="{ width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh' }"
+  >
+    <OnlyDocumentEditor
+      v-if="filePath"
+      :documentUrl="filePath"
+      :documentTitle="documentTitle"
+      :objectType="objectType"
+    />
+  </Dialog>
 </template>
 
 <script>
@@ -111,6 +130,7 @@ import { reactive, onMounted, ref } from "vue";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { useRoute } from "vue-router";
+import ReqExec from "@/services/RequestExecutor";
 
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ButtonCell2 from "@/components/listener/ContractButtonCell.vue";
@@ -134,6 +154,10 @@ import { usePayerStore } from "@/store2/listenergroup/payer";
 import { useProgramStore } from "@/store2/listenergroup/program";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
+import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, UnderlineType, TabStopType, TabStopPosition, PageNumber, VerticalAlign, Indent, Spacing, Table, TableRow, TableCell, WidthType, convertInchesToTwip, HeightRule } from "docx";
+import { saveAs } from "file-saver";
+import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
+
 export default {
   name: "ContractList",
   components: {
@@ -145,6 +169,7 @@ export default {
     ContractHrefCellRenderer3,
     ContractHrefCellRenderer4,
     AutoForm,
+    OnlyDocumentEditor,
   },
   setup() {
     const localeText = AG_GRID_LOCALE_RU;
@@ -155,6 +180,11 @@ export default {
     const dataLoaded = ref(false);
     const route = useRoute();
     const paginationPageSize = 60;
+    const maxDialog = ref();
+
+    function biggifyDialog() {
+      maxDialog.value.maximized = true;
+    }
 
     const onGridReady = (params) => {
       gridApi.value = params.api;
@@ -228,9 +258,6 @@ export default {
       rowData,
       defaultColDef,
       localeText,
-      cellWasClicked: (event) => {
-        console.log("cell was clicked", event);
-      },
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
@@ -238,6 +265,8 @@ export default {
       paginationPageSize,
       dataFromApi,
       dataLoaded,
+      biggifyDialog,
+      maxDialog,
     };
 
   },
@@ -254,7 +283,12 @@ export default {
       scheme: null,
 
       mainSidebarStyle: {}, 
-      isSmallScreen: false 
+      isSmallScreen: false,
+
+      docPreview: false,
+      filePath: null,
+      documentTitle: "",
+      objectType: "",
     };
   },
   async mounted() {
@@ -329,6 +363,7 @@ export default {
       "postContract",
       "putContract",
       "deleteContract",
+      "uploadGeneratedFile",
     ]),
     ...mapActions(useListenerStore, ["getListenerList"]),
     ...mapActions(usePayerStore, ["getPayerList"]),
@@ -344,6 +379,7 @@ export default {
         );
       }
     },
+    
     onFilterChanged() {
       this.filters = false;
       const savedQuickFilter = this.gridApi.getQuickFilter();
@@ -378,10 +414,19 @@ export default {
         this.contract = event.data;
         this.showSidebar = true;
       }
+      else {
+        if (event.colDef && event.colDef.headerName === "Договор") {
+          this.previewContract();
+        }
+      }
     },
     resetContract() {
       this.contract = new Contract({});
       this.errors = {};
+    },
+    async previewContract() {
+      await this.createContractDocx();
+      this.docPreview = true;
     },
     async submit() {
       const currentContract = { ...this.contract };
@@ -488,6 +533,37 @@ export default {
       margin: isScreenWideEnough ? 'auto' : '0' 
     };
   },
+
+  async createContractDocx(contract) {
+    // Create document
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+            children: [
+              new TextRun({
+                text: "Тут мог быть договор",
+                size: 28,
+                bold: true,
+              }),
+            ],
+          }),
+        ],
+      }],
+    });
+
+    // Generate and save document
+    const blob = await Packer.toBlob(doc);
+    this.objectType = "docx";
+    this.documentTitle = "Предпросмотр договора";
+    const respo = await this.uploadGeneratedFile(blob, "contract.docx");
+    this.filePath = ReqExec.baseUrl + "/api/Query/downloadFile/" + respo;
+    this.docPreview = true;
+  },
+
     
   },
   computed: {
@@ -674,5 +750,24 @@ export default {
 }
 .wide-input {
   width: 500px;
+}
+
+:deep(.p-dialog) {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+:deep(.p-dialog-content) {
+  height: calc(100vh - 60px) !important;
+  padding: 0 !important;
+}
+
+:deep(.p-dialog-header) {
+  padding: 0.5rem !important;
 }
 </style>
