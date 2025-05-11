@@ -35,6 +35,7 @@ export const useUserStore = defineStore('user', {
 
             if (response) {
                 await this.getUserList();
+                return response;
             }
         },
 

@@ -479,11 +479,12 @@ export default {
         await this.putUser(user);
         userId = user.id;
       } else {
-        userId = await this.postUser(user);
+        const resp = await this.postUser(user);
+        userId = resp.id;
       }
       // Clear this users previous roles if any
       if (user.id) {
-        await this.deleteUserRoleByUserId(user.id);
+        await this.deleteUserRoleByUserId({id: user.id});
       }
       // Assign new roles
       for (const roleId of this.selectedRoles) {
