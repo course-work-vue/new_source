@@ -493,6 +493,7 @@ export default {
         await this.postUserRole(userRole);
       }
       await this.getUserRoleList();
+      await this.getRoleList();
       this.formVisible = false;
       this.resetUser();
       this.selectedRoles = [];

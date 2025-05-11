@@ -373,12 +373,13 @@
           </TabPanel>
 
           <TabPanel header="SQL код">
-            <Textarea
+            <SqlMonacoEditor
               v-model="tableUser.table_definition"
-              rows="30"
+              height="500px"
+              theme="pgsql-light"
               class="flex-1"
-              @input="onSqlChanged"
-            ></Textarea>
+              @change="onSqlChanged"
+            />
           </TabPanel>
 
           <TabPanel header="Разрешения" v-if="tableUser.id">
@@ -504,6 +505,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
+import SqlMonacoEditor from "@/components/base/SqlMonacoEditor.vue";
 
 /* eslint-disable vue/no-unused-components */
 export default {
@@ -525,6 +527,7 @@ export default {
     Column,
     Checkbox,
     Button,
+    SqlMonacoEditor,
   },
   setup() {
     const localeText = AG_GRID_LOCALE_RU;

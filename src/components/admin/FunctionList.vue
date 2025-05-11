@@ -78,11 +78,12 @@
   >
     <div class="card flex flex-row">
       <div class="form flex flex-1 flex-row card__form">
-        <Textarea
+        <SqlMonacoEditor
           v-model="functionUser.functiondefinition"
-          rows="30"
+          height="500px"
+          theme="pgsql-light"
           class="flex-1"
-        ></Textarea>
+        />
       </div>
     </div>
 
@@ -141,6 +142,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
+import SqlMonacoEditor from "@/components/base/SqlMonacoEditor.vue";
 
 /* eslint-disable vue/no-unused-components */
 export default {
@@ -155,6 +157,7 @@ export default {
     ErrorMessage,
     AutoForm,
     OnlyDocumentEditor,
+    SqlMonacoEditor,
   },
   setup() {
     const localeText = AG_GRID_LOCALE_RU;

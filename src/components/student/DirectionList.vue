@@ -188,7 +188,7 @@ import { reactive, onMounted, ref } from "vue";
 import ButtonCell from "@/components/student/DirectionButtonCell.vue";
 import "ag-grid-community/styles/ag-grid.css"; // Core grid CSS, always needed
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional theme CSS
-
+import DirectionHref2 from "@/components/student/DirectionHrefCellRenderer2.vue";
 import DirectionHref from "@/components/student/DirectionHrefCellRenderer.vue";
 import { useDirectionStore } from "@/store2/studentgroup/direction";
 import { mapState, mapActions } from "pinia";
@@ -218,6 +218,7 @@ export default {
     AgGridVue,
     ButtonCell,
     DirectionHref,
+    DirectionHref2,
     AutoForm,
   },
   setup() {
@@ -253,7 +254,7 @@ export default {
           resizable: false,
         },
 
-        { field: "dir_name", headerName: "Название направления" },
+        { field: "dir_name", headerName: "Название направления", cellRenderer: "DirectionHref2", },
         {
           field: "dir_code",
           headerName: "Код направления",
