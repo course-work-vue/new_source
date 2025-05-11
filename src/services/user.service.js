@@ -1,8 +1,8 @@
 import axios from 'axios';
 import authHeader from './auth-header';
-const API_URL = 'https://ncatbird.ru/server/api/Query/';
+const API_URL = 'https://ncatbird.ru/ums/containers/prod/server/api/Query/';
 
-const API = 'https://ncatbird.ru/server/api';
+const API = 'https://ncatbird.ru/ums/containers/prod/server/api';
 
 class UserService {
   getPublicContent() {
@@ -342,6 +342,13 @@ getAllTeachGruz(){
   return fr;
 }
 
+getTeachGruzX(){
+  const query = {
+    query: `SELECT * from teach_gruz_x;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
 getQuery(q){
   const query = {
     query: q,
@@ -588,18 +595,16 @@ editWorkload(wl_id, teacher_id, audtype){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-addWorkload(group_id, subject_id, teacher_id, audtype){
+addWorkload(group_id, subject_id, teacher_id){
   const query = {
     query: `INSERT INTO "workload" (
       "group_id",
       "subject_id",
-      "teacher_id",
-      "audtype"
+      "teacher_id"
   ) VALUES (
       '${group_id}',
       '${subject_id}',
-      '${teacher_id}',
-      '${audtype}'
+      '${teacher_id}'
   );`,
   };
   return axios.post(API_URL, query, { headers: authHeader() });
