@@ -112,13 +112,17 @@
                             }}
                         </b>
                     </div>
+                    <!-- <div class="mb-3">
+                        <span class="me-2">Кол-во часов:</span>
+                        <b>{{ selectedSubjectObj?.hours || 'Не выбрано' }}</b>
+                    </div> -->
 
                     <div class="d-flex align-items-center mb-3 gap-2">
                         <button 
                             class="btn btn-primary"
-                            @click="openSelector('group', 'Выбрать группу', groups)"
-                            :disabled="!selectedSubjectObj.id"
-                        >
+                            @click="openSelector('group', 'Выбрать группу', groupList)"
+                            :disabled="!selectedSubjectObj.subject_id"
+                            >
                             Группа: {{ selectedGroupObj.group_number || 'Не выбрана' }}
                         </button>
                         <span>Контингент: <b>{{ selectedGroupObj.students_count || 0 }}</b></span>
@@ -140,8 +144,8 @@
                         <button 
                             class="btn btn-primary"
                             @click="openSelector('teacher', 'Преподаватель', teachers)"
-                            :disabled="!selectedSubjectObj.id"
-                        >
+                            :disabled="!selectedSubjectObj.subject_id"
+                            >
                             Преподаватель: {{ selectedTeacherObj.last_name || 'Не выбран' }}
                             <!-- <span v-if="teachers.length === 0">(Нет доступных преподавателей)</span> -->
                         </button>
@@ -219,6 +223,7 @@
 <script>
 import { mapState, mapActions } from "pinia";
 import { useDirectionStore } from "@/store2/studentgroup/direction";
+import { useGroupStore } from "@/store2/studentgroup/group";
 import UserService from "../services/user.service";
 
 export default {
@@ -254,12 +259,14 @@ export default {
             q: ``,
             programs: [], 
             subjectsList: [], 
-            i_disciples: []
+            i_disciples: [],
+            rowData: []
         };
     },
 
     computed: {
         ...mapState(useDirectionStore, ["directionList"]),
+        ...mapState(useGroupStore, ["groupList"]),
         filteredDirs() {
             return this.directionList
                 .filter(d => d.deleted_at === null && d.magister == this.isMag)
@@ -285,15 +292,11 @@ export default {
         filteredSubjects() {
             if (!this.selectedProgram?.id || !this.subjectsList?.length) return [];
             
-            let ret = this.subjectsList.filter(subject => 
+            return this.subjectsList.filter(subject => 
                 subject.program_id === this.selectedProgram.id &&
-                subject.sub_type !== 'Лекционное занятие'
+                subject.sub_type !== 'Лекционное занятие' &&
+                subject.semester === this.absoluteSemester
             );
-
-            console.log(123);
-            console.log(this.subjectsList);
-
-            return ret;
         },
 
         selectedProgram() {
@@ -344,7 +347,7 @@ export default {
         selectedDir(newVal) {
             if (newVal.dir_id) {
                 this.loadSubjects();
-                this.loadGroups();
+                // this.loadGroups();
             }
         },
 
@@ -375,11 +378,17 @@ export default {
         await this.loadTeacherGruz();
         await this.loadSubjects(); // Загружаем предметы вместо дисциплин
         await this.loadPrograms(); // Загружаем программы
+        await this.getGroupList(); // Получение списка групп
+        console.log(this.groupList);
+        
         this.loadInitialData();
     },
 
     methods: {
         ...mapActions(useDirectionStore, ["getDirectionList"]),
+        ...mapActions(useGroupStore, [
+            "getGroupList"
+        ]),
 
         async loadPrograms() {
             try {
@@ -439,7 +448,7 @@ export default {
         
         async loadInitialData() {
             if (this.selectedDir.dir_code) {
-                await this.loadGroups();
+                // await this.loadGroups();
                 await this.loadTeachers();
                 this.showSubjects = true;
             }
@@ -516,29 +525,78 @@ export default {
             try {
                 const response = await UserService.getAllSubjects();
                 this.subjectsList = response.data;
-                console.log('Loaded subjects:', response.data);
+                // console.log('Loaded subjects:', response.data);
                 
             } catch (error) {
                 console.error('Error loading subjects:', error);
             }
         },
 
-        async loadGroups() {
-            if (!this.selectedDir.dir_id) return;
-            
-            try {
-                const response = await UserService.getAllGroups();
-                this.groups = response.data
-                    .filter(g => g.course === this.selectedCourse && g.group_dir_id === this.selectedDir.dir_id);
+        // async loadGroups() {
+        //     try {
+        //         if (Array.isArray(this.groupList)) {
+        //             this.rowData.value = this.groupList
+        //                 .filter((group) => group.deleted_at === null)
+        //                 .sort((a, b) => a.group_number.localeCompare(b.group_number));
+        //         } else {
+        //             if (this.groupList.deleted_at === null) {
+        //                 this.rowData.value = [this.groupList];
+        //             } else {
+        //                 this.rowData.value = [];
+        //             }
+        //         }
+        //         // console.log(this.rowData.value);
 
-                await Promise.all(this.groups.map(async g => {
-                    const res = await UserService.getStudentsCount(g.group_id);
-                    g.students_count = res.data[0]?.count || 0;
-                }));
-            } catch (error) {
-                console.error('Error loading groups:', error);
-            }
-        },
+        //         this.groups = this.rowData.value;
+                
+        //         this.loading = false;
+        //     } catch (error) {
+        //         console.error("Error loading groups data:", error);
+        //     }
+        // },
+
+        // async loadGroups() {
+        //     try {
+        //         if (!this.selectedDir?.dir_code) return;
+                
+        //         const response = await UserService.getAllGroups();
+                
+        //         console.log(response.data);
+
+        //         this.groups = response.data.filter(g => 
+        //             g.group_dir_id === this.selectedDir.dir_id &&
+        //             g.course === this.selectedCourse
+        //         );
+
+                
+
+        //         await Promise.all(this.groups.map(async g => {
+        //             const res = await UserService.getStudentsCount(g.group_id);
+        //             g.students_count = res.data[0]?.count || 0;
+        //         }));
+
+        //     } catch (error) {
+        //         console.error('Error loading groups:', error);
+        //     }
+        // },
+
+
+        // async loadGroups() {
+        //     if (!this.selectedDir.dir_id) return;
+            
+        //     try {
+        //         const response = await UserService.getAllGroups();
+        //         this.groups = response.data
+        //             .filter(g => g.course === this.selectedCourse && g.group_dir_id === this.selectedDir.dir_id);
+
+        //         await Promise.all(this.groups.map(async g => {
+        //             const res = await UserService.getStudentsCount(g.group_id);
+        //             g.students_count = res.data[0]?.count || 0;
+        //         }));
+        //     } catch (error) {
+        //         console.error('Error loading groups:', error);
+        //     }
+        // },
 
         async saveRel() {
             try {

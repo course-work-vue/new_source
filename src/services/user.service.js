@@ -707,9 +707,12 @@ deleteGroupById(group_id){
 }
 
   getAllGroups(){
-    
-    return axios.get(API_URL + 'groups', { headers: authHeader() });
+    const apiUrl = `${API}/Groups`;
+
+    return axios.get(apiUrl, { headers: authHeader() });
   }
+
+  
 
   getGroupByDir(dir_id){
     const query = {
