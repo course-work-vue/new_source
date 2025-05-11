@@ -342,6 +342,34 @@ getAllTeachGruz(){
   return fr;
 }
 
+getTeachGruzX(){
+  const query = {
+    query: `SELECT * from teach_gruz_x;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getQuery(q){
+  const query = {
+    query: q,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getDisciples(){
+  const query = {
+    query: `SELECT * from import_disciples;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getPrograms_imp(){
+  const query = {
+    query: `SELECT * from import_programs;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
 
   
 // ВЗАИМОДЕЙСТВИЕ С ТАБЛИЦЕЙ SUBJECTS
@@ -567,18 +595,16 @@ editWorkload(wl_id, teacher_id, audtype){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-addWorkload(group_id, subject_id, teacher_id, audtype){
+addWorkload(group_id, subject_id, teacher_id){
   const query = {
     query: `INSERT INTO "workload" (
       "group_id",
       "subject_id",
-      "teacher_id",
-      "audtype"
+      "teacher_id"
   ) VALUES (
       '${group_id}',
       '${subject_id}',
-      '${teacher_id}',
-      '${audtype}'
+      '${teacher_id}'
   );`,
   };
   return axios.post(API_URL, query, { headers: authHeader() });
