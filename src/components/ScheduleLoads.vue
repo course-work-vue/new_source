@@ -120,7 +120,7 @@
                     <div class="d-flex align-items-center mb-3 gap-2">
                         <button 
                             class="btn btn-primary"
-                            @click="openSelector('group', 'Выбрать группу', groupList)"
+                            @click="openSelector('group', 'Выбрать группу', filteredGroups)"
                             :disabled="!selectedSubjectObj.subject_id"
                             >
                             Группа: {{ selectedGroupObj.group_number || 'Не выбрана' }}
@@ -272,6 +272,18 @@ export default {
                 .filter(d => d.deleted_at === null && d.magister == this.isMag)
                 .sort((a, b) => a.dir_name.localeCompare(b.dir_name));
         },
+
+        filteredGroups() {
+            if (!this.selectedDir?.dir_id || !this.selectedCourse) return [];           
+            // console.log(this.groups);
+            let ret = this.groups.filter(g => 
+                g.group_dir_id === this.selectedDir.dir_id &&
+                g.course === this.selectedCourse
+            );
+            // console.log(ret);
+            return ret;
+        },
+
         
         notificationClass() {
             return {
@@ -347,7 +359,6 @@ export default {
         selectedDir(newVal) {
             if (newVal.dir_id) {
                 this.loadSubjects();
-                // this.loadGroups();
             }
         },
 
@@ -379,7 +390,9 @@ export default {
         await this.loadSubjects(); // Загружаем предметы вместо дисциплин
         await this.loadPrograms(); // Загружаем программы
         await this.getGroupList(); // Получение списка групп
-        console.log(this.groupList);
+
+        this.groups = this.groupList;
+        // console.log(this.groupList);
         
         this.loadInitialData();
     },
@@ -435,20 +448,10 @@ export default {
             this.loadInitialData();
         },
         
-        // async loadInitialData() {
-        //     if (this.selectedDir.dir_id) {
-                
-        //         await this.loadDisciples();
-        //         await this.loadSubjects();
-        //         await this.loadGroups();
-        //         this.showSubjects = true;
-        //         // console.log(`был тут 2`);
-        //     }
-        // },   
+ 
         
         async loadInitialData() {
             if (this.selectedDir.dir_code) {
-                // await this.loadGroups();
                 await this.loadTeachers();
                 this.showSubjects = true;
             }
@@ -498,12 +501,6 @@ export default {
         },
 
 
-        // async loadInitialData() {
-        //     if (this.selectedDir.dir_code) {
-        //         await this.loadSubjects();
-        //         await this.loadGroups();
-        //     }
-        // },
 
         // async loadSubjects() {
         //     if (!this.selectedCourse || !this.selectedSem) return;
@@ -532,83 +529,16 @@ export default {
             }
         },
 
-        // async loadGroups() {
-        //     try {
-        //         if (Array.isArray(this.groupList)) {
-        //             this.rowData.value = this.groupList
-        //                 .filter((group) => group.deleted_at === null)
-        //                 .sort((a, b) => a.group_number.localeCompare(b.group_number));
-        //         } else {
-        //             if (this.groupList.deleted_at === null) {
-        //                 this.rowData.value = [this.groupList];
-        //             } else {
-        //                 this.rowData.value = [];
-        //             }
-        //         }
-        //         // console.log(this.rowData.value);
-
-        //         this.groups = this.rowData.value;
-                
-        //         this.loading = false;
-        //     } catch (error) {
-        //         console.error("Error loading groups data:", error);
-        //     }
-        // },
-
-        // async loadGroups() {
-        //     try {
-        //         if (!this.selectedDir?.dir_code) return;
-                
-        //         const response = await UserService.getAllGroups();
-                
-        //         console.log(response.data);
-
-        //         this.groups = response.data.filter(g => 
-        //             g.group_dir_id === this.selectedDir.dir_id &&
-        //             g.course === this.selectedCourse
-        //         );
-
-                
-
-        //         await Promise.all(this.groups.map(async g => {
-        //             const res = await UserService.getStudentsCount(g.group_id);
-        //             g.students_count = res.data[0]?.count || 0;
-        //         }));
-
-        //     } catch (error) {
-        //         console.error('Error loading groups:', error);
-        //     }
-        // },
-
-
-        // async loadGroups() {
-        //     if (!this.selectedDir.dir_id) return;
-            
-        //     try {
-        //         const response = await UserService.getAllGroups();
-        //         this.groups = response.data
-        //             .filter(g => g.course === this.selectedCourse && g.group_dir_id === this.selectedDir.dir_id);
-
-        //         await Promise.all(this.groups.map(async g => {
-        //             const res = await UserService.getStudentsCount(g.group_id);
-        //             g.students_count = res.data[0]?.count || 0;
-        //         }));
-        //     } catch (error) {
-        //         console.error('Error loading groups:', error);
-        //     }
-        // },
-
+       
         async saveRel() {
             try {
-                const payload = {
-                    group_id: this.selectedGroupObj.group_id,
-                    subject_id: this.selectedSubjectObj.subject_id, // Используем subject_id
-                    teacher_id: this.selectedTeacherObj.teacher_id
-                };
-
-                await UserService.addWorkload(payload);
+                let group_id = this.selectedGroupObj.group_id;
+                let subject_id = this.selectedSubjectObj.subject_id;
+                let teacher_id = this.selectedTeacherObj.teacher_id;
+                            
+                await UserService.addWorkload(group_id, subject_id, teacher_id);
                 this.showNotification('Связь успешно сохранена', 'success');
-                this.resetDependentSelections();
+                // this.resetDependentSelections();
                 
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
@@ -773,13 +703,18 @@ export default {
 
                 // Фильтруем связи tgz по выбранной дисциплине
                 const teacherIds = this.tgz
-                    .filter(t => t.disciple_id === this.selectedSubjectObj.id)
+                    .filter(t => t.disciple_id === this.selectedSubjectObj.disciple_id)
                     .map(t => t.teacher_id);
 
                 // Убираем дубликаты и фильтруем преподавателей
                 this.teachers = allTeachers.filter(t => 
                     [...new Set(teacherIds)].includes(t.teacher_id)
                 );
+
+                // console.log(allTeachers);
+                // console.log(teacherIds);
+                
+                
 
             } catch (error) {
                 console.error('Error loading teachers:', error);
@@ -789,6 +724,10 @@ export default {
 
 
         openSelector(type, title, items) {
+
+            console.log(title, items);
+            
+
             this.modalType = type;
             this.modalTitle = title;
             this.modalItems = items.map(item => ({

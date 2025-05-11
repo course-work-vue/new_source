@@ -597,16 +597,23 @@ editWorkload(wl_id, teacher_id, audtype){
 
 addWorkload(group_id, subject_id, teacher_id){
   const query = {
-    query: `INSERT INTO "workload" (
-      "group_id",
-      "subject_id",
-      "teacher_id"
-  ) VALUES (
-      '${group_id}',
-      '${subject_id}',
-      '${teacher_id}'
-  );`,
+    query: `
+      INSERT INTO workload (group_id, subject_id, teacher_id)
+      VALUES (
+        '${group_id}',
+        '${subject_id}',
+        '${teacher_id}'
+      )
+      ON CONFLICT (group_id, subject_id) 
+      DO UPDATE SET teacher_id = EXCLUDED.teacher_id
+      RETURNING *
+    `,
+    params: [group_id, subject_id, teacher_id]
   };
+
+
+  console.log(API_URL, query);
+  
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
