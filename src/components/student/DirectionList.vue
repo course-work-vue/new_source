@@ -355,6 +355,26 @@ export default {
       magisterFilter: false,
     };
   },
+  watch: {
+    'direction.bachelor': function(newVal) {
+      if (newVal) {
+        this.direction.magister = false;
+        this.direction.specialist = false;
+      }
+    },
+    'direction.magister': function(newVal) {
+      if (newVal) {
+        this.direction.bachelor = false;
+        this.direction.specialist = false;
+      }
+    },
+    'direction.specialist': function(newVal) {
+      if (newVal) {
+        this.direction.bachelor = false;
+        this.direction.magister = false;
+      }
+    }
+  },
   computed: {
     ...mapState(useDirectionStore, ["directionList"]),
     directionText() {
