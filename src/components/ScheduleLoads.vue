@@ -1,5 +1,5 @@
 <template>
-    <div class="sched col align-self-end">
+    <div class="sched col">
         <div class="col align-self-end">
             <div class="d-flex mb-2 gap-2">
                 <select 
@@ -43,8 +43,7 @@
                     >
                     <label class="form-check-label">Бакалавриат</label>
                 </div>
-            </div>
-            
+            </div>    
         </div>
 
         <div class="d-flex gap-2">
@@ -69,7 +68,7 @@
             </div>
 
             <!-- Предметы -->
-            <div class="col-3">
+            <div class="col-4">
                 <table class="table w-100" v-if="filteredDisciples.length && showSubjects">
                     <thead class="table-light">
                         <tr><th>Предмет</th></tr>
@@ -92,9 +91,9 @@
             </div>
 
             <!-- Детали -->
-            <div class="col-7">
+            <div class="col-6">
                 <div class="border border-success rounded bg-white p-3">
-                    <h3>Дисциплина: <b>{{ selectedSubjectObj.disciple_name || 'Не выбрана' }}</b></h3>
+                    <h3>Дисциплина: <b>{{ selectedSubjectObj.subject_name || 'Не выбрана' }}</b></h3>
                     
                     <div class="mb-3">
                         <span class="me-2">Направление:</span>
@@ -102,54 +101,121 @@
                     </div>
 
                     <div class="mb-3">
-                        <span class="me-2">Кол-во часов:</span>
-                        <b>
-                            {{
-                                selectedSubjectObj?.lab_hours === 0 
-                                ? selectedSubjectObj?.practice_hours 
-                                : selectedSubjectObj?.lab_hours 
-                                || 'Не выбрано'
-                            }}
-                        </b>
+                        <span class="me-2">Тип занятия:</span>
+                        <b>{{ selectedSubjectObj?.sub_type || 'Не выбрано' }}</b>
                     </div>
+
+                    <div class="mb-3">
+                        <span class="me-2">Кол-во часов:</span>
+                        <b>{{ selectedSubjectObj?.hours || 'Не выбрано' }}</b>
+                    </div>
+                    
                     <!-- <div class="mb-3">
                         <span class="me-2">Кол-во часов:</span>
                         <b>{{ selectedSubjectObj?.hours || 'Не выбрано' }}</b>
                     </div> -->
 
-                    <div class="d-flex align-items-center mb-3 gap-2">
-                        <button 
-                            class="btn btn-primary"
-                            @click="openSelector('group', 'Выбрать группу', filteredGroups)"
-                            :disabled="!selectedSubjectObj.subject_id"
+                    <div class="row p-1">
+                        <div class="col-7 d-flex gap-4 align-items-center p-1">
+                            <h5 class="mb-0">Группа:</h5>
+                            <select 
+                                required
+                                class="form-select"
+                                v-model="selectedGroupId"
+                                :disabled="!selectedSubjectObj.subject_id"
                             >
-                            Группа: {{ selectedGroupObj.group_number || 'Не выбрана' }}
-                        </button>
-                        <span>Контингент: <b>{{ selectedGroupObj.students_count || 0 }}</b></span>
+                            
+                                <option value="" disabled selected hidden>Выберите группу</option>
+                                <option 
+                                    v-for="group in filteredGroups" 
+                                    :key="group.group_id"
+                                    :value="group.group_id"
+                                >
+                                    {{ group.group_number }}
+                                </option>
+                            </select>
+
+                            <!-- <span>Контингент: <b>{{ selectedGroupObj.students_count || 0 }}</b></span> -->
+                        </div>
+
+                        <!-- <div class="mb-3">
+                            <span>Тип занятия: <b>{{ getSubjectType() || 'Не указан' }}</b></span>
+                        </div> -->
+
+                        <!-- <div class="col-8 d-flex p-1">
+                            <button 
+                                class="btn btn-primary"
+                                @click="openSelector('audit', 'Тип аудитории', audTypes)"
+                                :disabled="!selectedSubjectObj.id"
+                            >
+                                Аудитория: {{ selectedAudObj.value || 'Не выбрана' }}
+                            </button>
+                            
+                            <button 
+                                class="btn btn-primary"
+                                @click="openSelector('teacher', 'Преподаватель', teachers)"
+                                :disabled="!selectedSubjectObj.subject_id"
+                                >
+                                Преподаватель: {{ selectedTeacherObj.last_name || 'Не выбран' }}
+                                <span v-if="teachers.length === 0">(Нет доступных преподавателей)</span>
+                            </button>
+                        </div>-->
+                    </div> 
+
+                    <div class="mb-3">
+                        <h5>Преподаватели:</h5>
+                        <div v-if="teachers.length">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Преподаватель</th>
+                                        <th>Нагрузка</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr 
+                                        v-for="teacher in teachers" 
+                                        :key="teacher.teacher_id"
+                                        :class="{ 'table-active': selectedTeacherObj?.teacher_id === teacher.teacher_id }"
+                                    >
+                                        <td>{{ formatTeacherName(teacher) }}</td>
+                                        <td>0 ч</td> <!-- Временное значение -->
+                                        <td>
+                                            <button 
+                                                class="btn btn-sm btn-warning me-2"
+                                                @click="showTeacherDetails(teacher)"
+                                            >
+                                                Подробнее
+                                            </button>
+                                            <button 
+                                                class="btn btn-sm btn-outline-success"
+                                                @click="selectTeacher(teacher)"
+                                            >
+                                                Выбрать
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-else class="text-muted">
+                            Нет доступных преподавателей для выбранной дисциплины
+                        </div>
                     </div>
 
-                    <!-- <div class="mb-3">
-                        <span>Тип занятия: <b>{{ getSubjectType() || 'Не указан' }}</b></span>
-                    </div> -->
-
-                    <div class="d-flex gap-2 mb-3">
-                        <!-- <button 
-                            class="btn btn-primary"
-                            @click="openSelector('audit', 'Тип аудитории', audTypes)"
-                            :disabled="!selectedSubjectObj.id"
-                        >
-                            Аудитория: {{ selectedAudObj.value || 'Не выбрана' }}
-                        </button> -->
-                        
-                        <button 
-                            class="btn btn-primary"
-                            @click="openSelector('teacher', 'Преподаватель', teachers)"
-                            :disabled="!selectedSubjectObj.subject_id"
-                            >
-                            Преподаватель: {{ selectedTeacherObj.last_name || 'Не выбран' }}
-                            <!-- <span v-if="teachers.length === 0">(Нет доступных преподавателей)</span> -->
-                        </button>
+                    <div class="mb-3">
+                        <span v-if="selectedTeacherObj != null">
+                            Выбран преподаватель: 
+                            <b>{{ formatTeacherName(selectedTeacherObj) }}</b>
+                        </span>
+                        <span v-else class="text-muted">
+                            Преподаватель не выбран
+                        </span>
+                        {{ selectedTeacherObj }}
                     </div>
+
+
 
                     <div 
                         v-if="showSelector" 
@@ -177,7 +243,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-3">
+                <!-- <div class="mt-3">
                     <button 
                         class="btn btn-primary btn-block"
                         @click="saveRel"
@@ -185,7 +251,7 @@
                     >
                         Сохранить связь
                     </button>
-                </div>
+                </div> -->
             </div>
         </div>
 
@@ -194,29 +260,38 @@
                 :class="notificationClass" 
                 class="alert position-fixed bottom-0 end-0 m-3"
                 v-if="showNotificationFlag"
-            >
+            > 
                 {{ notifyText }}
             </div>
         </transition>
 
-        <div class="input-group mb-3">
-            <input 
-            type="text" 
-            class="form-control"
-            placeholder="Введите текст"
-            v-model="q"
-            @keyup.enter="query(q)"
-            >
+        <div class="relbtn mt-4 fixed-bottom left-5 mb-3" style="z-index: 1000; width: auto;">
             <button 
-            class="btn btn-primary"
-            @click="query(q)"
+                class="btn btn-primary shadow"
+                @click="saveRel"
+                :disabled="!isFormValid"
             >
-            Отправить
+                <i class="bi bi-save me-2"></i>
+                Сохранить связь
             </button>
         </div>
-        <!-- <div v-for="i in i_disciples">
-            {{ i }}
-        </div> -->
+
+        <div class="input-group mb-4 ml-5">
+            <input 
+                type="text" 
+                class="form-control"
+                placeholder="Введите текст"
+                v-model="q"
+                @keyup.enter="query(q)"
+            >
+                <button 
+                    class="btn btn-primary"
+                    @click="query(q)"
+                >
+                    Отправить
+                </button>
+        </div>
+        
     </div>
 </template>
 
@@ -243,7 +318,7 @@ export default {
             selectedSubjectObj: {},
             selectedGroupObj: {},
             selectedAudObj: {},
-            selectedTeacherObj: {},
+            selectedTeacherObj: null,
             subjects: [],
             groups: [],
             teachers: [],
@@ -260,7 +335,8 @@ export default {
             programs: [], 
             subjectsList: [], 
             i_disciples: [],
-            rowData: []
+            rowData: [],
+            selectedGroupId: ""
         };
     },
 
@@ -293,7 +369,7 @@ export default {
             };
         },
         isFormValid() {
-            return this.selectedGroupObj?.group_id 
+            return this.selectedGroupId 
                 && this.selectedTeacherObj?.teacher_id;
         },
 
@@ -314,6 +390,10 @@ export default {
         selectedProgram() {
             if (!this.selectedDir?.dir_code || !this.programs?.length) return null;
             return this.programs.find(p => p.code === this.selectedDir.dir_code);
+        },
+
+        selectedGroupObj() {
+            return this.filteredGroups.find(g => g.group_id === this.selectedGroupId) || {};
         },
 
         
@@ -424,13 +504,34 @@ export default {
             return 'Другой тип';
         },
 
+        formatTeacherName(teacher) {
+            let initials = ''
+            if (teacher.first_name) {
+                initials += teacher.first_name[0] + '.'
+                if (teacher.patronymic) {
+                    initials += teacher.patronymic[0] + '.'
+                }
+            }
+            return `${teacher.last_name} ${initials}`
+        },
+
+        selectTeacher(teacher) {
+            this.selectedTeacherObj = teacher
+        },
+
+        showTeacherDetails(teacher) {
+            // Заглушка для реализации подробной информации
+            alert(`Подробная информация:\n${teacher.last_name} ${teacher.first_name} ${teacher.patronymic}`)
+        },
+
 
         resetSelections() {
     // Сбрасываем только связанные с предметом данные
             this.selectedSubjectObj = {};
-            this.selectedGroupObj = {};
+            // this.selectedGroupObj = {};
+            this.selectedGroupId = "";
             this.selectedAudObj = {};
-            this.selectedTeacherObj = {};
+            this.selectedTeacherObj = null;
         },
 
         resetAllData() {
@@ -532,7 +633,7 @@ export default {
        
         async saveRel() {
             try {
-                let group_id = this.selectedGroupObj.group_id;
+                let group_id = this.selectedGroupId;
                 let subject_id = this.selectedSubjectObj.subject_id;
                 let teacher_id = this.selectedTeacherObj.teacher_id;
                             
@@ -547,8 +648,9 @@ export default {
         },
 
         resetDependentSelections() {
-            this.selectedGroupObj = {};
-            this.selectedTeacherObj = {};
+            // this.selectedGroupObj = {};
+            this.selectedGroupId = "";
+            this.selectedTeacherObj = null;
             this.selectedAudObj = {};
         },
 
@@ -641,6 +743,7 @@ export default {
         async selectDirection(dir) {
             this.selectedDir = dir;
             this.resetSelections();
+            this.showSelector = false;
             await this.loadDisciples(); // Добавляем загрузку дисциплин
             await this.loadInitialData();
             // this.$forceUpdate();
@@ -677,6 +780,7 @@ export default {
         async selectSubject(subject) {
             this.selectedSubjectObj = subject;
             this.resetDependentSelections();
+            this.showSelector = false;
             await this.loadTeachers();
         },
 
@@ -808,6 +912,23 @@ export default {
         border-bottom: 2px solid #446334;
     }
 }
+
+.table-hover {
+    tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+        
+        &:hover {
+            background-color: #f8f9fa;
+        }
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
 
 /* Стили форм и селектов */
 .form-select {
@@ -951,4 +1072,10 @@ export default {
 .mb-3 {
     margin-bottom: 1rem !important;
 }
+
+.relbtn {
+    left: 300px  !important;
+    bottom: 12px !important;
+}
+
 </style>
