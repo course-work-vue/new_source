@@ -35,12 +35,13 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
             }
         },
 
-        async putListener_Wish(listener_wish) {
-            const response = await api.putListener_Wish(listener_wish.id, listener_wish);
+        async putL_Wish_Day(l_wish_day) {
+            const response = await api.putL_Wish_Day(l_wish_day.id, l_wish_day);
+            console.log(response);
             if (response.success === true) {
-                const index = this.listener_wishList.findIndex(s => s.id === listener_wish.id);
+                const index = this.l_wish_dayList.findIndex(s => s.id === l_wish_day.id);
                 if (index !== -1) {
-                    this.listener_wishList.splice(index, 1, new Listener_Wish(listener_wish));
+                    this.l_wish_dayList[index].deleted_at = new Date().toISOString();
                 }
             }
         },
@@ -57,7 +58,8 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
               await this.postL_Wish_Day(day);
             }
             for (const day of toUpdate) {
-              //await this.putL_Wish_Day(day);
+              console.log("Нашёл что менять")
+              await this.putL_Wish_Day(day);
             }
             for (const day of toDelete) {
               await this.deleteL_Wish_Day(day);

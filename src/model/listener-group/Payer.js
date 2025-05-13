@@ -23,7 +23,7 @@ export default class Payer {
     this.snils = payer?.snils ?? null;
     this.passport = payer?.passport ?? null;
     this.issued_by = payer?.issued_by ?? null;
-    this.issue_date = new Date(payer?.issue_date) ?? null;
+    this.issue_date = payer?.issue_date ? new Date(payer.issue_date) : null;
     this.department_code = payer?.department_code ?? null;
     this.registration_address = payer?.registration_address ?? null;
     this.phone_number = payer?.phone_number ?? null;

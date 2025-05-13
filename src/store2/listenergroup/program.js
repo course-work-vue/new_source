@@ -17,6 +17,7 @@ export const useProgramStore = defineStore('program', {
     actions: {
         async getProgramList() {
             const responseData = await api.getProgramList();
+            console.log(responseData)
             this.programList = responseData.map((program) => {
                 return new Program(program);
             });
@@ -28,7 +29,7 @@ export const useProgramStore = defineStore('program', {
 
         async postProgram(program) {
             const response = await api.postProgram(program);
-
+            console.log(response);
             if (response.success === true) {
 
                 await this.getProgramList();
@@ -36,6 +37,7 @@ export const useProgramStore = defineStore('program', {
         },
 
         async putProgram(program) {
+            console.log(program)
             const response = await api.putProgram(program.id, program);
             console.log(response);
             if (response.success === true) {

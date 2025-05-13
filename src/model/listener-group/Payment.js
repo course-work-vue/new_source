@@ -11,15 +11,15 @@ export default class Payment {
         date_paid_100 = null,   // Новое поле
         bank = '',
         deleted_at = null,
-        left_to_pay = 0,      // Удалено, т.к. генерируется БД
+        left_to_pay = 0,      
     } = {}) {
         this.id = id;
         this.contract_id = contract_id;
-        this.expiration_date = expiration_date; // Срок оплаты
+        this.expiration_date = expiration_date ? new Date(expiration_date) : null; // Срок оплаты
         this.all_sum = all_sum;
         this.status = status;
-        this.date_paid_40 = date_paid_40;     // Дата оплаты 40%
-        this.date_paid_100 = date_paid_100;   // Дата полной оплаты
+        this.date_paid_40 = date_paid_40 ? new Date(date_paid_40) : null;     // Дата оплаты 40%
+        this.date_paid_100 = date_paid_100 ? new Date(date_paid_100) : null;   // Дата полной оплаты
         this.bank = bank;
         this.deleted_at = deleted_at;
 

@@ -28,8 +28,7 @@ export default class Listener {
     this.snils = listener?.snils ?? null;
     this.passport = listener?.passport ?? null;
     this.issued_by = listener?.issued_by ?? null;
-    this.issue_date = new Date(listener?.issued_by) ?? null;
-
+    this.issue_date = listener?.issue_date ? new Date(listener.issue_date) : null;
     this.department_code = listener?.department_code ?? null;
     this.registration_address = listener?.registration_address ?? null;
     this.phone_number = listener?.phone_number ?? null;

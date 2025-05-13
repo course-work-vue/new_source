@@ -67,11 +67,12 @@ export default {
 
   getL_Wish_DayList: () => ReqExec.get(endpoints.rest.l_wish_day, null, true),
   postL_Wish_Day: (l_wish_day) => ReqExec.post(endpoints.rest.l_wish_day, l_wish_day),
+  putL_Wish_Day: (id, l_wish_day) =>
+    ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
   deleteL_Wish_Day: (l_wish_day) =>
     ReqExec.put(endpoints.procedure.l_wish_day, l_wish_day.l_wish_day_id, l_wish_day),
 
-  putL_Wish_Day: (id, l_wish_day) =>
-    ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
+  
 
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),

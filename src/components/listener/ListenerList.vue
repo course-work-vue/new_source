@@ -206,31 +206,6 @@ import { MultiSelectInput } from '@/model/form/inputs/MultiSelectInput';
 import Listener from "@/model/listener-group/Listener";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
-const formatDateValue = (params) => {
-  const value = params.value;
-  if (!value) return '';
-  try {
-    // Ожидаем строку "YYYY-MM-DD"
-    if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const parts = value.split('-');
-      if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`; // dd/mm/yy
-      }
-    }
-    // Если это объект Date
-    const dateObj = new Date(value);
-    if (isNaN(dateObj.getTime())) return value;
-
-    const day = dateObj.getDate().toString().padStart(2, '0');
-    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const year = dateObj.getFullYear().toString().slice(-2);
-    return `${day}/${month}/${year}`;
-  } catch (e) {
-    console.error("Ошибка форматирования даты:", value, e);
-    return value;
-  }
-};
-
 export default {
   name: "App",
   components: {
@@ -429,7 +404,6 @@ export default {
       new DateInput({
         key: "issue_date",
         label: "Дата выдачи",
-        valueFormatter: formatDateValue,
       }),
       new TextInput({
         key: "department_code",
@@ -495,15 +469,10 @@ export default {
       new DateInput({
         key: "start_date",
         label: "Начало:",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
       }),
       new DateInput({
         key: "end_date",
         label: "Конец:",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
-        validation: [],
       }),
     ]);
     this.thirdScheme = new FormScheme([

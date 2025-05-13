@@ -102,7 +102,7 @@
 </template>
 
 <script>
-import { reactive, onMounted, ref, getCurrentInstance } from "vue";
+import { reactive, onMounted, ref, getCurrentInstance, computed } from "vue";
 import { AgGridVue } from "ag-grid-vue3";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ProgramHref from "@/components/ProgramHrefCellRenderer.vue";
@@ -111,7 +111,7 @@ import "ag-grid-community/styles/ag-theme-alpine.css";
 import { useRoute, useRouter } from "vue-router";
 import { useProgramStore } from "@/store2/listenergroup/program";
 
-import UserService from "@/services/user.service";
+import Program from "@/model/listener-group/program";
 
 import { mapActions, mapState } from "pinia";
 import AutoForm from "@/components/form/AutoForm.vue";
@@ -120,15 +120,6 @@ import { requiredRule } from "@/model/form/validation/rules";
 import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
-
-const Program = function () {
-  this.id = null;
-  this.required_amount = "";
-  this.program_name = "";
-  this.hours = "";
-  this.start_date = "";
-  this.end_date = "";
-};
 
 export default {
   name: "ProgramList",
@@ -150,7 +141,6 @@ export default {
     const route = useRoute();
     const router = useRouter();
 
-    // Получаем доступ к экземпляру компонента
     const { proxy } = getCurrentInstance();
 
     // Функция для редактирования программы (вызывается при клике по кнопке в таблице)
@@ -178,11 +168,8 @@ export default {
         {
           field: "program_name",
           headerName: "Название программы",
-          cellRenderer: "ProgramHref",
         },
         { field: "hours", headerName: "Часы" },
-        { field: "start_date", headerName: "Начало обучения", hide: true },
-        { field: "end_date", headerName: "Окончание обучения", hide: true },
       ],
     });
 
@@ -275,7 +262,8 @@ export default {
   },
   async mounted() {
     try {
-      await this.loadProgramsData();
+      await this.getProgramList(),
+      this.loadProgramsData();
 
       this.updateSidebarStyles();
       window.addEventListener('resize', this.updateSidebarStyles);
@@ -304,16 +292,10 @@ export default {
       new DateInput({
         key: "start_date",
         label: "Начало обучения",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
-        validation: [requiredRule],
       }),
       new DateInput({
         key: "end_date",
         label: "Окончание обучения",
-        dateFormat: "dd/mm/yy",
-        size: "sm",
-        validation: [requiredRule],
       }),
     ]);
   },
@@ -329,11 +311,9 @@ export default {
     ]),
     async loadProgramsData() {
       try {
-        const response = await UserService.getAllPrograms();
-        if (Array.isArray(response.data)) {
-          this.rowData.value = response.data;
-        } else if (response.data && response.data.deleted_at === null) {
-          this.rowData.value = [response.data];
+        if (Array.isArray(this.programList)) {
+          this.rowData.value = this.programList
+            .filter((program) => program.deleted_at === null)
         } else {
           this.rowData.value = [];
         }
@@ -360,14 +340,7 @@ export default {
       let program = { ...this.program };
       try {
         if (program.id) {
-          await UserService.updateProgramById(
-            program.id,
-            program.required_amount,
-            program.program_name,
-            program.hours,
-            program.start_date,
-            program.end_date
-          );
+          await this.putProgram(program)
         } else {
           await this.postProgram(program);
         }
@@ -376,6 +349,7 @@ export default {
       }
       this.showSidebar = false;
       this.resetProgram();
+      await this.getProgramList(),
       this.loadProgramsData();
     },
     async deleteProgram() {
@@ -412,8 +386,9 @@ export default {
     };
   },
   },
-
-
+  computed: {
+    ...mapState(useProgramStore, ["programList"]),
+  },
 };
 </script>
 

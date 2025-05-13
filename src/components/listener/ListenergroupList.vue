@@ -290,7 +290,6 @@ import { useDayStore } from "@/store2/listenergroup/day";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import { TextInput } from "@/model/form/inputs/TextInput";
-import { TimePickerInput } from "@/model/form/inputs/TimePickerInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
@@ -309,17 +308,17 @@ export default {
 
     const tableData = reactive([]);
 
-    const addRow = (listenerId) => {
-      console.log('Adding new wish day row for listener:', listenerId); 
+    const addRow = () => { // listenerId не используется, берем из listenergroup.value.id
+      const currentListenerGroupId = listenergroup.value ? listenergroup.value.id : null; // ID группы, а не слушателя
+      console.log('Adding new wish day row for group:', currentListenerGroupId); 
       const newRow = new L_Wish_Day({
           l_wish_day_id: null,
           day_id: null,
           starttime: '09:00', 
           endtime: '18:00', 
-          listener_id: listenerId 
       });
       tableData.push(newRow);
-      console.log('tableData after add:', tableData.value); 
+      console.log('tableData after add:', tableData); 
     };
 
     const removeRow = (index) => {
@@ -328,9 +327,7 @@ export default {
       console.log('tableData after remove:', tableData.value);
     };
 
-    const listenerStore = useListenerStore();
     const listenergroup = ref(new Listenergroup());
-    
 
     const instance = getCurrentInstance();
     const localeText = AG_GRID_LOCALE_RU;
@@ -761,6 +758,10 @@ export default {
       this.creatingProgram = programName;
       console.log(this.creatingProgram)
 
+      this.creatingProgramId = selectedProgramId; // <--- КРИТИЧЕСКИ ВАЖНО
+
+  console.log(`[openAddSidebar] Установлен creatingProgramId: ${this.creatingProgramId} (${this.creatingProgram})`);
+
       this.showAddSidebar = true; 
     },
     openGenAddSidebar() {
@@ -1039,52 +1040,63 @@ export default {
   },
 
   suitableListeners() {
-  console.log("%c[suitableListeners] Вызвано", "color: green; font-weight: bold;");
+  // 1. Проверка на загрузку данных и наличие listenerList
+  if (this.initialDataLoading) {
+     console.log("[suitableListeners] Данные еще загружаются. Возвращаем пустой массив.");
+     return [];
+  }
+  if (!this.listenerList || this.listenerList.length === 0) {
+     console.log("[suitableListeners] Список слушателей (listenerList) пуст или не загружен. Возвращаем пустой массив.");
+     return [];
+  }
+  // 2. Проверка на наличие creatingProgramId (для новой группы это критично)
+  if (!this.creatingProgramId) {
+     console.log("[suitableListeners] ID программы для создания (creatingProgramId) не установлен. Возвращаем пустой массив.");
+     return [];
+  }
 
-  const allListeners = this.listenerList || [];
-  const selectedProgramId = this.creatingProgramId;
-  const currentGroupId = this.listenergroup.id;
+  const allListeners = this.listenerList;
+  const selectedProgramId = this.creatingProgramId; // Это ID программы, для которой создаем группу
+  const currentGroupId = this.listenergroup.value ? this.listenergroup.value.id : null; // Будет null для НОВОЙ группы
 
-  console.log(`[suitableListeners] ID выбранной программы для фильтрации: ${selectedProgramId}`);
-  console.log(`[suitableListeners] ID текущей группы: ${currentGroupId}`);
-  console.log(`[suitableListeners] Слушатели, только что перемещенные:`, Array.from(this.justMovedFromGroupIds)); // Логируем Set как массив
-
-  let processedCount = 0;
+  console.log(`[suitableListeners] Фильтрация для программы ID: ${selectedProgramId}. Текущая группа ID (если есть): ${currentGroupId}.`);
+  
   const filteredListeners = allListeners.filter(listener => {
-    processedCount++;
     const isNotDeleted = listener.deleted_at === null;
 
-    // Проверяем, не находится ли слушатель уже в текущей группе
-    const hasValidGroupIds = listener.group_ids && Array.isArray(listener.group_ids);
-    const isInCurrentGroup = hasValidGroupIds && listener.group_ids.includes(currentGroupId);
-    const isNotInCurrentGroup = !isInCurrentGroup; // Условие, что НЕ в группе
-
-    // ---> НОВАЯ ПРОВЕРКА: Был ли слушатель только что перемещен <---
+    // Условие 1: Слушатель не должен быть в текущей редактируемой группе (актуально, если currentGroupId есть)
+    let isNotInCurrentGroup = true;
+    if (currentGroupId !== null) { // Только если группа УЖЕ существует (имеет ID)
+        const hasValidGroupIds = listener.group_ids && Array.isArray(listener.group_ids);
+        isNotInCurrentGroup = !hasValidGroupIds || !listener.group_ids.includes(currentGroupId);
+    }
+    
+    // Условие 2: Слушатель был только что перемещен из этой группы (актуально при редактировании существующей)
     const wasJustMoved = this.justMovedFromGroupIds.has(listener.id);
 
-    // Условие на программу (остается как было)
+    // Условие 3: Слушатель подходит по выбранной программе
     const hasValidProgramIds = listener.program_ids && Array.isArray(listener.program_ids);
     const hasSelectedProgram = hasValidProgramIds && listener.program_ids.includes(selectedProgramId);
 
     // Итоговое условие:
-    // Должен быть НЕ удален И НЕ в текущей группе И (ИЛИ соответствует программе ИЛИ был только что перемещен)
+    // Слушатель должен быть:
+    // 1. Не удален
+    // 2. Не состоять в текущей группе (если это редактирование существующей группы)
+    // 3. ИЛИ (подходить по программе ИЛИ быть только что перемещенным из текущей группы)
+    // Для НОВОЙ группы (currentGroupId is null), isNotInCurrentGroup всегда true, 
+    // поэтому условие упрощается до: isNotDeleted && (hasSelectedProgram || wasJustMoved)
+    // Но wasJustMoved для новой группы тоже маловероятно. Значит, в основном: isNotDeleted && hasSelectedProgram.
     const shouldBeIncluded = isNotDeleted && isNotInCurrentGroup && (hasSelectedProgram || wasJustMoved);
-
-    // Логирование для отладки первых нескольких или конкретного ID
-    if (listener.id === 54 || processedCount <= 5 || wasJustMoved) {
-         console.log(`[suitableListeners] Проверка слушателя ID ${listener.id}:
-           - isNotDeleted: ${isNotDeleted}
-           - isNotInCurrentGroup: ${isNotInCurrentGroup}
-           - hasSelectedProgram: ${hasSelectedProgram}
-           - wasJustMoved: ${wasJustMoved}
-           - Итог (shouldBeIncluded): ${shouldBeIncluded}`);
-    }
-
+    
+    // Для отладки конкретного слушателя:
+    // if (listener.id === YOUR_LISTENER_ID_TO_DEBUG) {
+    //    console.log(`  Listener ID ${listener.id}: isNotDeleted=${isNotDeleted}, isNotInCurrentGroup=${isNotInCurrentGroup}, hasSelectedProgram=${hasSelectedProgram}, wasJustMoved=${wasJustMoved}, included=${shouldBeIncluded}`);
+    // }
     return shouldBeIncluded;
   });
 
-  const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
-  return sortedListeners;
+  console.log(`[suitableListeners] Найдено подходящих слушателей: ${filteredListeners.length}`);
+  return filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
 },
 
   groupListenersCount() {

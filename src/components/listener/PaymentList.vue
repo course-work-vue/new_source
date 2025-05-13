@@ -93,7 +93,7 @@
       </Button>
       <Button
         v-if="payment.id"
-        class="btn btn-danger float-end mt-3" 
+        class="btn btn-danger float-end mt-3"
         @click="deletePay"
       >
         Удалить
@@ -105,7 +105,7 @@
 
 <script>
 import { AgGridVue } from "ag-grid-vue3";
-import { reactive, onMounted, ref, watch as vueWatch } from "vue"; // Добавлен vueWatch
+import { reactive, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { usePaymentStore } from "@/store2/listenergroup/payment";
@@ -126,19 +126,16 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 
-// Helper для форматирования дат в AG Grid
 const formatDateValue = (params) => {
   const value = params.value;
   if (!value) return '';
   try {
-    // Ожидаем строку "YYYY-MM-DD"
     if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const parts = value.split('-');
       if (parts.length === 3) {
-        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`; // dd/mm/yy
+        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
       }
     }
-    // Если это объект Date
     const dateObj = new Date(value);
     if (isNaN(dateObj.getTime())) return value;
 
@@ -191,14 +188,14 @@ export default {
           resizable: false,
         },
         { field: "contract_id", headerName: "Номер договора" },
-        { 
-          field: "status", 
+        {
+          field: "status",
           headerName: "Статус",
           valueFormatter: params => paymentStatusDisplayMap[params.value] || params.value,
         },
         {
           field: "expiration_date",
-          headerName: "Срок оплаты", 
+          headerName: "Срок оплаты",
           valueFormatter: formatDateValue,
         },
         {
@@ -229,9 +226,11 @@ export default {
     };
 
     const onFilterTextBoxChanged = () => {
-      gridApi.value.setQuickFilter(
-        document.getElementById("filter-text-box").value
-      );
+      if (gridApi.value) {
+        gridApi.value.setQuickFilter(
+          document.getElementById("filter-text-box").value
+        );
+      }
     };
 
     return {
@@ -242,7 +241,7 @@ export default {
       onGridReady,
       onFilterTextBoxChanged,
       paginationPageSize,
-      paymentStatusDisplayMap, // Экспортируем для использования в valueFormatter если нужно (уже встроено)
+      gridApi,
     };
   },
   data() {
@@ -252,14 +251,13 @@ export default {
       filters: false,
       payment: new Payment(),
       errors: {},
-      scheme: null, // Будет генерироваться динамически
+      scheme: null,
       paymentStatusOptions: [
         { value: 'not_paid', label: 'Не оплачен' },
         { value: 'paid_40', label: 'Оплачено 40%' },
         { value: 'paid_100', label: 'Оплачен полностью' },
       ],
       mainSidebarStyle: {},
-      isSmallScreen: false
     };
   },
   async mounted() {
@@ -271,7 +269,6 @@ export default {
       this.loadPaymentsData();
       this.updateSidebarStyles();
       window.addEventListener('resize', this.updateSidebarStyles);
-      // this.generateScheme(); // Первичная генерация схемы (для случая если сайдбар открыт по умолчанию)
     } catch (error) {
       console.error("Ошибка при загрузке данных:", error);
     }
@@ -289,7 +286,22 @@ export default {
     ...mapActions(useContractStore, ["getContractList"]),
 
     onSidebarHide() {
-        this.errors = {}; // Очищаем ошибки при закрытии сайдбара
+        this.errors = {};
+    },
+
+    updatePaymentAmounts() {
+      const totalSum = parseFloat(this.payment.all_sum) || 0;
+
+      if (this.payment.status === 'paid_40') {
+        this.payment.deposited_amount = (totalSum * 0.4).toFixed(2);
+        this.payment.left_to_pay = (totalSum * 0.6).toFixed(2);
+      } else if (this.payment.status === 'paid_100') {
+        this.payment.deposited_amount = totalSum.toFixed(2);
+        this.payment.left_to_pay = (0).toFixed(2);
+      } else {
+        this.payment.deposited_amount = (0).toFixed(2);
+        this.payment.left_to_pay = totalSum.toFixed(2);
+      }
     },
 
     generateScheme() {
@@ -305,7 +317,7 @@ export default {
           key: "all_sum",
           label: "Вся сумма",
           placeholder: "Сумма",
-          type: "number", // Для числового ввода
+          type: "number",
           validation: [requiredRule],
         }),
         new DateInput({
@@ -322,24 +334,27 @@ export default {
         }),
       ];
 
+      // Поле "Дата оплаты 40%"
       if (this.payment.status === 'paid_40' || this.payment.status === 'paid_100') {
         inputs.push(new DateInput({
           key: 'date_paid_40',
           label: 'Дата оплаты 40%',
           dateFormat: 'dd/mm/yy',
-          validation: [requiredRule],
+          // Обязательно только если статус 'Оплачено 40%'
+          validation: (this.payment.status === 'paid_40') ? [requiredRule] : [],
         }));
       }
 
+      // Поле "Дата полной оплаты"
       if (this.payment.status === 'paid_100') {
         inputs.push(new DateInput({
           key: 'date_paid_100',
           label: 'Дата полной оплаты',
           dateFormat: 'dd/mm/yy',
-          validation: [requiredRule],
+          validation: [requiredRule], // Всегда обязательно для 'Оплачен полностью'
         }));
       }
-      
+
       inputs.push(
         new TextInput({
           key: "bank",
@@ -350,14 +365,16 @@ export default {
           key: "deposited_amount",
           label: "Внесённая сумма",
           readonly: true,
+          type: "number",
         }),
         new TextInput({
           key: "left_to_pay",
           label: "Остаточная сумма",
           readonly: true,
+          type: "number",
         })
       );
-      
+
       this.scheme = new FormScheme(inputs);
     },
 
@@ -368,28 +385,24 @@ export default {
     },
 
     edit(event) {
-      this.payment = new Payment(event.data); 
-      this.generateScheme(); // Сгенерировать схему на основе текущего статуса
+      this.payment = new Payment(event.data);
+      this.updatePaymentAmounts();
+      this.generateScheme();
       this.showSidebar = true;
     },
 
     resetPayment() {
-      this.payment = new Payment(); // Создает новый объект со статусом 'not_paid' по умолчанию
-      // this.generateScheme(); // Схема обновится через watch или при открытии сайдбара
+      this.payment = new Payment();
+      this.updatePaymentAmounts();
     },
 
     openSidebar() {
       this.resetPayment();
-      this.generateScheme(); // Сгенерировать схему для нового платежа
+      this.generateScheme();
       this.showSidebar = true;
     },
 
-    // closeSidebar() { // Не используется, т.к. v-model:visible
-    //   this.showSidebar = false;
-    // },
-
     async loadPaymentsData() {
-      // await this.getPaymentList(); // Уже вызван в mounted
       try {
         if (Array.isArray(this.paymentList)) {
           this.rowData.value = this.paymentList.filter(
@@ -407,47 +420,39 @@ export default {
     },
 
     async submit() {
-      this.errors = {}; // Сброс ошибок перед валидацией
-      let isValid = true; // Флаг валидности
+      this.errors = {};
+      let isValid = true;
 
-      // Простая ручная валидация для дат в зависимости от статуса
-      if (this.payment.status === 'paid_40' || this.payment.status === 'paid_100') {
+      // Ручная валидация для дат
+      if (this.payment.status === 'paid_40') { // Только если 'Оплачено 40%'
         if (!this.payment.date_paid_40) {
           this.errors.date_paid_40 = 'Дата оплаты 40% обязательна';
           isValid = false;
         }
       }
-      if (this.payment.status === 'paid_100') {
+      
+      if (this.payment.status === 'paid_100') { // Только если 'Оплачен полностью'
         if (!this.payment.date_paid_100) {
           this.errors.date_paid_100 = 'Дата полной оплаты обязательна';
           isValid = false;
         }
+        // date_paid_40 не проверяется на обязательность здесь, т.к. она не обязательна для paid_100
       }
-      
-      // Дополнительно можно интегрировать с системой валидации AutoForm, если она возвращает промис/статус
-      // Например, if (!this.$refs.autoFormComponent.validate()) isValid = false;
 
       if (!isValid) {
-        // Можно показать общее сообщение об ошибке
-        // this.$toast.add({severity:'error', summary: 'Ошибка валидации', detail:'Проверьте заполненные поля', life: 3000});
-        console.warn("Форма не прошла валидацию", this.errors)
+        console.warn("Форма не прошла валидацию", this.errors);
         return;
       }
 
       const currentPayment = { ...this.payment };
 
-      // Очистка дат, если статус не предполагает их наличие
       if (currentPayment.status === 'not_paid') {
         currentPayment.date_paid_40 = null;
         currentPayment.date_paid_100 = null;
       } else if (currentPayment.status === 'paid_40') {
         currentPayment.date_paid_100 = null;
       }
-      // Для 'paid_100' обе даты (date_paid_40 и date_paid_100) должны быть установлены (если логика это требует)
-
-      // Удаляем поля, которые генерируются БД, перед отправкой
-      delete currentPayment.deposited_amount;
-      delete currentPayment.left_to_pay;
+      // Для 'paid_100' date_paid_40 останется как есть (null если не заполнена)
 
       try {
         if (currentPayment.id) {
@@ -455,8 +460,8 @@ export default {
         } else {
           await this.postPayment(currentPayment);
         }
-        await this.getPaymentList(); // Обновляем список после сохранения
-        this.loadPaymentsData(); // Перезагружаем данные в грид
+        await this.getPaymentList();
+        this.loadPaymentsData();
         this.showSidebar = false;
         this.resetPayment();
       } catch (error) {
@@ -464,7 +469,6 @@ export default {
           if (error.response && error.response.data && error.response.data.errors) {
             this.errors = error.response.data.errors;
           } else {
-            // Общая ошибка
             this.errors.general = "Произошла ошибка при сохранении.";
           }
       }
@@ -473,114 +477,111 @@ export default {
     async deletePay() {
       if (!this.payment.id) return;
       try {
-        await this.deletePayment({ id: this.payment.id }); // Отправляем только id или весь объект, как требует API
+        await this.deletePayment({ id: this.payment.id });
         await this.getPaymentList();
         this.loadPaymentsData();
         this.showSidebar = false;
         this.resetPayment();
       } catch (error) {
         console.error("Ошибка при удалении платежа:", error);
-        // Обработка ошибки удаления
       }
     },
 
     onFirstDataRendered(params) {
-      this.gridApi = params.api;
-      this.columnApi = params.columnApi;
-
-      const filterModelQuery = this.$route.query.filterModel;
+      const route = useRoute();
+      const filterModelQuery = route.query.filterModel;
       if (filterModelQuery) {
         const filterModel = JSON.parse(filterModelQuery);
-        this.gridApi.setFilterModel(filterModel);
+        if(this.gridApi) this.gridApi.setFilterModel(filterModel);
         this.filters = true;
       }
 
-      const quickFilterQuery = this.$route.query.quickFilter;
+      const quickFilterQuery = route.query.quickFilter;
       if (quickFilterQuery) {
         const quickFilter = JSON.parse(quickFilterQuery);
-        this.gridApi.setQuickFilter(quickFilter);
+         if(this.gridApi) this.gridApi.setQuickFilter(quickFilter);
         this.quickFilterValue = quickFilter;
         this.filters = true;
       }
     },
     onFilterChanged() {
       this.filters = false;
+      if (!this.gridApi) return;
+
       const savedQuickFilter = this.gridApi.getQuickFilter();
       const savedFilterModel = this.gridApi.getFilterModel();
-
       const queryParams = {};
 
       if (savedQuickFilter) {
         queryParams.quickFilter = JSON.stringify(savedQuickFilter);
         this.filters = true;
       }
-
       if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
         queryParams.filterModel = JSON.stringify(savedFilterModel);
         this.filters = true;
       }
-
       this.$router.push({ query: queryParams });
     },
 
     clearFilters() {
-      this.gridApi.setFilterModel();
-      this.gridApi.setQuickFilter();
+      if (!this.gridApi) return;
+      this.gridApi.setFilterModel(null);
+      this.gridApi.setQuickFilter("");
       this.quickFilterValue = "";
       this.filters = false;
+      this.$router.push({ query: {} });
     },
     updateSidebarStyles() {
-    const minWidthValue = 850;
-    const screenWidth = window.innerWidth;
+      const minWidthValue = 850;
+      const screenWidth = window.innerWidth;
+      const isScreenWideEnough = screenWidth >= minWidthValue;
 
-    const isScreenWideEnough = screenWidth >= minWidthValue;
-
-    this.mainSidebarStyle = {
-      width: isScreenWideEnough ? '820px' : '100%', 
-      minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto', 
-      maxHeight: '700px',
-      height: 'auto',
-      margin: isScreenWideEnough ? 'auto' : '0' 
-    };
-  },
-
+      this.mainSidebarStyle = {
+        width: isScreenWideEnough ? '820px' : '100%',
+        minWidth: isScreenWideEnough ? `${minWidthValue}px` : 'auto',
+        maxHeight: '700px',
+        height: 'auto',
+        margin: isScreenWideEnough ? 'auto' : '0'
+      };
+    },
   },
   watch: {
     'payment.status'() {
-      // При изменении статуса, перегенерировать схему для отображения/скрытия полей дат
-      this.generateScheme();
-      // Очистка дат при смене статуса (если нужно более сложное поведение)
-      // Например, если переключили с 'paid_100' на 'paid_40', date_paid_100 можно обнулить
+      this.updatePaymentAmounts();
+      this.generateScheme(); // Это обновит правила валидации для AutoForm
       if (this.payment.status === 'not_paid') {
           this.payment.date_paid_40 = null;
           this.payment.date_paid_100 = null;
       } else if (this.payment.status === 'paid_40') {
           this.payment.date_paid_100 = null;
+          // date_paid_40 становится обязательной, если была пуста - AutoForm покажет ошибку
+      } else if (this.payment.status === 'paid_100') {
+          // date_paid_40 становится НЕ обязательной, если была ошибка - она должна исчезнуть
+          // date_paid_100 становится обязательной
       }
+    },
+    'payment.all_sum'() {
+      this.updatePaymentAmounts();
     },
     showSidebar(newValue) {
       if (newValue) {
-        // Когда сайдбар открывается, убедимся, что схема актуальна
-        // Особенно важно для первого открытия или если payment был изменен извне
+        this.updatePaymentAmounts();
         this.generateScheme();
       } else {
-        this.errors = {}; // Очистка ошибок при закрытии сайдбара
+        this.errors = {};
       }
     }
   },
-  created() {
-  },
   computed: {
     ...mapState(usePaymentStore, ["paymentList"]),
-    ...mapState(useContractStore, ["contractList", "contractMap"]), 
+    ...mapState(useContractStore, ["contractList", "contractMap"]),
     contractOptions() {
-      // const contractStore = useContractStore(); // Уже есть через mapState
       if (!this.contractMap) return [];
       return Object.values(this.contractMap)
         .filter(item => item.deleted_at === null)
         .map((item) => ({
           value: item.id,
-          label: `${item.contr_number}`, 
+          label: `${item.contr_number}`,
         }));
     }
   },
@@ -605,7 +606,7 @@ export default {
 }
 
 .ag-theme-alpine {
-  flex: 1; 
+  flex: 1;
 }
 
 .title-container {
@@ -651,5 +652,12 @@ export default {
 .form-select {
   padding-top: 0;
   padding-bottom: 0;
+}
+
+:deep(.p-sidebar) {
+}
+:deep(.p-sidebar-header) {
+}
+:deep(.p-sidebar-content) {
 }
 </style>

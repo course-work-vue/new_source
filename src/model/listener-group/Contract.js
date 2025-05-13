@@ -21,7 +21,7 @@ export default class Contract {
     this.listener_id = contract?.listener_id ?? null;
     this.payer_id = contract?.payer_id ?? null;
     this.program_id = contract?.program_id ?? null;
-    this.cert_date = new Date(contract?.cert_date) ?? null;
+    this.cert_date = contract?.cert_date ? new Date(contract.cert_date): null;
     this.listened_hours = contract?.listened_hours ?? null;
     this.date_enroll = new Date(contract?.date_enroll) ?? null;
     this.date_kick = new Date(contract?.date_kick) ?? null;
