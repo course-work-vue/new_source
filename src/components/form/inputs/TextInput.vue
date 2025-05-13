@@ -8,6 +8,7 @@
         :placeholder="placeholder"
         :class="inputClass"
         :disabled="disabled"
+        :readonly="readonly"
         @input="handleInput"
       ></InputText>
     </input-with-icon>
@@ -57,6 +58,10 @@ export default {
     },
     disabled: {
       type: Boolean,
+    },
+    readonly: { 
+      type: Boolean,
+      default: false 
     },
   },
   setup(props, { emit }) {

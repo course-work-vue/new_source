@@ -97,7 +97,7 @@
       <Button
         class="btn btn-primary float-end"
         v-if="contract.id"
-        @click="deleteContract"
+        @click="handleDeleteContract"
       >
         Удалить
       </Button>
@@ -145,7 +145,6 @@ import { TextInput } from "@/model/form/inputs/TextInput";
 import { DateInput } from "@/model/form/inputs/DateInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
 import Contract from "@/model/listener-group/Contract";
-import UserService from "../../services/user.service";
 
 import { mapActions, mapState } from "pinia";
 import { useContractStore } from "@/store2/listenergroup/contract";
@@ -219,6 +218,11 @@ export default {
           resizable: false,
         },
         {
+          field: "contr_number",
+          headerName: "Номер договора",
+          maxWidth: 175,
+        },
+        {
           field: "full_name",
           headerName: "Слушатель",
         },
@@ -226,11 +230,7 @@ export default {
           field: "payer_full_name",
           headerName: "Законный представитель",
         },
-        {
-          field: "contr_number",
-          headerName: "Номер договора",
-          maxWidth: 175,
-        },
+        
         {
           field: "program_name",
           headerName: "Программа",
@@ -316,9 +316,15 @@ export default {
     }
     
     this.scheme = new FormScheme([
+      new TextInput({
+        key: "contr_number",
+        label: "Номер договора",
+        placeholder: "Номер договора",
+        validation: [requiredRule],
+      }),
       new ComboboxInput({
         key: "listener_id",
-        label: "\nСлушатель",
+        label: "Слушатель",
         placeholder: "Выберите слушателя",
         options: this.listenerOptions,
       }),
@@ -328,17 +334,23 @@ export default {
         placeholder: "Выберите представителя",
         options: this.payerOptions,
       }),
-      new TextInput({
-        key: "contr_number",
-        label: "\nНомер договора",
-        placeholder: "Номер договора",
-        validation: [requiredRule],
-      }),
       new ComboboxInput({
         key: "program_id",
-        label: "\nПрограмма",
+        label: "Программа",
         placeholder: "Выберите программу",
         options: this.programOptions,
+      }),
+      
+      new DateInput({
+        key: "date_enroll",
+        label: "Дата зачисления",
+        dateFormat: "dd/mm/yy",
+        validation: [requiredRule],
+      }),
+      new DateInput({
+        key: "date_kick",
+        label: "Дата отчисления",
+        dateFormat: "dd/mm/yy",
       }),
       new DateInput({
         key: "cert_date",
@@ -348,20 +360,9 @@ export default {
       }),
       new TextInput({
         key: "listened_hours",
-        label: "\nПрослушанные часы",
+        label: "Прослушанные часы",
         placeholder: "Часы",
         validation: [requiredRule],
-      }),
-      new DateInput({
-        key: "date_enroll",
-        label: "\nДата зачисления",
-        dateFormat: "dd/mm/yy",
-        validation: [requiredRule],
-      }),
-      new DateInput({
-        key: "date_kick",
-        label: "\nДата отчисления",
-        dateFormat: "dd/mm/yy",
       }),
     ]);
   },
@@ -429,7 +430,7 @@ export default {
       }
       else {
         if (event.colDef && event.colDef.headerName === "Договор") {
-          this.previewContract();
+          this.previewContract(event.data);
         }
       }
     },
@@ -437,15 +438,17 @@ export default {
       this.contract = new Contract({});
       this.errors = {};
     },
-    async previewContract() {
-      await this.createContractDocx();
+    async previewContract(ContractForDocx) {
+      console.log("PREVIEW")
+      console.log(ContractForDocx)
+      await this.createContractDocx(ContractForDocx);
       this.docPreview = true;
     },
     async submit() {
       const currentContract = { ...this.contract };
       try {
         if (currentContract.id) {
-          await UserService.putContract(currentContract);
+          await this.putContract(currentContract);
         } else {
           await this.postContract(currentContract);
         }
@@ -456,9 +459,10 @@ export default {
         console.error("Ошибка сохранения договора:", error);
       }
     },
-    async deleteContract() {
+    async handleDeleteContract() {
       try {
-        await UserService.deleteContract(this.contract.id);
+        const currentContract = { ...this.contract };
+        await this.deleteContract(currentContract);
         this.showSidebar = false;
         this.resetContract();
         await this.loadContractsData();
@@ -523,7 +527,7 @@ export default {
     },
 
     updateSidebarStyles() {
-    const minWidthValue = 820;
+    const minWidthValue = 1100;
     const screenWidth = window.innerWidth;
 
     const isScreenWideEnough = screenWidth >= minWidthValue;
@@ -545,8 +549,9 @@ export default {
     };
   },
 
-  async createContractDocx() {
-    // Create document
+  async createContractDocx(ContractForDocx) {
+
+    console.log(ContractForDocx)
     const contractNumber = 1;
     const contract = {
       daySigned: "15",         // День подписания (строка)
@@ -931,7 +936,8 @@ export default {
       new TextRun({ text: "Заказчик вправе:", font: "Arial", size: 16 })] }), // Paragraph index 37
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.2.1. Получать информацию от Исполнителя по вопросам организации и обеспечения надлежащего предоставления услуг, предусмотренных ", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора.", font: "Arial", size: 16 })] }), // Paragraph index 38
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.", font: "Arial", size: 16 }),
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", 
+    children: [new TextRun({ text: "2.3.", font: "Arial", size: 16 }),
       new TextRun({ text: "Обучающийся вправе:", font: "Arial", size: 16 })] }), // Paragraph index 39
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.1.", font: "Arial", size: 16 }),
       new TextRun({ text: "Получать информацию от Исполнителя по вопросам организации и обеспечения надлежащего предоставления услуг, предусмотренных ", font: "Arial", size: 16 }),
@@ -939,22 +945,20 @@ export default {
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.2.", font: "Arial", size: 16 }),
       new TextRun({ text: "Обращаться к Исполнителю по вопросам, касающимся образовательного процесса.", font: "Arial", size: 16 })] }), // Paragraph index 41
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Пользоваться в порядке, установленном локальными нормативными актами, имуществом Исполнителя, необходимым для освоения образовательной программы.", font: "Arial", size: 16 })] }), // Paragraph index 42
+      new TextRun({ text: "Пользоваться в порядке, установленном локальными нормативными актами, имуществом Исполнителя, необходимым для освоения образовательной программы.", font: "Arial", size: 16 })] }), // Paragraph index 42
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Принимать в порядке, установленном локальными нормативными актами, участие в социально-культурных, оздоровительных и иных ", font: "Arial", size: 16 }),
       new TextRun({ text: "мероприятиях, организованных Исполнителем.", font: "Arial", size: 16 })] }), // Paragraph index 43
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Получать полную и достоверную информацию об оценке своих знаний, умений, навыков и компетенций, а также о критериях этой оценки.", font: "Arial", size: 16 })] }), // Paragraph index 44
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "2.3.6.", font: "Arial", size: 16 }),
       new TextRun({ text: " Обучающемуся предоставляются академические права в соответствии с ", font: "Arial", size: 16 }),
       new TextRun({ text: " Федерального закона от 29 декабря 2012 г. N 273-ФЗ «Об образовании в Российской Федерации».", font: "Arial", size: 16 })] }), // Paragraph index 45
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "III. Обязанности Исполнителя, Заказчика и Обучающегося ", font: "Arial", size: 16 })] }), // Paragraph index 46
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Исполнитель обязан:", font: "Arial", size: 16 })] }), // Paragraph index 47
+      new TextRun({ text: "Исполнитель обязан:", font: "Arial", size: 16 })] }), // Paragraph index 47
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "3.1.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Зачислить лицо, выполнившее установленные законодательством Российской Федерации, учредительными документами, локальными нормативными актами Исполнителя условия приема, в Кубанский государственный университет в качестве Обучающегося в образовательном подразделении ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Зачислить лицо, выполнившее установленные законодательством Российской Федерации, учредительными документами, локальными нормативными актами Исполнителя условия приема, в Кубанский государственный университет в качестве Обучающегося в образовательном подразделении ", font: "Arial", size: 16 }),
       new TextRun({ text: "	              ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "   ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "«", bold: true, underline: true, font: "Arial", size: 16 }),
@@ -964,58 +968,57 @@ export default {
       new TextRun({ text: "Института тестовых технологий и дополнительного образования.", font: "Arial", size: 16 })] }), // Paragraph index 48
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "(наименование образовательного подразделения)", font: "Arial", size: 12 })] }), // Paragraph index 49
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Довести до Заказчика информацию, содержащую сведения о предоставлении платных образовательных услуг в порядке и объеме, которые предусмотрены ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Довести до Заказчика информацию, содержащую сведения о предоставлении платных образовательных услуг в порядке и объеме, которые предусмотрены ", font: "Arial", size: 16 }),
       new TextRun({ text: " Российской Федерации «О защите прав потребителей» и Федеральным ", font: "Arial", size: 16 }),
       new TextRun({ text: " «Об образовании ", font: "Arial", size: 16 }),
       new TextRun({ text: "\nв Российской Федерации».", font: "Arial", size: 16 })] }), // Paragraph index 50
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Организовать и обеспечить надлежащее предоставление образовательных услуг, предусмотренных ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Организовать и обеспечить надлежащее предоставление образовательных услуг, предусмотренных ", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора. Образовательные услуги оказываются в соответствии с федеральными государственными требованиями, учебным планом, в том числе индивидуальным (при его наличии), и расписанием занятий Исполнителя.", font: "Arial", size: 16 })] }), // Paragraph index 51
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Обеспечить Обучающемуся предусмотренные выбранной образовательной программой условия ее освоения, а также специальные условия при необходимости.", font: "Arial", size: 16 })] }), // Paragraph index 52
+      new TextRun({ text: "Обеспечить Обучающемуся предусмотренные выбранной образовательной программой условия ее освоения, а также специальные условия при необходимости.", font: "Arial", size: 16 })] }), // Paragraph index 52
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.5.", font: "Arial", size: 16 }),
       new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Сохранить место за Обучающимся в случае пропуска занятий по уважительным причинам (с учетом оплаты услуг, предусмотренных", font: "Arial", size: 16 }),
       new TextRun({ text: " ", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора).", font: "Arial", size: 16 })] }), // Paragraph index 53
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.6.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Принимать от Обучающегося и (или) Заказчика плату за образовательные услуги.", font: "Arial", size: 16 })] }), // Paragraph index 54
+      new TextRun({ text: "Принимать от Обучающегося и (или) Заказчика плату за образовательные услуги.", font: "Arial", size: 16 })] }), // Paragraph index 54
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.7.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Обеспечить Обучающемуся уважение человеческого достоинства, защиту от всех форм физического и психического насилия, оскорбления личности, охрану жизни и здоровья.", font: "Arial", size: 16 })] }), // Paragraph index 55
+      new TextRun({ text: "Обеспечить Обучающемуся уважение человеческого достоинства, защиту от всех форм физического и психического насилия, оскорбления личности, охрану жизни и здоровья.", font: "Arial", size: 16 })] }), // Paragraph index 55
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Заказчик обязан:", font: "Arial", size: 16 })] }), // Paragraph index 56
+      new TextRun({ text: "Заказчик обязан:", font: "Arial", size: 16 })] }), // Paragraph index 56
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.2.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Заказчик обязан своевременно вносить плату за предоставляемые Обучающемуся образовательные услуги, указанные в ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Заказчик обязан своевременно вносить плату за предоставляемые Обучающемуся образовательные услуги, указанные в ", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора, в размере и порядке, определенных настоящим Договором, а также предоставлять платежные документы, подтверждающие такую оплату (банковская квитанция об оплате, платежное поручение с отметкой банка, чек по операции онлайн банка, чек терминала и др.).", font: "Arial", size: 16 })] }), // Paragraph index 57
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "3.2.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	При зачислении Обучающегося в Университет в образовательное подразделение Института тестовых технологий и дополнительного образования и в процессе его обучения своевременно предоставлять все необходимые документы, предусмотренные локальными нормативными актами Университета.", font: "Arial", size: 16 })] }), // Paragraph index 58
+      new TextRun({ text: "При зачислении Обучающегося в Университет в образовательное подразделение Института тестовых технологий и дополнительного образования и в процессе его обучения своевременно предоставлять все необходимые документы, предусмотренные локальными нормативными актами Университета.", font: "Arial", size: 16 })] }), // Paragraph index 58
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "3.2.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Незамедлительно сообщать Исполнителю об изменении контактного телефона и места жительства.", font: "Arial", size: 16 })] }), // Paragraph index 59
+      new TextRun({ text: "Незамедлительно сообщать Исполнителю об изменении контактного телефона и места жительства.", font: "Arial", size: 16 })] }), // Paragraph index 59
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "3.2.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Извещать Исполнителя об уважительных причинах отсутствия Обучающегося на занятиях.", font: "Arial", size: 16 })] }), // Paragraph index 60
+      new TextRun({ text: "Извещать Исполнителя об уважительных причинах отсутствия Обучающегося на занятиях.", font: "Arial", size: 16 })] }), // Paragraph index 60
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "3.2.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Возмещать ущерб, причиненный Обучающимся имуществу Университета в соответствии с законодательством Российской Федерации.", font: "Arial", size: 16 })] }), // Paragraph index 61
+      new TextRun({ text: "Возмещать ущерб, причиненный Обучающимся имуществу Университета в соответствии с законодательством Российской Федерации.", font: "Arial", size: 16 })] }), // Paragraph index 61
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.2.6. Обеспечивать посещение занятий, своевременное выполнение Обучающимся всех видов учебных заданий.", font: "Arial", size: 16 })] }), // Paragraph index 62
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Обучающийся обязан:", font: "Arial", size: 16 })] }), // Paragraph index 63
+      new TextRun({ text: "Обучающийся обязан:", font: "Arial", size: 16 })] }), // Paragraph index 63
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.3.1.Соблюдать требования, установленные в ", font: "Arial", size: 16 }),
       new TextRun({ text: " Федерального закона от 29 декабря 2012 г. N 273-ФЗ ", font: "Arial", size: 16 }),
       new TextRun({ text: "\n«Об образовании в Российской Федерации», в том числе:", font: "Arial", size: 16 })] }), // Paragraph index 64
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "– посещать занятия согласно расписанию;", font: "Arial", size: 16 })] }), // Paragraph index 65
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "– выполнять задания для подготовки к занятиям, предусмотренным учебным планом, в том числе индивидуальным;", font: "Arial", size: 16 })] }), // Paragraph index 66
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "– извещать Исполнителя о причинах отсутствия на занятиях (в случае если не известил Заказчик);", font: "Arial", size: 16 })] }), // Paragraph index 67
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "– принимать участие в предусмотренных программой обучения массовых, конкурсных и иных мероприятиях;", font: "Arial", size: 16 })] }), // Paragraph index 68
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "– о", font: "Arial", size: 16 }),
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " – посещать занятия согласно расписанию;", font: "Arial", size: 16 })] }), // Paragraph index 65
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " – выполнять задания для подготовки к занятиям, предусмотренным учебным планом, в том числе индивидуальным;", font: "Arial", size: 16 })] }), // Paragraph index 66
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " – извещать Исполнителя о причинах отсутствия на занятиях (в случае если не известил Заказчик);", font: "Arial", size: 16 })] }), // Paragraph index 67
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " – принимать участие в предусмотренных программой обучения массовых, конкурсных и иных мероприятиях;", font: "Arial", size: 16 })] }), // Paragraph index 68
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " – о", font: "Arial", size: 16 }),
       new TextRun({ text: "бучаться в образовательной организации по образовательной программе с соблюдением требований, установленных ", font: "Arial", size: 16 }),
       new TextRun({ text: "федеральными государственными требованиями и учебным планом, в том числе индивидуальным, Исполнителя.", font: "Arial", size: 16 })] }), // Paragraph index 69
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.3.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Соблюдать требования учредительных документов, правила внутреннего распорядка и иные локальные нормативные акты Исполнителя.", font: "Arial", size: 16 })] }), // Paragraph index 70
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal" }), // Paragraph index 71
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "IV. Стоимость услуг, сроки и порядок их оплаты ", font: "Arial", size: 16 })] }), // Paragraph index 72
     new Paragraph({ style: "ConsPlusNormal" }), // Paragraph index 73
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "4.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Полная стоимость платных образовательных услуг за весь период обучения Обучающегося составляет", font: "Arial", size: 16 }),
+      new TextRun({ text: "Полная стоимость платных образовательных услуг за весь период обучения Обучающегося составляет", font: "Arial", size: 16 }),
       new TextRun({ text: " ____", font: "Arial", size: 16 }),
       new TextRun({ text: "24 3", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "00", bold: true, underline: true, font: "Arial", size: 16 }),
@@ -1037,13 +1040,13 @@ export default {
       new TextRun({ text: "год", underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: " и плановый период.", font: "Arial", size: 16 })] }), // Paragraph index 76
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	 Оплата производится ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Оплата производится ", font: "Arial", size: 16 }),
       new TextRun({ text: "в безналичном порядке на счет, указанный в разделе ", font: "Arial", size: 16 }),
       new TextRun({ text: "IX", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора", font: "Arial", size: 16 }),
       new TextRun({ text: ":", font: "Arial", size: 16 })] }), // Paragraph index 77
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.3.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Единовременно в полном объеме до начала обучения либо ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Единовременно в полном объеме до начала обучения либо ", font: "Arial", size: 16 }),
       new TextRun({ text: "в размере 60% от полной стоимости образовательных услуг – до издания приказа/распоряжения о зачислении, оставшуюся сумму в размере 40% от стоимости – не позднее ", font: "Arial", size: 16 }),
       new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "______", bold: true, underline: true, font: "Arial", size: 16 }),
@@ -1052,19 +1055,19 @@ export default {
       new TextRun({ text: "2024_______", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: " (если продолжительность обучения составляет не менее 6 месяцев).", font: "Arial", size: 16 })] }), // Paragraph index 78
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.3.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Оплата образовательных услуг может осуществляться за счет средств материнского (семейного) капитала, при этом оплата производится единовременно не позднее даты завершения обучения.", font: "Arial", size: 16 })] }), // Paragraph index 79
+      new TextRun({ text: "Оплата образовательных услуг может осуществляться за счет средств материнского (семейного) капитала, при этом оплата производится единовременно не позднее даты завершения обучения.", font: "Arial", size: 16 })] }), // Paragraph index 79
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.3.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Оплата, внесенная за обучение, считается авансовым платежом. Право собственности на сумму внесенного авансового платежа переходит к ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Оплата, внесенная за обучение, считается авансовым платежом. Право собственности на сумму внесенного авансового платежа переходит к ", font: "Arial", size: 16 }),
       new TextRun({ text: "Исполнителю", font: "Arial", size: 16 }),
       new TextRun({ text: " ", italic: true, font: "Arial", size: 16 }),
       new TextRun({ text: "после завершения обучения. ", font: "Arial", size: 16 })] }), // Paragraph index 80
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Право собственности на всю сумму внесенного платежа переходит к ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Право собственности на всю сумму внесенного платежа переходит к ", font: "Arial", size: 16 }),
       new TextRun({ text: "Исполнителю", font: "Arial", size: 16 }),
       new TextRun({ text: " ", italic: true, font: "Arial", size: 16 }),
       new TextRun({ text: "после оказания Обучающемуся образовательных услуг в полном объеме. ", font: "Arial", size: 16 })] }), // Paragraph index 81
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	В случае отчисления Обучающегося из Университета до завершения им обучения по дополнительной общеобразовательной (общеразвивающей) программе в полном объеме в соответствии с п. 3 ст. 781, п. 1 ст. 782 ГК РФ право собственности на внесенный платеж в размере фактически произведенных Исполнителем расходов переходит к Исполнителю с момента отчисления Обучающегося из Университета. Расчет суммы возврата денежных средств ", font: "Arial", size: 16 }),
+      new TextRun({ text: "В случае отчисления Обучающегося из Университета до завершения им обучения по дополнительной общеобразовательной (общеразвивающей) программе в полном объеме в соответствии с п. 3 ст. 781, п. 1 ст. 782 ГК РФ право собственности на внесенный платеж в размере фактически произведенных Исполнителем расходов переходит к Исполнителю с момента отчисления Обучающегося из Университета. Расчет суммы возврата денежных средств ", font: "Arial", size: 16 }),
       new TextRun({ text: "осуществляется с момента отчисления", font: "Arial", size: 16 }),
       new TextRun({ text: " Обучающегося из Университета, перерасчет за пропущенные занятия в период освоения дополнительной общеобразовательной (общеразвивающей) программы ", font: "Arial", size: 16 }),
       new TextRun({ text: "не производится.", font: "Arial", size: 16 })] }), // Paragraph index 82
@@ -1078,93 +1081,95 @@ export default {
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "V. Основания, порядок изменения и расторжения договора", font: "Arial", size: 16 })] }), // Paragraph index 85
     new Paragraph({ style: "ConsPlusNormal" }), // Paragraph index 86
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "5.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Условия, на которых заключен настоящий Договор, могут быть изменены по соглашению Сторон или в соответствии с законодательством", font: "Arial", size: 16 }),
       new TextRun({ text: " Российской Федерации.", font: "Arial", size: 16 })] }), // Paragraph index 87
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "5.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий Договор может быть расторгнут по соглашению Сторон.", font: "Arial", size: 16 })] }), // Paragraph index 88
+      new TextRun({ text: "Настоящий Договор может быть расторгнут по соглашению Сторон.", font: "Arial", size: 16 })] }), // Paragraph index 88
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "5.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий Договор может быть расторгнут по инициативе Исполнителя в одностороннем порядке в случаях:", font: "Arial", size: 16 })] }), // Paragraph index 89
+      new TextRun({ text: "Настоящий Договор может быть расторгнут по инициативе Исполнителя в одностороннем порядке в случаях:", font: "Arial", size: 16 })] }), // Paragraph index 89
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	установления нарушения порядка приема в образовательную организацию, повлекшего по вине Обучающегося его незаконное зачисление в эту образовательную организацию;", font: "Arial", size: 16 })] }), // Paragraph index 90
+      new TextRun({ text: "установления нарушения порядка приема в образовательную организацию, повлекшего по вине Обучающегося его незаконное зачисление в эту образовательную организацию;", font: "Arial", size: 16 })] }), // Paragraph index 90
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	просрочки оплаты стоимости платных образовательных услуг;", font: "Arial", size: 16 })] }), // Paragraph index 91
+      new TextRun({ text: "просрочки оплаты стоимости платных образовательных услуг;", font: "Arial", size: 16 })] }), // Paragraph index 91
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	невозможности надлежащего исполнения обязательства по оказанию платных образовательных услуг вследствие действий (бездействия) Обучающегося;", font: "Arial", size: 16 })] }), // Paragraph index 92
+      new TextRun({ text: "невозможности надлежащего исполнения обязательства по оказанию платных образовательных услуг вследствие действий (бездействия) Обучающегося;", font: "Arial", size: 16 })] }), // Paragraph index 92
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	несоблюдения правил внутреннего распорядка;", font: "Arial", size: 16 })] }), // Paragraph index 93
+      new TextRun({ text: "несоблюдения правил внутреннего распорядка;", font: "Arial", size: 16 })] }), // Paragraph index 93
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	в иных случаях, предусмотренных законодательством Российской Федерации.", font: "Arial", size: 16 })] }), // Paragraph index 94
+      new TextRun({ text: "в иных случаях, предусмотренных законодательством Российской Федерации.", font: "Arial", size: 16 })] }), // Paragraph index 94
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "5.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий Договор расторгается досрочно:", font: "Arial", size: 16 })] }), // Paragraph index 95
+      new TextRun({ text: "Настоящий Договор расторгается досрочно:", font: "Arial", size: 16 })] }), // Paragraph index 95
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	по инициативе Обучающегося или родителей (законных представителей) несовершеннолетнего Обучающегося, а также Заказчика;", font: "Arial", size: 16 })] }), // Paragraph index 96
+      new TextRun({ text: "по инициативе Обучающегося или родителей (законных представителей) несовершеннолетнего Обучающегося, а также Заказчика;", font: "Arial", size: 16 })] }), // Paragraph index 96
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	по инициативе Исполнителя в случае применения к Обучающемуся, достигшему возраста пятнадцати лет, отчисления как меры дисциплинарного взыскания, а также в случае установления нарушения порядка приема в образовательную организацию, повлекшего по вине обучающегося его незаконное зачисление в образовательную организацию;", font: "Arial", size: 16 })] }), // Paragraph index 97
+      new TextRun({ text: "по инициативе Исполнителя в случае применения к Обучающемуся, достигшему возраста пятнадцати лет, отчисления как меры дисциплинарного взыскания, а также в случае установления нарушения порядка приема в образовательную организацию, повлекшего по вине обучающегося его незаконное зачисление в образовательную организацию;", font: "Arial", size: 16 })] }), // Paragraph index 97
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "–", font: "Arial", size: 16 }),
-      new TextRun({ text: "	по обстоятельствам, не зависящим от воли Обучающегося или родителей (законных представителей) несовершеннолетнего Обучающегося, Заказчика и Исполнителя, в том числе в случае ликвидации Исполнителя.", font: "Arial", size: 16 })] }), // Paragraph index 98
+      new TextRun({ text: "по обстоятельствам, не зависящим от воли Обучающегося или родителей (законных представителей) несовершеннолетнего Обучающегося, Заказчика и Исполнителя, в том числе в случае ликвидации Исполнителя.", font: "Arial", size: 16 })] }), // Paragraph index 98
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "5.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Исполнитель вправе отказаться от исполнения обязательств по Договору при условии полного возмещения Заказчику убытков.", font: "Arial", size: 16 })] }), // Paragraph index 99
+      new TextRun({ text: "Исполнитель вправе отказаться от исполнения обязательств по Договору при условии полного возмещения Заказчику убытков.", font: "Arial", size: 16 })] }), // Paragraph index 99
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "5.6.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Обучающийся/Заказчик (ненужное вычеркнуть) вправе отказаться от исполнения настоящего Договора при условии оплаты Исполнителю фактически понесенных им расходов, связанных с исполнением обязательств по Договору.", font: "Arial", size: 16 })] }), // Paragraph index 100
+      new TextRun({ text: "Обучающийся/Заказчик (ненужное вычеркнуть) вправе отказаться от исполнения настоящего Договора при условии оплаты Исполнителю фактически понесенных им расходов, связанных с исполнением обязательств по Договору.", font: "Arial", size: 16 })] }), // Paragraph index 100
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 101
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 102
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "VI. Ответственность Исполнителя, Заказчика и Обучающегося", font: "Arial", size: 16 })] }), // Paragraph index 103
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 104
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "За неисполнение или ненадлежащее исполнение своих обязательств по Договору Стороны несут ответственность, предусмотренную", font: "Arial", size: 16 }),
       new TextRun({ text: " законодательством Российской Федерации и Договором.", font: "Arial", size: 16 })] }), // Paragraph index 105
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	При обнаружении недостатка образовательной услуги, в том числе оказания ее не в полном объеме, предусмотренном образовательными программами (частью образовательной программы), Заказчик вправе по своему выбору потребовать:", font: "Arial", size: 16 })] }), // Paragraph index 106
+      new TextRun({ text: "При обнаружении недостатка образовательной услуги, в том числе оказания ее не в полном объеме, предусмотренном образовательными программами (частью образовательной программы), Заказчик вправе по своему выбору потребовать:", font: "Arial", size: 16 })] }), // Paragraph index 106
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.2.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Безвозмездного оказания образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 107
+      new TextRun({ text: "Безвозмездного оказания образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 107
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.2.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Соразмерного уменьшения стоимости оказанной образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 108
+      new TextRun({ text: "Соразмерного уменьшения стоимости оказанной образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 108
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.2.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Возмещения понесенных им расходов по устранению недостатков оказанной образовательной услуги своими силами или третьими лицами.", font: "Arial", size: 16 })] }), // Paragraph index 109
+      new TextRun({ text: "Возмещения понесенных им расходов по устранению недостатков оказанной образовательной услуги своими силами или третьими лицами.", font: "Arial", size: 16 })] }), // Paragraph index 109
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Заказчик вправе отказаться от исполнения Договора и потребовать полного возмещения убытков, если в разумный срок недостатки образовательной услуги не устранены Исполнителем. Заказчик также вправе отказаться от исполнения Договора, если им обнаружен существенный недостаток оказанной образовательной услуги или иные существенные отступления от условий Договора.", font: "Arial", size: 16 })] }), // Paragraph index 110
+      new TextRun({ text: "Заказчик вправе отказаться от исполнения Договора и потребовать полного возмещения убытков, если в разумный срок недостатки образовательной услуги не устранены Исполнителем. Заказчик также вправе отказаться от исполнения Договора, если им обнаружен существенный недостаток оказанной образовательной услуги или иные существенные отступления от условий Договора.", font: "Arial", size: 16 })] }), // Paragraph index 110
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Если Исполнитель нарушил сроки оказания образовательной услуги (сроки начала и (или) окончания оказания образовательной услуги и (или) промежуточные сроки оказания образовательной услуги) либо если во время оказания образовательной услуги стало очевидным, что она не будет осуществлена в срок, Заказчик вправе по своему выбору:", font: "Arial", size: 16 })] }), // Paragraph index 111
+      new TextRun({ text: "Если Исполнитель нарушил сроки оказания образовательной услуги (сроки начала и (или) окончания оказания образовательной услуги и (или) промежуточные сроки оказания образовательной услуги) либо если во время оказания образовательной услуги стало очевидным, что она не будет осуществлена в срок, Заказчик вправе по своему выбору:", font: "Arial", size: 16 })] }), // Paragraph index 111
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.4.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Назначить Исполнителю новый срок, в течение которого Исполнитель должен приступить к оказанию образовательной услуги ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Назначить Исполнителю новый срок, в течение которого Исполнитель должен приступить к оказанию образовательной услуги ", font: "Arial", size: 16 }),
       new TextRun({ text: "\nи (или) закончить оказание образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 112
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.4.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Поручить оказать образовательную услугу третьим лицам за разумную цену и потребовать от Исполнителя возмещения понесенных расходов;", font: "Arial", size: 16 })] }), // Paragraph index 113
+      new TextRun({ text: "Поручить оказать образовательную услугу третьим лицам за разумную цену и потребовать от Исполнителя возмещения понесенных расходов;", font: "Arial", size: 16 })] }), // Paragraph index 113
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.4.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Потребовать уменьшения стоимости образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 114
+      new TextRun({ text: "Потребовать уменьшения стоимости образовательной услуги;", font: "Arial", size: 16 })] }), // Paragraph index 114
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.4.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Расторгнуть Договор.", font: "Arial", size: 16 })] }), // Paragraph index 115
+      new TextRun({ text: "Расторгнуть Договор.", font: "Arial", size: 16 })] }), // Paragraph index 115
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "6.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Заказчик вправе потребовать полного возмещения убытков, причиненных ему в связи с нарушением сроков начала и (или) окончания оказания образовательной услуги, а также в связи с недостатками образовательной услуги.", font: "Arial", size: 16 })] }), // Paragraph index 116
+      new TextRun({ text: "Заказчик вправе потребовать полного возмещения убытков, причиненных ему в связи с нарушением сроков начала и (или) окончания оказания образовательной услуги, а также в связи с недостатками образовательной услуги.", font: "Arial", size: 16 })] }), // Paragraph index 116
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 117
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "VII. Срок действия Договора", font: "Arial", size: 16 })] }), // Paragraph index 118
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 119
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "7.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий Договор вступает в силу со дня его заключения Сторонами и действует до полного исполнения Сторонами обязательств.", font: "Arial", size: 16 })] }), // Paragraph index 120
+      new TextRun({ text: "Настоящий Договор вступает в силу со дня его заключения Сторонами и действует до полного исполнения Сторонами обязательств.", font: "Arial", size: 16 })] }), // Paragraph index 120
     new Paragraph({ style: "ConsPlusNormal" }), // Paragraph index 121
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "VIII. Заключительные положения", font: "Arial", size: 16 })] }), // Paragraph index 122
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal" }), // Paragraph index 123
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Сведения, указанные в настоящем Договоре, соответствуют информации, размещенной на официальном сайте Исполнителя ", font: "Arial", size: 16 }),
+      new TextRun({ text: "Сведения, указанные в настоящем Договоре, соответствуют информации, размещенной на официальном сайте Исполнителя ", font: "Arial", size: 16 }),
       new TextRun({ text: "\nв сети «Интернет» на дату заключения настоящего Договора.", font: "Arial", size: 16 })] }), // Paragraph index 124
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.2.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Под периодом предоставления образовательной услуги (периодом обучения) понимается промежуток времени с даты издания приказа/распоряжения о зачислении Обучающегося в образовательную организацию до даты издания приказа/распоряжения об окончании обучения или отчислении Обучающегося из образовательной организации.", font: "Arial", size: 16 })] }), // Paragraph index 125
+      new TextRun({ text: "Под периодом предоставления образовательной услуги (периодом обучения) понимается промежуток времени с даты издания приказа/распоряжения о зачислении Обучающегося в образовательную организацию до даты издания приказа/распоряжения об окончании обучения или отчислении Обучающегося из образовательной организации.", font: "Arial", size: 16 })] }), // Paragraph index 125
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.3.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий Договор составлен в 3 экземплярах, два находятся у Исполнителя, один – у Заказчика. Все экземпляры имеют одинаковую юридическую силу. Изменения и дополнения настоящего Договора могут производиться только в письменной форме ", font: "Arial", size: 16 }),
-      new TextRun({ text: "\nи подписываться уполномоченными представителями Сторон.", font: "Arial", size: 16 })] }), // Paragraph index 126
+      new TextRun({ text: "Настоящий Договор составлен в 3 экземплярах, два находятся у Исполнителя, один – у Заказчика. Все экземпляры имеют одинаковую юридическую силу. Изменения и дополнения настоящего Договора могут производиться только в письменной форме ", font: "Arial", size: 16 }),
+      new TextRun({ text: "\nи подписываться уполномоченными представителями Сторон.", font: "Arial", size: 16 })] }), 
+      
+      // Paragraph index 126
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.4.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Изменения Договора оформляются дополнительными соглашениями к Договору.", font: "Arial", size: 16 })] }), // Paragraph index 127
+      new TextRun({ text: "Изменения Договора оформляются дополнительными соглашениями к Договору.", font: "Arial", size: 16 })] }), // Paragraph index 127
     new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { line: 240, rule: 'auto' }, style: "Абзацсписка1", children: [new TextRun({ text: "8.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Обучающийся/Заказчик согласен на обработку своих персональных данных в целях исполнения Сторонами своих обязательств. Обработка персональных данных осуществляется Исполнителем в порядке, установленном законодательством Российской Федерации (приложение 1 к Договору).", font: "Arial", size: 16 })] }), // Paragraph index 128
+      new TextRun({ text: "Обучающийся/Заказчик согласен на обработку своих персональных данных в целях исполнения Сторонами своих обязательств. Обработка персональных данных осуществляется Исполнителем в порядке, установленном законодательством Российской Федерации (приложение 1 к Договору).", font: "Arial", size: 16 })] }), // Paragraph index 128
     new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { line: 240, rule: 'auto' }, style: "Абзацсписка1", children: [new TextRun({ text: "8.6.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	Настоящий договор (а также дополнительные соглашения к нему) может быть заключен путем обмена сторонами посредством электронной почты с адресов, указанных в реквизитах сторон настоящего договора, сканированными копиями подписанного соответствующей стороной текста договора. В соответствии со статьей 160 Гражданского кодекса РФ такой обмен стороны признают соблюдением письменной формы сделки и надлежащим подписанием договора.", font: "Arial", size: 16 })] }), // Paragraph index 129
+      new TextRun({ text: "Настоящий договор (а также дополнительные соглашения к нему) может быть заключен путем обмена сторонами посредством электронной почты с адресов, указанных в реквизитах сторон настоящего договора, сканированными копиями подписанного соответствующей стороной текста договора. В соответствии со статьей 160 Гражданского кодекса РФ такой обмен стороны признают соблюдением письменной формы сделки и надлежащим подписанием договора.", font: "Arial", size: 16 })] }), // Paragraph index 129
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 240 }, children: [new TextRun({ text: "IХ", font: "Arial", size: 16 }),
       new TextRun({ text: ". Адреса и реквизиты ", font: "Arial", size: 16 }),
       new TextRun({ text: "с", font: "Arial", size: 16 }),
       new TextRun({ text: "торон", font: "Arial", size: 16 })] }), // Paragraph index 130
-    new Paragraph({ alignment: AlignmentType.CENTER }), // Paragraph index 131
+    new Paragraph({ alignment: AlignmentType.CENTER }), 
+    
+    // Paragraph index 131
     new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { before: 360 }, style: "ConsPlusCell", children: [new TextRun({ text: "Проректор", font: "Arial", size: 16 })] }), // Paragraph index 132
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "по довузовскому и дополнительному", font: "Arial", size: 16 })] }), // Paragraph index 133
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "профессиональному образованию", font: "Arial", size: 16 })] }), // Paragraph index 134
@@ -1222,23 +1227,28 @@ export default {
     ...mapState(usePayerStore, ["payerList"]),
     programOptions() {
       const programStore = useProgramStore();
-      return Object.values(programStore.programMap || {}).map((item) => ({
+      return Object.values(programStore.programMap || {})
+      .map((item) => ({
         value: item.id,
         label: item.program_name,
       }));
     },
     listenerOptions() {
       const listenerStore = useListenerStore();
-      return Object.values(listenerStore.listenerMap || {}).map((item) => ({
+      return Object.values(listenerStore.listenerMap || {})
+      .filter(item => item.deleted_at === null)
+      .map((item) => ({
         value: item.id,
-        label: item.name,
+        label: item.full_name,
       }));
     },
     payerOptions() {
       const payerStore = usePayerStore();
-      return Object.values(payerStore.payerMap || {}).map((item) => ({
+      return Object.values(payerStore.payerMap || {})
+      .filter(item => item.deleted_at === null)
+      .map((item) => ({
         value: item.id,
-        label: item.name,
+        label: item.full_name,
       }));
     },
   },

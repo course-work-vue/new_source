@@ -37,6 +37,7 @@ export const useProgramStore = defineStore('program', {
 
         async putProgram(program) {
             const response = await api.putProgram(program.id, program);
+            console.log(response);
             if (response.success === true) {
                 const index = this.programList.findIndex(s => s.id === program.id);
                 if (index !== -1) {

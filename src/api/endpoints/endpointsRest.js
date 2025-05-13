@@ -36,7 +36,7 @@ export default Object.freeze({
     l_group: prefix + 'l_groups',
     contract: prefix + 'contracts',
     payer: prefix + 'payers',
-    pay_graph: prefix + 'pay_graphs',
+    pay_graph: prefix + 'pay_graph',
     program: prefix + 'programs',
 
     //ИМПОРТ

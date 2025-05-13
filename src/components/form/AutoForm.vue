@@ -17,6 +17,7 @@
         :size="item.size"
         :placeholder="item.placeholder"
         :disabled="item.disabled"
+        :readonly="item.readonly" 
         @update:value="update($event, item.key)"
       ></text-input>
 
@@ -184,6 +185,10 @@ export default {
       validator: (scheme) => {
         return scheme instanceof FormScheme;
       },
+    },
+    readonly: {
+      type: Boolean,
+      default: false 
     },
     modelValue: {
       type: Object,

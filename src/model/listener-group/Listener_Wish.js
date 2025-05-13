@@ -17,8 +17,8 @@ export default class Listener_Wish {
     this.listener_id = listener_wish?.listener_id ?? null;
     this.group_size = listener_wish?.group_size ?? null;
     this.hours = listener_wish?.hours ?? null;
-    this.start_date = listener_wish?.start_date ?? null;
-    this.end_date = listener_wish?.end_date ?? null;
+    this.start_date = new Date(listener_wish?.start_date) ?? null;
+    this.end_date = new Date(listener_wish?.end_date) ?? null;
     this.listener_comment = listener_wish?.listener_comment ?? null;
     this.deleted_at = listener_wish?.deleted_at ?? null;
   }

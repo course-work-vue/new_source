@@ -18,8 +18,8 @@ export default class Listenergroup {
     this.group_program_id = listenergroup?.group_program_id ?? null;
     this.hours = listenergroup?.hours ?? null;
     this.group_number = listenergroup?.group_number ?? null;
-    this.start_date = listenergroup?.start_date ?? null;
-    this.end_date = listenergroup?.end_date ?? null;
+    this.start_date = new Date(listenergroup?.start_date) ?? null;
+    this.end_date = new Date(listenergroup?.end_date) ?? null;
     this.starttime = listenergroup?.starttime ?? null;
     this.endtime = listenergroup?.endtime ?? null;
     this.people_count = listenergroup?.people_count ?? null;

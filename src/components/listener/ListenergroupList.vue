@@ -115,7 +115,7 @@
           </auto-form>
           <button type="button" class="btn btn-primary ms-5" @click="openAddSidebar"
           style="white-space: nowrap;"
-          :disabled="!listenergroup.program_id">
+          :disabled="!listenergroup.group_program_id">
             Создать
           </button>
         </div>
@@ -233,10 +233,10 @@
         </div>
 
         <div class="d-flex flex-column align-items-center justify-content-center px-2" style="align-self: center;">
-           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedToGroup" title="Добавить выбранных в группу" :disabled="!canMoveToGroup"><i class="material-icons-outlined">chevron_right</i></button>
-           <button class="btn btn-light btn-sm mb-2" @click="moveAllToGroup" title="Добавить всех в группу" :disabled="!canMoveAllToGroup"><i class="material-icons-outlined">double_arrow</i></button>
-           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedFromGroup" title="Убрать выбранных из группы" :disabled="!canMoveFromGroup"><i class="material-icons-outlined">chevron_left</i></button>
-           <button class="btn btn-light btn-sm" @click="moveAllFromGroup" title="Убрать всех из группы" :disabled="!canMoveAllFromGroup"><i class="material-icons-outlined" style="transform: rotate(180deg);">double_arrow</i></button>
+           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedToGroup" title="Добавить выбранных в группу" ><i class="material-icons-outlined">chevron_right</i></button>
+           <button class="btn btn-light btn-sm mb-2" @click="moveAllToGroup" title="Добавить всех в группу" ><i class="material-icons-outlined">double_arrow</i></button>
+           <button class="btn btn-light btn-sm mb-2" @click="moveSelectedFromGroup" title="Убрать выбранных из группы"><i class="material-icons-outlined">chevron_left</i></button>
+           <button class="btn btn-light btn-sm" @click="moveAllFromGroup" title="Убрать всех из группы"><i class="material-icons-outlined" style="transform: rotate(180deg);">double_arrow</i></button>
         </div>
 
         <div style="flex: 1; height: 50vh">
@@ -282,6 +282,8 @@ import { useProgramStore } from "@/store2/listenergroup/program";
 import { useL_Ready_GroupStore } from "@/store2/listenergroup/l_ready_group";
 import { useL_Group_StatusStore } from "@/store2/listenergroup/l_group_status";
 import { useListenerStore } from "@/store2/listenergroup/listener";
+import { useL_Wish_DayStore } from "@/store2/listenergroup/l_wish_day"
+import { useListener_WishStore } from "@/store2/listenergroup/listenerwish";
 import L_Wish_Day from "@/model/listener-group/L_Wish_Day"; 
 import { useDayStore } from "@/store2/listenergroup/day";
 
@@ -376,28 +378,6 @@ export default {
         },
         { field: "group_number", headerName: "Номер группы" },
         { field: "program_name", headerName: "Программа" },
-        { 
-          field: "group_formed", 
-          headerName: "Статус",
-          cellRenderer: (params) => {
-            const status = params.value;
-            let statusText = '';
-            let statusClass = '';
-            
-            if (status === true) {
-              statusText = 'Сформирована';
-              statusClass = 'text-success';
-            } else if (status === false) {
-              statusText = 'В процессе';
-              statusClass = 'text-warning';
-            } else {
-              statusText = 'Не определён';
-              statusClass = 'text-secondary';
-            }
-            
-            return `<span class="${statusClass}">${statusText}</span>`;
-          }
-        },
       ],
     });
 
@@ -447,15 +427,17 @@ export default {
     const onGridReadySuitable = (params) => {
     console.log("Grid API для Подходящих слушателей готов.");
     gridApiSuitable.value = params.api;
-    gridColumnApiSuitable.value = params.columnApi; // Опционально
+    gridColumnApiSuitable.value = params.columnApi; 
   };
 
-  // Функция для установки API правой таблицы
   const onGridReadyGroup = (params) => {
     console.log("Grid API для Слушателей в группе готов.");
     gridApiGroup.value = params.api;
-    gridColumnApiGroup.value = params.columnApi; // Опционально
+    gridColumnApiGroup.value = params.columnApi; 
   };
+
+  const ignoreCountWish = ref(false); // Используем ref()
+  const ignoreScheduleWish = ref(false); // Используем ref()
 
     return {
       onGridReady,
@@ -491,6 +473,9 @@ export default {
       listenergroup,
       groupListenersRowData,
       loadL_Group_StatusData,
+
+      ignoreCountWish,       
+      ignoreScheduleWish,    
     };
   },
   data() {
@@ -508,6 +493,8 @@ export default {
       creatingProgram: '',
       creatingProgramId: null,
       days: [],
+
+      justMovedFromGroupIds: new Set(),
     };
   },
   async mounted() {
@@ -516,7 +503,6 @@ export default {
       await this.loadL_Group_StatusData();
       this.loadListenergroupData();
       this.loadListenersData();
-      console.log("Статусы групп:", this.l_group_status);
     } catch (error) {
       console.error("Ошибка при загрузке данных слушателей:", error);
     }
@@ -535,6 +521,8 @@ export default {
       new DateInput({
         key: "start_date",
         label: "Дата начала",
+        dateFormat: "dd/mm/yy",
+        size: "sm",
       }),
       new DateInput({
         key: "end_date",
@@ -554,6 +542,9 @@ export default {
     "getListenerList",
     "getReady_ListenerList"
   ]),
+  ...mapActions(useListener_WishStore, [
+      "getListener_WishList",
+    ]),
     ...mapActions(useProgramStore, ["getProgramList"]),
     ...mapActions(useL_Group_StatusStore, ["getL_Group_StatusList"]),
     ...mapActions(useL_Ready_GroupStore, [
@@ -571,6 +562,8 @@ export default {
       this.errors = {};
       this.creatingProgram = '';
       this.creatingProgramId = null;
+      this.tableData.splice(0, this.tableData.length); 
+      this.justMovedFromGroupIds.clear();
     },
     edit(event) {
       this.resetLgr();
@@ -593,7 +586,6 @@ export default {
         console.warn(`Программа с ID ${selectedProgramId} не найдена в programMap.`);
       }
 
-      console.log(`Переход к созданию группы для программы: "${programName}" (ID: ${selectedProgramId})`);
       this.creatingProgram = programName;
       this.creatingProgramId = selectedProgramId;
       console.log(this.creatingProgram)
@@ -601,18 +593,14 @@ export default {
       this.showAddSidebar = true;
     },
     async submit() {
-      console.log("Сабмитаю");
       let listenergroup = { ...this.listenergroup };
       if (listenergroup.id) {
-        console.log("До обновления (PUT):", listenergroup);
         await this.putListenergroup(listenergroup);
       } else {
-        console.log("До создания (POST):", listenergroup);
-        console.log("Часы:", listenergroup.hours);
-        console.log("Номер группы:", listenergroup.group_number);
         await this.postListenergroup(listenergroup);
       }
-      this.showSidebar = false;
+      this.showAddSidebar = false;
+      this.showGenAddSidebar = false;
       this.resetLgr();
       this.loadListenergroupData();
     },
@@ -620,7 +608,7 @@ export default {
       let listenergroup = { ...this.listenergroup };
       console.log("Удаляем:", listenergroup);
       await this.deleteListenergroup(listenergroup);
-      this.showSidebar = false;
+      this.showAddSidebar = false;
       this.resetLgr();
       this.loadListenergroupData();
     },
@@ -632,9 +620,9 @@ export default {
           this.getListenergroupList(),
           this.getProgramList(),
           this.getListenerList(),
-          //this.getReady_ListenerList(),
+          this.getListener_WishList(),
           this.getL_Group_StatusList(),
-          //this.getL_Ready_GroupList(),
+          this.getL_Ready_GroupList(),
           this.getDayList(),
        ]);
        console.log("Initial data fetched successfully.");
@@ -650,18 +638,27 @@ export default {
           // Получаем статусы групп
           const groupStatuses = this.l_group_statusList || [];
           const statusMap = new Map(groupStatuses.map(status => [status.group_id, status.group_formed]));
+          
+          // Получаем мапу программ
+          const programStore = useProgramStore();
+          const programMap = programStore.programMap || {};
 
           this.rowData.value = this.listenergroupList
             .filter(lgr => lgr.deleted_at === null)
             .map(lgr => ({
               ...lgr,
-              group_formed: statusMap.get(lgr.id) || null
+              group_formed: statusMap.get(lgr.id) || null,
+              program_name: programMap[lgr.group_program_id]?.program_name || 'Не указана'
             }));
         } else if (this.listenergroupList && this.listenergroupList.deleted_at === null) {
           const status = this.l_group_statusList?.find(s => s.group_id === this.listenergroupList.id);
+          const programStore = useProgramStore();
+          const programName = programStore.programMap[this.listenergroupList.group_program_id]?.program_name || 'Не указана';
+          
           this.rowData.value = [{
             ...this.listenergroupList,
-            group_formed: status?.group_formed || null
+            group_formed: status?.group_formed || null,
+            program_name: programName
           }];
         } else {
           this.rowData.value = [];
@@ -679,6 +676,7 @@ export default {
           this.suitableListenersRowData.value = this.listenerList
             .filter((listener) => listener.deleted_at === null)
             .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
           console.log(this.suitableListenersRowData.value)
 
         } else if (this.listenerList && this.listenerList.deleted_at === null) {
@@ -743,7 +741,7 @@ export default {
       this.showSidebar = true;
     },
     openAddSidebar() {
-      const selectedProgramId = this.listenergroup.program_id;
+      const selectedProgramId = this.listenergroup.group_program_id;;
       if (!selectedProgramId) {
         console.error("Ошибка: Невозможно продолжить без выбранной программы!");
         return; 
@@ -766,6 +764,7 @@ export default {
       this.showAddSidebar = true; 
     },
     openGenAddSidebar() {
+      this.resetLgr();
       this.showGenAddSidebar = true;
     },
     closeSidebar() {
@@ -787,6 +786,210 @@ export default {
         this.days = [];
       }
     },
+
+    findOriginalListener(listenerId) {
+    if (!this.listenerList || !Array.isArray(this.listenerList)) {
+      console.error("Исходный список слушателей (listenerList) не доступен или не массив.");
+      return null;
+    }
+    return this.listenerList.find(listener => listener.id === listenerId);
+  },
+
+  moveSelectedToGroup() {
+    console.log("НАЖАЛОСЬ");
+    const currentGroupId = this.listenergroup.id;
+    if (!currentGroupId) {
+      console.error("Невозможно добавить в группу: ID текущей группы не определен.");
+      return;
+    }
+    if (!this.gridApiSuitable) { // Или gridApiSuitable.value в setup
+       console.error("API таблицы 'Подходящие слушатели' не готово.");
+       return;
+    }
+
+    const selectedNodes = this.gridApiSuitable.getSelectedNodes(); // Или .value.getSelectedNodes()
+    if (!selectedNodes || selectedNodes.length === 0) {
+      console.log("Нет выбранных слушателей для перемещения в группу.");
+      return;
+    }
+
+    console.log(`Перемещение ${selectedNodes.length} слушателей в группу ID: ${currentGroupId}`);
+
+    selectedNodes.forEach(node => {
+      const listenerData = node.data; // Данные выбранной строки
+      if (!listenerData || !listenerData.id) return;
+
+      const originalListener = this.findOriginalListener(listenerData.id);
+      if (originalListener) {
+        // Убедимся, что group_ids существует и это массив
+        if (!Array.isArray(originalListener.group_ids)) {
+          originalListener.group_ids = [];
+        }
+        // Добавляем ID группы, если его еще нет
+        if (!originalListener.group_ids.includes(currentGroupId)) {
+          originalListener.group_ids.push(currentGroupId);
+          console.log(` - Слушателю ${originalListener.id} добавлена группа ${currentGroupId}`);
+        }
+      } else {
+          console.warn(`Не найден оригинальный слушатель с ID ${listenerData.id} в listenerList.`);
+      }
+    });
+
+    this.gridApiSuitable.deselectAll(); // Или .value.deselectAll()
+
+    console.log("Перемещение в группу завершено.");
+    // Таблицы должны обновиться автоматически из-за реактивности computed properties
+  },
+
+  /**
+   * Перемещает ВСЕХ слушателей из списка "Подходящие" в "Группу".
+   */
+  moveAllToGroup() {
+    const currentGroupId = this.listenergroup.id;
+     if (!currentGroupId) {
+      console.error("Невозможно добавить в группу: ID текущей группы не определен.");
+      return;
+    }
+     if (!this.gridApiSuitable) { // Или gridApiSuitable.value в setup
+       console.error("API таблицы 'Подходящие слушатели' не готово.");
+       return;
+    }
+
+    // Получаем данные ВСЕХ строк, отображаемых в таблице "Подходящие"
+    const allSuitableListenersData = [];
+    this.gridApiSuitable.forEachNode(node => { // Или .value.forEachNode
+        if(node.data) {
+            allSuitableListenersData.push(node.data);
+        }
+    });
+    // Альтернативно, если suitableListeners доступен: const allSuitableListenersData = this.suitableListeners;
+
+    if (allSuitableListenersData.length === 0) {
+        console.log("Нет слушателей в списке 'Подходящие' для перемещения.");
+        return;
+    }
+
+    console.log(`Перемещение ВСЕХ (${allSuitableListenersData.length}) слушателей в группу ID: ${currentGroupId}`);
+
+    allSuitableListenersData.forEach(listenerData => {
+      if (!listenerData || !listenerData.id) return;
+
+      const originalListener = this.findOriginalListener(listenerData.id);
+      if (originalListener) {
+        if (!Array.isArray(originalListener.group_ids)) {
+          originalListener.group_ids = [];
+        }
+        if (!originalListener.group_ids.includes(currentGroupId)) {
+          originalListener.group_ids.push(currentGroupId);
+           console.log(` - Слушателю ${originalListener.id} добавлена группа ${currentGroupId}`);
+        }
+      } else {
+          console.warn(`Не найден оригинальный слушатель с ID ${listenerData.id} в listenerList.`);
+      }
+    });
+
+    console.log("Перемещение всех в группу завершено.");
+     // Таблицы должны обновиться автоматически
+  },
+
+  /**
+   * Перемещает выбранных слушателей из "Группы" обратно в "Подходящие".
+   */
+  moveSelectedFromGroup() {
+    const currentGroupId = this.listenergroup.id;
+    if (!currentGroupId) {
+      console.error("Невозможно убрать из группы: ID текущей группы не определен.");
+      return;
+    }
+     if (!this.gridApiGroup) { // Или gridApiGroup.value в setup
+       console.error("API таблицы 'Слушатели в группе' не готово.");
+       return;
+    }
+
+    const selectedNodes = this.gridApiGroup.getSelectedNodes(); // Или .value.getSelectedNodes()
+    if (!selectedNodes || selectedNodes.length === 0) {
+      console.log("Нет выбранных слушателей для удаления из группы.");
+      return;
+    }
+
+     console.log(`Удаление ${selectedNodes.length} слушателей из группы ID: ${currentGroupId}`);
+
+    selectedNodes.forEach(node => {
+      const listenerData = node.data;
+      if (!listenerData || !listenerData.id) return;
+
+      const originalListener = this.findOriginalListener(listenerData.id);
+      if (originalListener && Array.isArray(originalListener.group_ids)) {
+        const index = originalListener.group_ids.indexOf(currentGroupId);
+        if (index > -1) {
+        originalListener.group_ids.splice(index, 1); // Удаляем ID группы
+        console.log(` - У слушателя ${originalListener.id} удалена группа ${currentGroupId}`);
+        // ---> ДОБАВЛЯЕМ ID ВО ВРЕМЕННОЕ ХРАНИЛИЩЕ <---
+        this.justMovedFromGroupIds.add(listenerData.id);
+      }
+      } else {
+          console.warn(`Не найден оригинальный слушатель с ID ${listenerData.id} или у него нет group_ids.`);
+      }
+    });
+
+    // Опционально: Сбросить выбор
+    this.gridApiGroup.deselectAll(); // Или .value.deselectAll()
+
+    console.log("Удаление из группы завершено.");
+    // Таблицы должны обновиться автоматически
+  },
+
+  /**
+   * Перемещает ВСЕХ слушателей из "Группы" обратно в "Подходящие".
+   */
+  moveAllFromGroup() {
+     const currentGroupId = this.listenergroup.id;
+     if (!currentGroupId) {
+      console.error("Невозможно убрать из группы: ID текущей группы не определен.");
+      return;
+    }
+    if (!this.gridApiGroup) { // Или gridApiGroup.value в setup
+       console.error("API таблицы 'Слушатели в группе' не готово.");
+       return;
+    }
+
+    // Получаем данные ВСЕХ строк, отображаемых в таблице "Группа"
+    const allGroupListenersData = [];
+     this.gridApiGroup.forEachNode(node => { // Или .value.forEachNode
+        if(node.data) {
+            allGroupListenersData.push(node.data);
+        }
+    });
+    // Альтернативно, если groupListenersInOpenGroup доступен: const allGroupListenersData = this.groupListenersInOpenGroup;
+
+
+     if (allGroupListenersData.length === 0) {
+        console.log("Нет слушателей в группе для удаления.");
+        return;
+    }
+
+     console.log(`Удаление ВСЕХ (${allGroupListenersData.length}) слушателей из группы ID: ${currentGroupId}`);
+
+     allGroupListenersData.forEach(listenerData => {
+        if (!listenerData || !listenerData.id) return;
+
+        const originalListener = this.findOriginalListener(listenerData.id);
+         if (originalListener && Array.isArray(originalListener.group_ids)) {
+            const index = originalListener.group_ids.indexOf(currentGroupId);
+            if (index > -1) {
+              originalListener.group_ids.splice(index, 1);
+               console.log(` - У слушателя ${originalListener.id} удалена группа ${currentGroupId}`);
+              this.justMovedFromGroupIds.add(listenerData.id);
+              }
+         } else {
+              console.warn(`Не найден оригинальный слушатель с ID ${listenerData.id} или у него нет group_ids.`);
+         }
+     });
+
+      console.log("Удаление всех из группы завершено.");
+       // Таблицы должны обновиться автоматически
+  },
+
   },
   computed: {
     ...mapState(useListenergroupStore, ["listenergroupList"]),
@@ -796,6 +999,10 @@ export default {
     ...mapState(useListenerStore, [
       "listenerList"
     ]),
+    ...mapState(useL_Wish_DayStore, [
+      "l_wish_dayList"
+    ]),
+    
     ...mapState(useDayStore, ["dayList"]),
     
     groupListenersInOpenGroup() {
@@ -832,26 +1039,53 @@ export default {
   },
 
   suitableListeners() {
-    console.log("%c[suitableListeners] Вызвано", "color: green; font-weight: bold;");
+  console.log("%c[suitableListeners] Вызвано", "color: green; font-weight: bold;");
 
-    const allListeners = this.listenerList || [];
-    const selectedProgramId = this.creatingProgramId;
-    
-    console.log(`[suitableListeners] ID выбранной программы для фильтрации: ${selectedProgramId}`);
+  const allListeners = this.listenerList || [];
+  const selectedProgramId = this.creatingProgramId;
+  const currentGroupId = this.listenergroup.id;
 
-    let processedCount = 0;
-    const filteredListeners = allListeners.filter(listener => {
-      processedCount++;
-      const isNotDeleted = listener.deleted_at === null;
-      const hasValidProgramIds = listener.program_ids && Array.isArray(listener.program_ids);
-      const hasSelectedProgram = hasValidProgramIds && listener.program_ids.includes(selectedProgramId);
+  console.log(`[suitableListeners] ID выбранной программы для фильтрации: ${selectedProgramId}`);
+  console.log(`[suitableListeners] ID текущей группы: ${currentGroupId}`);
+  console.log(`[suitableListeners] Слушатели, только что перемещенные:`, Array.from(this.justMovedFromGroupIds)); // Логируем Set как массив
 
-      return isNotDeleted && hasSelectedProgram;
-    });
+  let processedCount = 0;
+  const filteredListeners = allListeners.filter(listener => {
+    processedCount++;
+    const isNotDeleted = listener.deleted_at === null;
 
-    const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
-    return sortedListeners;
-  },
+    // Проверяем, не находится ли слушатель уже в текущей группе
+    const hasValidGroupIds = listener.group_ids && Array.isArray(listener.group_ids);
+    const isInCurrentGroup = hasValidGroupIds && listener.group_ids.includes(currentGroupId);
+    const isNotInCurrentGroup = !isInCurrentGroup; // Условие, что НЕ в группе
+
+    // ---> НОВАЯ ПРОВЕРКА: Был ли слушатель только что перемещен <---
+    const wasJustMoved = this.justMovedFromGroupIds.has(listener.id);
+
+    // Условие на программу (остается как было)
+    const hasValidProgramIds = listener.program_ids && Array.isArray(listener.program_ids);
+    const hasSelectedProgram = hasValidProgramIds && listener.program_ids.includes(selectedProgramId);
+
+    // Итоговое условие:
+    // Должен быть НЕ удален И НЕ в текущей группе И (ИЛИ соответствует программе ИЛИ был только что перемещен)
+    const shouldBeIncluded = isNotDeleted && isNotInCurrentGroup && (hasSelectedProgram || wasJustMoved);
+
+    // Логирование для отладки первых нескольких или конкретного ID
+    if (listener.id === 54 || processedCount <= 5 || wasJustMoved) {
+         console.log(`[suitableListeners] Проверка слушателя ID ${listener.id}:
+           - isNotDeleted: ${isNotDeleted}
+           - isNotInCurrentGroup: ${isNotInCurrentGroup}
+           - hasSelectedProgram: ${hasSelectedProgram}
+           - wasJustMoved: ${wasJustMoved}
+           - Итог (shouldBeIncluded): ${shouldBeIncluded}`);
+    }
+
+    return shouldBeIncluded;
+  });
+
+  const sortedListeners = filteredListeners.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
+  return sortedListeners;
+},
 
   groupListenersCount() {
     return this.groupListenersInOpenGroup.length;
@@ -862,26 +1096,20 @@ export default {
     console.log("Генерация опций ВСЕХ программ из:", programStore.programMap);
     return Object.values(programStore.programMap || {})
       .map(item => ({
-        value: item.id, // ID программы
-        label: item.program_name, // Название программы
+        value: item.id, 
+        label: item.program_name, 
       }))
-      .sort((a, b) => a.label.localeCompare(b.label)); // Сортировка по названию
+      .sort((a, b) => a.label.localeCompare(b.label)); 
   },
 
   readyProgramOptions() {
   const readyGroupStore = useL_Ready_GroupStore();
   const programStore = useProgramStore();
 
-  // 1. Получаем список объектов готовых групп.
   const readyGroups = readyGroupStore.l_ready_groupList || [];
   console.log("1. Список объектов готовых групп (из store):", readyGroups);
-  // Дополнительный лог для проверки структуры первого объекта
-  if (readyGroups.length > 0) {
-    console.log("DEBUG: Структура первого объекта L_Ready_Group:", readyGroups[0]);
-  }
 
-  // 2. Создаем МАССИВ ID готовых программ.
-  //    !!! ВНИМАНИЕ: ЭТА СТРОКА ОЖИДАЕТ НАЛИЧИЕ 'program_id' В ОБЪЕКТАХ 'readyGroups' !!!
+  console.log("MEOW!")
   const readyProgramIdsArray = readyGroups.map(rg => {
     // Если program_id отсутствует, rg.program_id вернет undefined.
     if (rg.program_id === undefined) {
@@ -894,26 +1122,21 @@ export default {
   // Если на предыдущем шаге не нашлось ни одного program_id, массив будет пуст.
   console.log("2. Массив ID готовых программ (после извлечения и фильтрации undefined):", readyProgramIdsArray);
 
-  // 3. Получаем все программы.
   const allPrograms = Object.values(programStore.programMap || {});
 
-  // 4. Фильтруем, форматируем и сортируем.
-  //    Фильтрация будет работать корректно ТОЛЬКО ЕСЛИ readyProgramIdsArray содержит актуальные ID.
   const options = allPrograms
     .filter(program => {
-        // Убедимся, что у программы есть ID для сравнения
         if (program.id === undefined || program.id === null) {
             console.warn("Проблема с данными Program: отсутствует id. Программа:", program);
             return false;
         }
-        // Проверяем, есть ли ID программы в нашем списке ID готовых программ
         return readyProgramIdsArray.includes(program.id);
     })
     .map(item => ({
       value: item.id,
       label: item.program_name,
     }))
-    .sort((a, b) => a.label.localeCompare(b.label)); // Сортировка
+    .sort((a, b) => a.label.localeCompare(b.label)); 
 
   console.log("3. Сгенерированные опции ГОТОВЫХ программ:", options);
   return options;
@@ -921,11 +1144,9 @@ export default {
 
   dynamicProgramOptions() {
     if (this.filterOnlySufficient) {
-      // Если чекбокс НАЖАТ - возвращаем ВСЕ программы
       console.log("Используем ВСЕ опции программ");
       return this.allProgramOptions;
     } else {
-      // Если чекбокс НЕ НАЖАТ - возвращаем только ГОТОВЫЕ
       console.log("Используем опции ГОТОВЫХ программ");
       return this.readyProgramOptions;
     }
@@ -935,7 +1156,7 @@ export default {
     console.log("Пересчет addScheme, используемые опции:", this.dynamicProgramOptions);
     return new FormScheme([
       new ComboboxInput({
-        key: "program_id",
+        key: "group_program_id",
         label: "Программа",
         placeholder: "Выберите программу",
         options: this.dynamicProgramOptions, 

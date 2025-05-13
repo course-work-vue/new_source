@@ -28,12 +28,20 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
         },
 
         async postL_Wish_Day(l_wish_day) {
-
             const response = await api.postL_Wish_Day(l_wish_day);
-            //console.log(response)
             if (response.success === true) {
 
                 await this.getL_Wish_DayList();
+            }
+        },
+
+        async putListener_Wish(listener_wish) {
+            const response = await api.putListener_Wish(listener_wish.id, listener_wish);
+            if (response.success === true) {
+                const index = this.listener_wishList.findIndex(s => s.id === listener_wish.id);
+                if (index !== -1) {
+                    this.listener_wishList.splice(index, 1, new Listener_Wish(listener_wish));
+                }
             }
         },
 
@@ -44,24 +52,17 @@ export const useL_Wish_DayStore = defineStore('l_wish_day', {
             const toCreate = current.filter(d => !d.l_wish_day_id);
             const toUpdate = current.filter(d => d.l_wish_day_id);
             const toDelete = existing.filter(e => !current.find(d => d.l_wish_day_id === e.l_wish_day_id));
-            
-            console.log("Сверяем")
-            console.log(existing)
-            console.log(current)
           
             for (const day of toCreate) {
               await this.postL_Wish_Day(day);
             }
-            // 3. Обновить изменённые
             for (const day of toUpdate) {
               //await this.putL_Wish_Day(day);
             }
             for (const day of toDelete) {
               await this.deleteL_Wish_Day(day);
             }
-          
-            // 5. Обновить локальный список
-            //await this.getL_Wish_DayList();
+        
           },
 
         async deleteL_Wish_Day(l_wish_day) {

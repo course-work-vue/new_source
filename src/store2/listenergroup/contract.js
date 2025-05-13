@@ -16,9 +16,7 @@ export const useContractStore = defineStore('contract', {
     },
     actions: {
         async getContractList() {
-            console.log("Я в договорах");
             const responseData = await api.getContractList();
-            console.log(responseData);
             this.contractList = responseData.map((contract) => {
                 return new Contract(contract);
             });
@@ -30,7 +28,6 @@ export const useContractStore = defineStore('contract', {
 
         async postContract(contract) {
             const response = await api.postContract(contract);
-
             if (response.success === true) {
 
                 await this.getContractList();
@@ -39,6 +36,7 @@ export const useContractStore = defineStore('contract', {
 
         async putContract(contract) {
             const response = await api.putContract(contract.id, contract);
+            console.log(response);
             if (response.success === true) {
                 const index = this.contractList.findIndex(s => s.id === contract.id);
                 if (index !== -1) {
@@ -49,6 +47,7 @@ export const useContractStore = defineStore('contract', {
 
         async deleteContract(contract) {
             const response = await api.deleteContract(contract);
+            
             if (response.success === true) {
                 const index = this.contractList.findIndex(s => s.id === contract.id);
                 if (index !== -1) {

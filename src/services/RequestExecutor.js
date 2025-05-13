@@ -115,11 +115,6 @@ class RequestExecutor {
             }
 
             const location = exact ? url : this.baseUrl + url;
-            console.log('↪︎ RequestExecutor fetching:', {
-                location,
-                method: init.method,
-                body: init.body ?? data
-              });
             const response = await fetch(location, init);
 
             if (response.status === 401) {
