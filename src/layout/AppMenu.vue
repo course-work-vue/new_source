@@ -32,15 +32,32 @@ const model = ref([
             label: "Список студентов",
             icon: "pi pi-fw pi-list",
             to: "/students",
+            roles: ["super_admin", "superadmin", "control_student"],
           },
           {
             label: "Направления",
             icon: "pi pi-fw pi-directions",
             to: "/directions",
+            roles: ["super_admin", "superadmin", "control_student"],
           },
-          { label: "Профили", icon: "pi pi-fw pi-id-card", to: "/profiles" },
-          { label: "Группы", icon: "pi pi-fw pi-users", to: "/groups" },
-          { label: "Квал. работы", icon: "pi pi-fw pi-book", to: "/courseworks" },
+          {
+            label: "Профили",
+            icon: "pi pi-fw pi-id-card",
+            to: "/profiles",
+            roles: ["super_admin", "superadmin", "control_student"],
+          },
+          {
+            label: "Группы",
+            icon: "pi pi-fw pi-users",
+            to: "/groups",
+            roles: ["super_admin", "superadmin", "control_student"],
+          },
+          {
+            label: "Квал. работы",
+            icon: "pi pi-fw pi-book",
+            to: "/courseworks",
+            roles: ["super_admin", "superadmin", "control_student"],
+          },
         ],
       },
       {
@@ -76,7 +93,11 @@ const model = ref([
             icon: "pi pi-fw pi-calendar-times",
             to: "/ScheduleLoads",
           },
-          { label: "Расписание", icon: "pi pi-fw pi-calendar", to: "/schedules" },
+          {
+            label: "Расписание",
+            icon: "pi pi-fw pi-calendar",
+            to: "/schedules",
+          },
           { label: "Аудитории", icon: "pi pi-fw pi-building", to: "/audits" },
         ],
       },
@@ -88,7 +109,7 @@ const model = ref([
       {
         label: "Админ панель",
         icon: "pi pi-fw pi-box",
-        roles: ["super_admin", 'superadmin'], // Этот маршрут доступен только для админа
+        roles: ["super_admin", "superadmin"], // Этот маршрут доступен только для админа
         items: [
           {
             label: "Процедуры",
