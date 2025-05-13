@@ -104,19 +104,31 @@ const routes = [
         path: "/students",
         name: "Студенты",
         component: StudentList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
       },
 
       //{ path: '/students/:studentId', component: StudentDetail },
       { path: "/rights/:table", component: RightsTable },
-      { path: "/directions", name: "Направления", component: DirectionList },
+      {
+        path: "/directions",
+        name: "Направления",
+        component: DirectionList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
       {
         path: "/groups",
         name: "Группы",
         component: GroupList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
       },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
-      { path: "/profiles", name: "Профили", component: ProfileList },
+      {
+        path: "/profiles",
+        name: "Профили",
+        component: ProfileList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
       // { path: '/profiles/:profileId', component: ProfileDetail },
 
       // { path: '/groups/:groupId', component: GroupDetail },
@@ -169,7 +181,11 @@ const routes = [
       { path: "/ScheduleLoads", component: ScheduleLoads },
 
       //{ path: '/addcw', component: AddCw },
-      { path: "/courseworks", component: CWList },
+      {
+        path: "/courseworks",
+        component: CWList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
       // { path: '/courseworks/:CwId', component: CWdetail },
 
       { path: "/programs", component: ProgramList },
@@ -272,7 +288,7 @@ router.beforeEach(async (to, from, next) => {
 
     const currentTime = Date.now() / 1000;
     if (decodedToken.exp < currentTime) {
-      authStore.login();      // или logout, как у вас принято
+      authStore.login(); // или logout, как у вас принято
       return next("/login");
     }
 
@@ -286,8 +302,8 @@ router.beforeEach(async (to, from, next) => {
     // если в маршруте есть meta.roles — проверяем их
     if (to.meta.roles) {
       const userRoles = authStore.user?.roles || [];
-      const required  = to.meta.roles;
-      const hasRole   = userRoles.some(r => required.includes(r));
+      const required = to.meta.roles;
+      const hasRole = userRoles.some((r) => required.includes(r));
       if (!hasRole) {
         authStore.noAccess = true;
         // можно редиректить на /no-access или просто next()
@@ -304,8 +320,6 @@ router.beforeEach(async (to, from, next) => {
   // публичные страницы
   next();
 });
-
-
 
 /*
 на случай если мы не хотим проверять токен
