@@ -132,11 +132,7 @@ const model = ref([
         icon: "pi pi-fw pi-book",
         to: "/teachers",
       },
-      {
-        label: "Настройки",
-        icon: "pi pi-fw pi-cog",
-        to: "/profile",
-      },
+
       {
         label: "Выйти",
         icon: "pi pi-fw pi-sign-out",

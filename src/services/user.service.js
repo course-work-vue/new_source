@@ -209,7 +209,7 @@ class UserService {
   getGroupsAsIdText(){
     const query = {
       query: `SELECT group_id AS id, group_number AS text
-      FROM "groups" ORDER BY 
+      FROM "groups" where deleted_at is null ORDER BY 
       text ASC;`,
     };
     
@@ -340,6 +340,34 @@ getAllTeachGruz(){
   let fr = axios.get(API+"/TeachGruz", { headers: authHeader() })
   // console.log(fr);
   return fr;
+}
+
+getTeachGruzX(){
+  const query = {
+    query: `SELECT * from teach_gruz_x;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getQuery(q){
+  const query = {
+    query: q,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getDisciples(){
+  const query = {
+    query: `SELECT * from import_disciples;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getPrograms_imp(){
+  const query = {
+    query: `SELECT * from import_programs;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
 }
 
 
@@ -567,18 +595,16 @@ editWorkload(wl_id, teacher_id, audtype){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-addWorkload(group_id, subject_id, teacher_id, audtype){
+addWorkload(group_id, subject_id, teacher_id){
   const query = {
     query: `INSERT INTO "workload" (
       "group_id",
       "subject_id",
-      "teacher_id",
-      "audtype"
+      "teacher_id"
   ) VALUES (
       '${group_id}',
       '${subject_id}',
-      '${teacher_id}',
-      '${audtype}'
+      '${teacher_id}'
   );`,
   };
   return axios.post(API_URL, query, { headers: authHeader() });
@@ -1769,7 +1795,7 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
       groups AS g
   
   WHERE
-      g.group_dir_id = '${dir_id}'  AND course = '${course}'  
+      g.group_dir_id = '${dir_id}'  AND course = '${course}' AND g.deleted_at is null  
       ;
   `,
     };
@@ -1782,7 +1808,8 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
       query: `
         SELECT w.wl_id,
         w.group_id, 
-        s.subject_name, 
+        s.subject_name,
+        w.teacher_id, 
         CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name,
         g.group_number
         FROM workload w

@@ -48,7 +48,7 @@
           class="btn btn-primary w-100"
           type="button"
         >
-          <i class="material-icons-outlined me-1">description</i>Отчёт о научных
+          <i class="material-icons-outlined me-1">description</i>Отчёт по научным
           руководителях
         </button>
       </div>
@@ -403,6 +403,7 @@ export default {
           Студент: "Студент",
           Оценка: "Оценка",
           Тема: "Тема",
+          Выпускная:"Выпускная"
         });
 
         // Перебираем года в отсортированном порядке для удобства
@@ -423,6 +424,7 @@ export default {
                     Студент: cw.student_name,
                     Оценка: cw.course_work_ocenka || "",
                     Тема: cw.course_work_theme || "",
+                    Выпускная: cw.course_work_vipysk? "Да" : "Нет"
                   });
                 });
               });
@@ -431,7 +433,7 @@ export default {
         // Преобразуем данные в рабочий лист Excel
         // Опция skipHeader: true запрещает автоматическую генерацию строки заголовка
         const ws = XLSX.utils.json_to_sheet(sheetData, {
-          header: ["Год", "Семестр", "№", "Студент", "Оценка", "Тема"],
+          header: ["Год", "Семестр", "№", "Студент", "Оценка", "Тема", "Выпускная"],
           skipHeader: true,
         });
 
@@ -443,6 +445,7 @@ export default {
           { wch: 30 }, // Студент
           { wch: 10 }, // Оценка
           { wch: 50 }, // Тема
+          { wch: 20 },
         ];
 
         // Обеспечиваем соответствие имени листа требованиям Excel

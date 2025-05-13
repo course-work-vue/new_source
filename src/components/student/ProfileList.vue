@@ -54,6 +54,7 @@
             :rowHeight="40"
             :rowData="rowData.value"
             :defaultColDef="defaultColDef"
+            :localeText="localeText"
             rowSelection="multiple"
             animateRows="true"
             includeHiddenColumnsInQuickFilter="true"

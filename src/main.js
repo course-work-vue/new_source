@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import store from "./store";
+
 import "bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FontAwesomeIcon } from './plugins/font-awesome'
@@ -9,6 +9,8 @@ import { FontAwesomeIcon } from './plugins/font-awesome'
 //import "vue-toastification/dist/index.css";
 
 import { createPinia } from 'pinia';
+// Import Monaco Editor CSS
+import 'monaco-editor/min/vs/editor/editor.main.css';
 // Vuetify
 /*
 import 'vuetify/styles'
@@ -382,7 +384,6 @@ app.component('TreeTable', TreeTable);
 app.component('VirtualScroller', VirtualScroller);
 app
   .use(router)
-app.use(store)
 app.use(Toast, options)
 app.use(createPinia())
 // .use(vuetify)

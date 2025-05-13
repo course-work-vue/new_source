@@ -177,17 +177,16 @@ export default {
         },
         { field: "course", headerName: "Курс", maxWidth: 129 },
         {
+          field: "dir_name",
+
+          headerName: "Название направления",
+        },
+        {
           field: "prof_name",
           headerName: "Название профиля",
           cellRenderer: "GroupHref2",
         },
         { field: "dir_code", headerName: "Код направления", hide: true },
-        {
-          field: "dir_name",
-          filter: "agDateColumnFilter",
-          headerName: "Название Направления",
-          hide: true,
-        },
       ],
     });
 
