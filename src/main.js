@@ -35,6 +35,7 @@ const options = {
     rtl: false
 };
 import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
 import 'primeicons/primeicons.css'
 import "primeflex/primeflex.css";
 
@@ -386,6 +387,7 @@ app
   .use(router)
 app.use(Toast, options)
 app.use(createPinia())
+app.use(ToastService)
 // .use(vuetify)
 app.component("font-awesome-icon", FontAwesomeIcon)
 //.component('Select2', Select2)

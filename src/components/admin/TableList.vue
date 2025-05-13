@@ -918,8 +918,9 @@ export default {
       sql += [...columnDefs, ...fkDefs].join(",\n");
       sql += "\n);\n";
 
-      // Add basic index for primary key
-      if (pkColumns.length > 0) {
+      // Only add the index if this is an existing table (has originalTableDefinition)
+      // For new tables, PostgreSQL will automatically create the index for PRIMARY KEY
+      if (pkColumns.length > 0 && this.originalTableDefinition) {
         sql += `\nCREATE UNIQUE INDEX ${this.getTableBaseName()}_pkey ON ${
           this.tableEditor.tableName
         } USING btree (${pkColumns.join(", ")});\n`;

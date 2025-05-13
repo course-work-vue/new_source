@@ -290,7 +290,7 @@ export default {
         label: "Преподаватель",
         options: [
           ...[...this.teacherList].map((teacher) => ({
-            label: `${teacher.first_name} ${teacher.last_name}`,
+            label: `${teacher.last_name} ${teacher.first_name} ${teacher.patronymic}`,
             value: teacher.teacher_id,
           })),
         ],
@@ -301,7 +301,7 @@ export default {
         label: "Студент",
         options: [
           ...[...this.activeSortedStudents].map((student) => ({
-            label: `${student.first_name} ${student.last_name}`,
+            label: `${student.last_name} ${student.first_name} ${student.patronymic} `,
             value: student.student_id,
           })),
         ],
