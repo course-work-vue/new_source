@@ -1,5 +1,6 @@
 import Formatter from "@/utils/Formatter";
 import { useGroupStore } from "@/store2/studentgroup/group";
+const currentYear = new Date().getFullYear();
 export default class Student {
   student_id;
   date_of_birth;
@@ -26,8 +27,14 @@ export default class Student {
 
   constructor(student) {
     this.student_id = student?.student_id ?? null;
-    this.date_of_birth = new Date(student?.date_of_birth) ?? null;
-    this.enrolled_date = new Date(student?.enrolled_date) ?? null;
+
+    this.date_of_birth = student?.date_of_birth
+      ? new Date(student.date_of_birth)
+      : new Date(`${currentYear - 17}-01-01`);
+
+    this.enrolled_date = student?.enrolled_date
+      ? new Date(student.enrolled_date)
+      : new Date(`${currentYear + 1}-08-17`);
 
     this.group_id = student?.group_id ?? null;
     this.is_budget = student?.is_budget ?? null;
