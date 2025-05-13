@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from './plugins/font-awesome'
 
 import { createPinia } from 'pinia';
 // Import Monaco Editor CSS
-import 'monaco-editor/min/vs/editor/editor.main.css';
+//import 'monaco-editor/min/vs/editor/editor.main.css';
 // Vuetify
 /*
 import 'vuetify/styles'
