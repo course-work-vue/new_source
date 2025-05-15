@@ -1,68 +1,74 @@
 <template>
-  <div v-if="!loading">
-    <div class="col col-xs-9 col-lg-12 list">
-      <div class="col col-12">
-        <div class="d-inline-flex">
-          <div v-if="!dirc">
-            <h1>Список всех профилей</h1>
-          </div>
-          <h1 v-if="dirc">Список профилей с направлением {{ dir_c_n }}</h1>
-        </div>
-
-        <div class="row">
-          <div class="col col-4 d-inline-flex align-items-center mb-2">
-            <button
-              @click="openCreatingForm"
-              class="btn btn-primary"
-              type="button"
-            >
-              <i class="material-icons-outlined">add</i>Добавить профиль
-            </button>
-          </div>
-          <div class="col col-4 d-inline-flex align-items-center mb-2">
-            <button
-              @click="clearFilters"
-              :disabled="!filters"
-              class="btn btn-sm btn-primary text-nowrap mx-2"
-              type="button"
-            >
-              <i class="material-icons-outlined">close</i>Очистить фильтры
-            </button>
-          </div>
-          <div class="col col-4">
-            <input
-              class="form-control"
-              type="text"
-              v-model="quickFilterValue"
-              id="filter-text-box"
-              v-on:input="onFilterTextBoxChanged()"
-              placeholder="Поиск..."
-            />
-          </div>
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1" v-if="!loading">
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!dirc">Список всех профилей</span>
+        <span v-if="dirc">Список профилей с направлением {{ dir_c_n }}</span>
       </div>
     </div>
 
-    <div style="height: 90vh">
-      <div class="h-100 pt-5">
-        <ag-grid-vue
-          class="ag-theme-alpine"
-          style="width: 100%; height: 100%"
-          :columnDefs="columnDefs.value"
-          :rowData="rowData.value"
-          :defaultColDef="defaultColDef"
-          rowSelection="multiple"
-          animateRows="true"
-          includeHiddenColumnsInQuickFilter="true"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReady"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onFilterChanged"
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
         >
-        </ag-grid-vue>
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
+    </div>
+
+    <!-- Add Profile Button -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить профиль
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
+          <ag-grid-vue
+            class="ag-theme-alpine"
+            :columnDefs="columnDefs.value"
+            :rowHeight="40"
+            :rowData="rowData.value"
+            :defaultColDef="defaultColDef"
+            :localeText="localeText"
+            rowSelection="multiple"
+            animateRows="true"
+            includeHiddenColumnsInQuickFilter="true"
+            @cell-clicked="cellWasClicked"
+            @grid-ready="onGridReady"
+            @firstDataRendered="onFirstDataRendered"
+            @filter-changed="onFilterChanged"
+          >
+          </ag-grid-vue>
+        </div>
       </div>
     </div>
   </div>
+
   <Dialog v-model:visible="formVisible" modal header="Форма профиля">
     <div class="card flex flex-row">
       <div class="form card__form">
@@ -121,7 +127,7 @@ import { CheckboxInput } from "@/model/form/inputs/CheckboxInput";
 import { RadioInput } from "@/model/form/inputs/RadioInput";
 import { ToggleInput } from "@/model/form/inputs/ToggleInput";
 import { ComboboxInput } from "@/model/form/inputs/ComboboxInput";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "ProfileManagement",
@@ -133,6 +139,7 @@ export default {
     AutoForm,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
 
@@ -198,6 +205,7 @@ export default {
       rowData,
       defaultColDef,
       onFilterTextBoxChanged,
+      localeText,
     };
   },
   data() {
@@ -245,6 +253,27 @@ export default {
     ...mapState(useProfileStore, ["profileList"]),
   },
   methods: {
+    onFirstDataRendered(params) {
+      this.gridApi = params.api;
+      this.columnApi = params.columnApi;
+
+      // Check if filterModel exists in the route query
+      const filterModelQuery = this.$route.query.filterModel;
+
+      if (filterModelQuery) {
+        const filterModel = JSON.parse(filterModelQuery);
+        this.gridApi.setFilterModel(filterModel);
+        this.filters = true;
+      }
+
+      const quickFilterQuery = this.$route.query.quickFilter;
+      if (quickFilterQuery) {
+        const quickFilter = JSON.parse(quickFilterQuery);
+        this.gridApi.setQuickFilter(quickFilter);
+        this.quickFilterValue = quickFilter;
+        this.filters = true;
+      }
+    },
     ...mapActions(useDirectionStore, ["getDirectionList"]),
     ...mapActions(useProfileStore, [
       "getProfileList",
@@ -258,8 +287,8 @@ export default {
 
       await this.deleteProfile(profile);
       this.formVisible = false;
-      this.resetDir();
-      this.loadDirectionsData();
+      this.resetProf();
+      this.loadProfilesData();
     },
     openCreatingForm() {
       this.resetProf();
@@ -350,6 +379,43 @@ export default {
         console.error("Error loading directions data:", error);
       }
     },
+    onFilterChanged() {
+      // This function will be called whenever filters change.
+      // You can perform your desired action here.
+      // For example, you can get the current filter model:
+      this.filters = false;
+      const savedQuickFilter = this.gridApi.getQuickFilter();
+      const savedFilterModel = this.gridApi.getFilterModel();
+
+      // Initialize an empty object for queryParams
+      const queryParams = {};
+
+      // Check if savedQuickFilter is not empty, then add it to queryParams
+      if (savedQuickFilter) {
+        queryParams.quickFilter = JSON.stringify(savedQuickFilter);
+        this.filters = true;
+      }
+
+      // Check if savedFilterModel is not empty, then add it to queryParams
+      if (savedFilterModel && Object.keys(savedFilterModel).length > 0) {
+        queryParams.filterModel = JSON.stringify(savedFilterModel);
+        this.filters = true;
+        if (savedFilterModel.prof_name) {
+          this.pr = true;
+          this.pr_n = savedFilterModel.prof_name.filter;
+        } else {
+          this.pr = false;
+        }
+      } else {
+        this.pr = false;
+      }
+
+      // Push the query parameters to the router
+      this.$router.push({ query: queryParams });
+
+      // Do something with the filterModel or trigger other actions as needed.
+    },
+
     clearFilters() {
       this.gridApi.setFilterModel();
       this.gridApi.setQuickFilter();
@@ -362,57 +428,74 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.bigger {
-  font-size: 30px;
-  white-space: nowrap;
-}
-.ag-row .ag-cell {
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
   display: flex;
-  justify-content: center; /* align horizontal */
+  margin-bottom: 5px;
+}
+
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.ag-theme-alpine {
+  flex: 1;
+}
+
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
+}
+
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
   align-items: center;
 }
 
-.skeleton {
-  width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
 }
 
-.text-center * {
-  justify-content: center;
+.ag-row .ag-cell {
   display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.nmbr {
-  height: 44px;
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -426,39 +509,17 @@ export default {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
-}
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
 }
 
 .card {

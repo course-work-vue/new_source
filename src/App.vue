@@ -48,6 +48,7 @@
       </div>
     </nav>
 -->
+    <Toast />
     <div class="mycontainer">
       <router-view />
     </div>
@@ -56,15 +57,20 @@
 
 <script>
 import Menu from "./components/Menu.vue";
+import Toast from 'primevue/toast';
+
+import { useAuthStore } from "./store2/auth";
+import { mapState, mapActions } from "pinia";
 export default {
   created() {
-    this.$store.dispatch("auth/checkTokenExpiration");
+    this.checkTokenExpiration();
   },
-  components: {},
+
+  components: {
+    Toast
+  },
   computed: {
-    currentUser() {
-      return this.$store.state.auth.user;
-    },
+    ...mapState(useAuthStore, ["noAccess"]),
     /*
     showAdminBoard() {
       if (this.currentUser && this.currentUser['roles']) {
@@ -83,12 +89,7 @@ export default {
       */
   },
 
-  methods: {
-    logOut() {
-      this.$store.dispatch("auth/logout");
-      this.$router.push("/login");
-    },
-  },
+  methods: { ...mapActions(useAuthStore, ["checkTokenExpiration"]) },
 };
 </script>
 
@@ -105,6 +106,7 @@ body {
   margin: 0;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 html {
@@ -119,4 +121,24 @@ body {
   padding: 1rem;
   overflow: auto;
 }
+
+/* WebKit browsers */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+
 </style>

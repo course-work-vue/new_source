@@ -1,8 +1,8 @@
 import axios from 'axios';
 import authHeader from './auth-header';
-const API_URL = 'https://ncatbird.ru/server/api/Query/';
+const API_URL = 'https://ncatbird.ru/ums/containers/prod/server/api/Query/';
 
-const API = 'https://ncatbird.ru/server/api';
+const API = 'https://ncatbird.ru/ums/containers/prod/server/api';
 
 class UserService {
   getPublicContent() {
@@ -268,6 +268,11 @@ deleteDirectionById(direction_id){
 
   return axios.delete(apiUrl, { headers: authHeader() });
 }
+
+getRestDirs(){
+  return axios.get(`${API}/Direction`, { headers: authHeader() });
+}
+
   getAllDirections(){
     const query = {
       query: `SELECT 
@@ -331,6 +336,40 @@ updateDirectionById(dir_id, dir_name, dir_code) {
       });
 }
 
+getAllTeachGruz(){
+  let fr = axios.get(API+"/TeachGruz", { headers: authHeader() })
+  // console.log(fr);
+  return fr;
+}
+
+getTeachGruzX(){
+  const query = {
+    query: `SELECT * from teach_gruz_x;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getQuery(q){
+  const query = {
+    query: q,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getDisciples(){
+  const query = {
+    query: `SELECT * from import_disciples;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getPrograms_imp(){
+  const query = {
+    query: `SELECT * from import_programs;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
 
   
 // ВЗАИМОДЕЙСТВИЕ С ТАБЛИЦЕЙ SUBJECTS
@@ -340,6 +379,8 @@ updateDirectionById(dir_id, dir_name, dir_code) {
     };
     return axios.post(API_URL, query, { headers: authHeader() });
   }
+
+  
 
   getSubjectById(id){
     const query = {
@@ -541,11 +582,12 @@ getWorkload(group_id){
 
 
 
-editWorkload(wl_id, teacher_id){
+editWorkload(wl_id, teacher_id, audtype){
   const query = {
     query: `UPDATE "workload"
     SET
-      "teacher_id" = '${teacher_id}'
+      "teacher_id" = '${teacher_id}',
+      "audtype" = '${audtype}'
     WHERE
       "wl_id" = '${wl_id}'
     ;`,
@@ -663,30 +705,10 @@ deleteGroupById(group_id){
 
   return axios.delete(apiUrl, { headers: authHeader() });
 }
+
   getAllGroups(){
-    const query = {
-      query: `SELECT
-      g.group_id,
-      g.group_number,
-      g.course,
-      g.magister,
-      p.prof_name,
-      d.dir_name,
-      d.dir_code
-  FROM
-      "groups" AS g
-  JOIN
-      "profiles" AS p
-  ON
-      g.group_prof_id = p.prof_id
-  JOIN
-      "directions" AS d
-  ON
-      g.group_dir_id = d.dir_id  ORDER BY 
-      g.group_number ASC;
-  `,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
+    
+    return axios.get(API_URL + 'groups', { headers: authHeader() });
   }
 
   getGroupByDir(dir_id){
@@ -1242,6 +1264,14 @@ updateContractById(id, listener_id, payer_id, contr_number, program_id) {
       text ASC;`,
     };
     
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
+
+  getStudentsCount(id){
+    const query = {
+      query: `select count(students.*) from students
+where group_id='${id}';`,
+    };
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
@@ -1817,408 +1847,6 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
-  //Excel Запросы
-
-    //Чистка временных таблиц
-  clearTempTeachGruz() {
-    const query = {
-      query: `TRUNCATE "temp_teach_gruz" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-      clearTempSostav() {
-    const query = {
-      query: `TRUNCATE "temp_sostav" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  clearTempFac() {
-    const query = {
-      query: `TRUNCATE "temp_fac_names" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  clearTempItogVO() {
-    const query = {
-      query: `TRUNCATE "temp_itogVO" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  clearTempDep() {
-    const query = {
-      query: `TRUNCATE "temp_departaments" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  clearForShedLec() {
-    const query = {
-      query: `TRUNCATE "for_sched_lec" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  clearForShedPrac() {
-    const query = {
-      query: `TRUNCATE "for_sched_prac" RESTART IDENTITY;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  //Вставка в таблицы
-  insertTempSostav(str) {
-    const query = {
-      query: `INSERT INTO "temp_sostav" (
-        "name1",
-        "name2",
-        "name3",
-        "fac",
-        "dep",
-        "dolj",
-        "deg",
-        "status") 
-        VALUES 
-        ${str}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-
-
-  insertTempTeachNagr(str) {
-    const query = {
-      query: `INSERT INTO "temp_teach_gruz" (
-        "fam",
-        "fac",
-        "dep",
-        "dis_name",
-        "code_napr",
-        "kurs",
-        "semestr",
-        "kont_budg",
-        "kont_dog",
-        "number_of_streams",
-        "number_of_groups",
-        "number_of_subgroups",
-        "lec_h",
-        "seminar_h",
-        "lab_h",
-        "consult_h",
-        "exam_h",
-        "zachet_h",
-        "kursach_h",
-        "control_h",
-        "VKR_h",
-        "magistr_h",
-        "GEK_h",
-        "practice_h",
-        "manage_h",
-        "other_h")
-      VALUES
-        ${str}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  insertTempFac(name) {
-    const query = {
-      query: `INSERT INTO "temp_fac_names" (
-        "full_name",
-        "short_name") 
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  insertTempDep(name) {
-    const query = {
-      query: `INSERT INTO "temp_departaments" (
-        "dep_name",
-        "dep_abb") 
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-  
-  insertTempItogVO(name) {
-    const query = {
-      query: `INSERT INTO "temp_itogVO" (
-        "fac",
-        "dep",
-        "years",
-        "lek_budj",
-        "lek_dogovor",
-        "p_budg",
-        "p_dogovor" ,
-        "lab_budj",
-        "lab_dogovor",
-        "cons_ex",
-        "cons_zfo",
-        "control_work",
-        "zachet_h",
-        "ex_speak",
-        "ex_wr",
-        "practice",
-        "manageVKR",
-        "recVKR",
-        "normContVKR",
-        "checkPlagVKR",
-        "GOSexam",
-        "defVKR",
-        "manag")
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  insertTempPractice(name) {
-    const query = {
-      query: `INSERT INTO "temp_practice" (
-        "fac",
-        "dep",
-        "years",
-        "napr",
-        "profile",
-        "practice_name",
-        "srok",
-        "kurs",
-        "semestr",
-        "number_of_weeks",
-        "number_of_work_days",
-        "students_budg",
-        "students_dog",
-        "number_of_groups",
-        "number_of_subgroups",
-        "budg_h",
-        "dog_h")
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  insertForShedLec(name) {
-    const query = {
-      query: `INSERT INTO "for_sched_lec" (
-        "fac",
-        "dep",
-        "napr",
-        "kurs",
-        "disc",
-        "number_of_streams",
-        "number_of_groups",
-        "number_of_subgroups",
-        "lec_h",
-        "fio")
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  insertForShedPrac(name) {
-    const query = {
-      query: `INSERT INTO "for_sched_prac" (
-        "fac",
-        "dep",
-        "napr",
-        "kurs",
-        "disc",
-        "number_of_subgroups",
-        "fio",
-        "display_audit")
-        VALUES
-        ${name}
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempTeachGruzCount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_teach_gruz";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-  
-  getTempSostavCount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_sostav";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempFacCount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_fac_names";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempDepCount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_departaments";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempItogVOcount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempRasprСount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempOFOVOcount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getForShedLecOcount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getForShedPraccount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempKurscount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempPlanSvodcount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempKompetcount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempGruzKurscount(){
-    const query = {
-      query: `SELECT COUNT(*) FROM "temp_itogVO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempSostav(){
-    const query = {
-      query: `SELECT * FROM "temp_sostav" INNER JOIN "temp_fac_names" ON (temp_sostav.fac = temp_fac_names.full_name);`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempTeachGruz(){
-    const query = {
-      query: `SELECT * FROM "temp_teach_gruz" INNER JOIN "temp_fac_names" ON (temp_teach_gruz.fac = temp_fac_names.full_name);`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempFac(){
-    const query = {
-      query: `SELECT * FROM "temp_fac_names";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempDep(){
-    const query = {
-      query: `SELECT * FROM "temp_departaments";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempVO(){
-    const query = {
-      query: `SELECT * FROM "temp_itogVO" ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempRaspr(){
-    const query = {
-      query: `SELECT * FROM "temp_distrib_KIT";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getTempOFO(){
-    const query = {
-      query: `SELECT * FROM "temp_OFO_VO";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getForShedLec(){
-    const query = {
-      query: `SELECT * FROM "for_sched_lec" INNER JOIN "temp_fac_names" ON (for_sched_lec.fac = temp_fac_names.full_name);`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getForShedPrac(){
-    const query = {
-      query: `SELECT * FROM "for_sched_prac" INNER JOIN "temp_fac_names" ON (for_sched_prac.fac = temp_fac_names.full_name);`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  getKurs(){
-    const query = {
-      query: `SELECT * FROM "temp_distrib_KIT";`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-  updateTempNagrFam(id,name){
-    const query = {
-      query: `UPDATE "temp_teach_gruz"
-      SET "fam" = '${name}'
-      WHERE "id" = '${id}';`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
-
-
-
   saveTeachers(name) {
     const query = {
       query: `INSERT INTO "teachers" (
@@ -2234,7 +1862,251 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
   }
 
 
+
+
+
+	//ЖУРНАЛ
+
+  saveTeachers(name) {
+    const query = {
+      query: `INSERT INTO "teachers" (
+        "first_name",
+        "last_name",
+        "patronymic"
+        ) 
+        VALUES
+        ${name}
+    ;`,
+    };
+    return axios.post(API_URL, query, { headers: authHeader() });
+  }
   
+deleteTegrsuById(tegrsu_id){
+  const query = {
+    query: `DELETE FROM tegrsus where "tegrsu_id" = '${tegrsu_id}'`,
+  };
+
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+/*getAllStudentss(){
+  const query = {
+    query: `SELECT 
+	s.student_id,
+	CONCAT_WS(' ', s.last_name, s.first_name, s.patronymic) AS full_name,
+	g.group_number
+    FROM students AS s
+JOIN
+ groups AS g
+ON 
+ s.group_id=g.group_id;`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}*/
+
+getTegrsusAsIdText(){
+  const query = {
+    query: `SELECT 
+	t.tegrsu_id,
+	t.tegrsu_teacher_id,
+	t.tegrsu_group_id,
+	g.group_number AS text
+    FROM "tegrsus" AS t
+JOIN
+	groups AS g
+ON
+t.tegrsu_group_id=g.group_id;`,
+  };
+  
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getAllTegrsus(){
+  const query = {
+    query: `SELECT
+    te.tegrsu_id,
+    t.teacher_id,
+    gr.group_id,
+    gr.group_number,
+    s.subject_id,
+    CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name_teacher,
+    s.subject_name
+FROM
+    "tegrsus" AS te
+JOIN
+    "teachers" AS t
+ON
+    te.tegrsu_teacher_id = t.teacher_id
+JOIN
+    "groups" AS gr
+ON
+    te.tegrsu_group_id = gr.group_id
+
+JOIN
+    "subjects" AS s
+ON
+    te.tegrsu_subject_id = s.subject_id;
+`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+
+
+updateTegrsuById(tegrsuId,tegrsu_teacher_id,tegrsu_group_id,tegrsu_subject_id){
+  const query = {
+    query: `"tegrsu_teacher_id" = '${tegrsu_teacher_id}',
+    "tegrsu_group_id" = '${tegrsu_group_id}',
+    "tegrsu_subject_id" = '${tegrsu_subject_id}'
+    
+WHERE
+    "tegrsu_id" = '${tegrsuId}';`,
+  };
+  
+  return axios.put(API_URL+"tegrsus", query, { headers: authHeader() });
+}
+
+addTegrsu(tegrsu_teacher_id,tegrsu_group_id,tegrsu_subject_id){
+  const query = {
+    query: `INSERT INTO "tegrsus" (
+      "tegrsu_teacher_id",
+      "tegrsu_group_id",
+      "tegrsu_subject_id"
+  ) VALUES (
+      '${tegrsu_teacher_id}',
+      '${tegrsu_group_id}',
+      '${tegrsu_subject_id}'
+  );`,
+  };
+
+  return axios.post(API_URL, query, { headers: authHeader() });
+
+
+}
+getTegrsuById(id){
+  const query = {
+    query: `SELECT * from tegrsus where 
+    tegrsu_id='${id}';`,
+  };
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+getAllJournals(){
+  const query = {
+    query: `select 
+j.j_id,
+j.date,
+j.gradekr,
+j.gradekol,
+j.gradekr2,
+j.gradekol2,
+j.grade,
+j.status,
+j.grade2,
+j.status2,
+j.teacher_id,
+j.subject_id,
+s.student_id,
+g.group_id,
+CONCAT_WS(' ', j.date) AS date,
+CONCAT_WS(' ', su.subject_name) AS subject_name,
+CONCAT_WS(' ', s.last_name, s.first_name, s.patronymic) AS full_name,
+CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name_teacher,
+CONCAT_WS('/', g.group_number, NULLIF(s.subgroup, '')) AS group_name,
+g.group_number
+from 
+  journal as j 
+join 
+  students as s
+on 
+  j.student_id=s.student_id
+join
+    groups as g
+on
+  j.group_id=g.group_id
+join
+  teachers as t
+on
+j.teacher_id=t.teacher_id
+join
+    subjects as su
+on
+  j.subject_id=su.subject_id
+`,
+
+  };
+
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+getTeacherByJournal(){
+  const query = {
+    query: `select 
+    j.j_id,
+j.teacher_id,
+s.student_id,
+j.subject_id,
+j.group_id,
+CONCAT_WS(' ', su.subject_name) AS subject_name,
+CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name_teacher
+from 
+  journal as j 
+join 
+  students as s
+on 
+  j.student_id=s.student_id
+join
+  teachers as t
+on
+  j.teacher_id=t.teacher_id
+join 
+    subjects as su
+on
+    j.subject_id=su.subject_id
+join
+	groups as g
+on 
+	j.group_id=g.group_id
+`,
+
+};
+return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+
+/*updateJournal(j_id, date, grade, status, teacher_id, subject_id, student_id, group_id) {
+  const apiUrl = `${API}/journal/${j_id}`;
+  const formattedJournal = {
+    date: date,
+    grade: grade,
+    status: status,
+    teacherId: teacher_id,
+    subjectId: subject_id,
+    studentId: student_id,
+    groupId: group_id
+  };
+
+  return axios.put(apiUrl, formattedJournal, { headers: authHeader() });
+}*/
+updateJournalById(j_id, status,grade,gradekr,gradekol,status2, grade2) {
+  const query = {
+    query: ` UPDATE "journal"
+    SET
+        "status"='${status}',
+        "grade" = ${grade},
+        "gradekr" = ${gradekr},
+        "gradekol" = ${gradekol},
+        "status2"='${status2}',
+        "grade2" = ${grade2}
+        
+    WHERE
+      "j_id" = '${j_id}';`,
+  };
+
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+
+
 }
 
 export default new UserService();

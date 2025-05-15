@@ -1,8 +1,6 @@
 import endpoints from '@/api/endpoints';
 import ReqExec from '@/services/RequestExecutor';
-ReqExec.baseUrl = 'https://ncatbird.ru/server';
-
-
+ReqExec.baseUrl = 'https://ncatbird.ru/ums/containers/prod/server';
 
 //API methods
 export default {
@@ -10,13 +8,11 @@ export default {
     uploadFile: (file) => {
         const formData = new FormData();
         formData.append('file', file);
-
-
         return ReqExec.postFile(endpoints.directLinks.uploadFile, file)
-
     },
     //student
     getStudentList: () => ReqExec.get(endpoints.rest.student, null, true),
+    getStudentCont: () => ReqExec.get(endpoints.rest.cont, null, true),
     postStudent: (student) => ReqExec.post(endpoints.rest.student, student),
     putStudent: (student_id, student) => ReqExec.put(endpoints.rest.student, student_id, student),
     deleteStudent: (student) => ReqExec.put(endpoints.procedure.student, student.student_id, student),
@@ -48,41 +44,142 @@ export default {
     //teacher
     getTeacherList: () => ReqExec.get(endpoints.rest.teacher, null, true),
 
+    // СЛУШАТЕЛИ
 
-    //role
-    getRoleList: () => ReqExec.get(endpoints.rest.role, null, true),
-    postRole: (role) => ReqExec.post(endpoints.function_end.insert_roles, role),
-    putRole: (roleid, role) => ReqExec.put(endpoints.rest.role, roleid, role),
-    deleteRole: (role) => ReqExec.put(endpoints.procedure.role, role.roleid, role),
-    //globalPermission
-    getGlobalPermissionList: () => ReqExec.get(endpoints.rest.globalPermission, null, true),
-    postGlobalPermission: (globalPermission) => ReqExec.post(endpoints.rest.globalPermission, globalPermission),
-    putGlobalPermission: (permissionid, globalPermission) => ReqExec.put(endpoints.rest.globalPermission, permissionid, globalPermission),
-    deleteGlobalPermission: (globalPermission) => ReqExec.put(endpoints.procedure.globalPermission, globalPermission.permissionid, globalPermission),
-    //functionUser
-    getFunctionUserList: () => ReqExec.get(endpoints.rest.functionUser, null, true),
-    postFunctionUser: (functionUser) => ReqExec.post(endpoints.directLinks.createFunction, functionUser),
-    putFunctionUser: (id, functionUser) => ReqExec.put(endpoints.directLinks.updateFunctionFromSql, id, functionUser),
-    deleteFunctionUser: (functionUser) => ReqExec.put(endpoints.procedure.deleteFunctionUser, functionUser, functionUser),
-    //procedureUser
-    getProcedureUserList: () => ReqExec.get(endpoints.rest.procedureUser, null, true),
-    postProcedureUser: (procedureUser) => ReqExec.post(endpoints.directLinks.createProcedure, procedureUser),
-    putProcedureUser: (id, procedureUser) => ReqExec.put(endpoints.directLinks.updateProcedureFromSql, id, procedureUser),
-    deleteProcedureUser: (procedureUser) => ReqExec.put(endpoints.procedure.deleteProcedureUser, procedureUser, procedureUser),
-    //tableUser
-    getTableUserList: () => ReqExec.get(endpoints.rest.tableUser, null, true),
-    postTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.createTable, tableUser),
-    putTableUser: (id, tableUser) => ReqExec.put(endpoints.directLinks.updateTableFromSql, id, tableUser),
-    deleteTableUser: (tableUser) => ReqExec.put(endpoints.table.deleteTableUser, tableUser, tableUser),
-    //triggerUser
-    getTriggerUserList: () => ReqExec.get(endpoints.rest.triggerUser, null, true),
-    postTriggerUser: (triggerUser) => ReqExec.post(endpoints.directLinks.createTrigger, triggerUser),
-    putTriggerUser: (id, triggerUser) => ReqExec.put(endpoints.directLinks.updateTriggerFromSql, id, triggerUser),
-    deleteTriggerUser: (triggerUser) => ReqExec.put(endpoints.trigger.deleteTriggerUser, triggerUser, triggerUser),
-    //user
-    getUserList: () => ReqExec.get(endpoints.rest.user, null, true),
-    postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),
-    putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),
-    deleteUser: (user) => ReqExec.put(endpoints.procedure.user, user.id, user),
+  getListenerList: () => ReqExec.get(endpoints.rest.listener, null, true),
+  postListener: (listener) => ReqExec.post(endpoints.rest.listener, listener),
+  putListener: (id, listener) =>
+    ReqExec.put(endpoints.rest.listener, id, listener),
+  deleteListener: (listener) =>
+    ReqExec.put(endpoints.procedure.listener, listener.id, listener),
 
+  getDayList: () => ReqExec.get(endpoints.rest.day, null, true),
+  
+  getL_Group_StatusList: () => ReqExec.get(endpoints.rest.l_group_status, null, true),
+
+  getReady_ListenerList:() => ReqExec.get(endpoints.rest.ready_listener, null, true),
+  getL_Ready_GroupList:() => ReqExec.get(endpoints.rest.l_ready_group, null, true),
+
+  getListener_WishList: () => ReqExec.get(endpoints.rest.listener_wish, null, true),
+  postListener_Wish: (listener_wish) => ReqExec.post(endpoints.rest.listener_wish, listener_wish),
+  putListener_Wish: (id, listener_wish) =>
+      ReqExec.put(endpoints.rest.listener_wish, id, listener_wish),
+
+  getL_Wish_DayList: () => ReqExec.get(endpoints.rest.l_wish_day, null, true),
+  postL_Wish_Day: (l_wish_day) => ReqExec.post(endpoints.rest.l_wish_day, l_wish_day),
+  putL_Wish_Day: (id, l_wish_day) =>
+    ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
+  deleteL_Wish_Day: (l_wish_day) =>
+    ReqExec.put(endpoints.procedure.l_wish_day, l_wish_day.l_wish_day_id, l_wish_day),
+
+  
+
+  getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
+  postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),
+  putContract: (id, contract) =>
+    ReqExec.put(endpoints.rest.contract, id, contract),
+  deleteContract: (contract) =>
+    ReqExec.put(endpoints.procedure.contract, contract.id, contract),
+
+  getListenergroupList: () => ReqExec.get(endpoints.rest.l_group, null, true),
+  postListenergroup: (l_group) => ReqExec.post(endpoints.rest.l_group, l_group),
+  putListenergroup: (id, l_group) =>
+    ReqExec.put(endpoints.rest.l_group, id, l_group),
+  deleteListenergroup: (l_group) =>
+    ReqExec.put(endpoints.procedure.l_group, l_group.id, l_group),
+
+  getPayerList: () => ReqExec.get(endpoints.rest.payer, null, true),
+  postPayer: (payer) => ReqExec.post(endpoints.rest.payer, payer),
+  putPayer: (id, payer) =>
+    ReqExec.put(endpoints.rest.payer, id, payer),
+  deletePayer: (payer) =>
+    ReqExec.put(endpoints.procedure.payer, payer.id, payer),
+
+  getPaymentList: () => ReqExec.get(endpoints.rest.pay_graph, null, true),
+  postPayment: (pay_graph) => ReqExec.post(endpoints.rest.pay_graph, pay_graph),
+  putPayment: (id, pay_graph) =>
+    ReqExec.put(endpoints.rest.pay_graph, id, pay_graph),
+  deletePayment: (pay_graph) =>
+    ReqExec.put(endpoints.procedure.pay_graph, pay_graph.id, pay_graph),
+
+  getProgramList: () => ReqExec.get(endpoints.rest.program, null, true),
+  postProgram: (program) => ReqExec.post(endpoints.rest.program, program),
+  putProgram: (id, program) =>
+    ReqExec.put(endpoints.rest.program, id, program),
+  deleteProgram: (program) =>
+    ReqExec.put(endpoints.procedure.program, program.id, program),
+  
+  //ИМПОРТ
+
+  getImport_ProgramList: () => ReqExec.get(endpoints.rest.import_program, null, true),
+  getImport_ProgramYearsList: () => ReqExec.get(endpoints.rest.import_program_years, null, true),
+  getImport_ProgramCodesList: () => ReqExec.get(endpoints.rest.import_program_codes, null, true),
+  postImport_Program: (import_program) => ReqExec.post(endpoints.rest.import_program, import_program),
+  postImport_Programs: (import_programs) => ReqExec.post(endpoints.rest.import_programs, import_programs),
+
+  //direction code?
+  putImport_Program: (direction_code, import_program) =>
+    ReqExec.put(endpoints.rest.import_program, direction_code, import_program),
+  deleteImport_Program: (import_program) =>
+    ReqExec.put(endpoints.procedure.import_program, import_program.id, import_program),
+
+  getImport_DiscipleList: () => ReqExec.get(endpoints.rest.import_disciple, null, true),
+  postImport_Disciple: (import_disciple) => ReqExec.post(endpoints.rest.import_disciple, import_disciple),
+  putImport_Disciple: (direction_code, import_disciple) =>
+    ReqExec.put(endpoints.rest.import_disciple, direction_code, import_disciple),
+  deleteImport_Disciple: (import_disciple) =>
+    ReqExec.put(endpoints.procedure.import_disciple, import_disciple.id, import_disciple),
+
+  getImport_DiscipleDepartmentsList: () => ReqExec.get(endpoints.rest.import_disciple_departments, null, true),
+  getImport_DiscipleSemestresList: () => ReqExec.get(endpoints.rest.import_disciple_semestres, null, true),
+
+  //role
+  getRoleList: () => ReqExec.get(endpoints.function_end.selectRole, null, true),
+  postRole: (role) => ReqExec.post(endpoints.function_end.postRole, role), 
+  putRole: (roleid, role) => ReqExec.put(endpoints.procedure.updateRole, roleid, role),
+  deleteRole: (role) => ReqExec.put(endpoints.procedure.role, role.roleid, role),
+  //globalPermission
+  getGlobalPermissionList: () => ReqExec.get(endpoints.function_end.globalPermission, null, true),
+  postGlobalPermission: (globalPermission) => ReqExec.post(endpoints.procedure.postGlobalPermission, globalPermission),
+  putGlobalPermission: (permissionid, globalPermission) => ReqExec.put(endpoints.procedure.putGlobalPermission, permissionid, globalPermission),
+  deleteGlobalPermission: (globalPermission) => ReqExec.put(endpoints.procedure.globalPermission, globalPermission.permissionid, globalPermission),
+  //functionUser
+  getFunctionUserList: () => ReqExec.get(endpoints.function_end.functionUser, null, true),
+  postFunctionUser: (functionUser) => ReqExec.post(endpoints.directLinks.createFunction, functionUser),
+  putFunctionUser: (id, functionUser) => ReqExec.put(endpoints.directLinks.updateFunctionFromSql, id, functionUser),
+  deleteFunctionUser: (functionUser) => ReqExec.put(endpoints.procedure.deleteFunctionUser, functionUser, functionUser),
+  //procedureUser+
+  getProcedureUserList: () => ReqExec.get(endpoints.function_end.procedureUser, null, true),
+  postProcedureUser: (procedureUser) => ReqExec.post(endpoints.directLinks.createProcedure, procedureUser),
+  putProcedureUser: (id, procedureUser) => ReqExec.put(endpoints.directLinks.updateProcedureFromSql, id, procedureUser),
+  deleteProcedureUser: (procedureUser) => ReqExec.put(endpoints.procedure.deleteProcedureUser, procedureUser, procedureUser),
+  //tableUser
+  getTableUserList: () => ReqExec.get(endpoints.function_end.tableUser, null, true),
+  postTableUser: (tableUser) => ReqExec.post(endpoints.directLinks.createTable, tableUser),
+  putTableUser: (id, tableUser) => ReqExec.post(endpoints.directLinks.updateTableFromSql, tableUser),//to:do
+  deleteTableUser: (tableUser) => ReqExec.post(endpoints.procedure.deleteTableFromSql, tableUser),//to:do
+  //triggerUser
+  getTriggerUserList: () => ReqExec.get(endpoints.function_end.triggerUser, null, true), 
+  postTriggerUser: (triggerUser) => ReqExec.post(endpoints.directLinks.createTrigger, triggerUser),//to:do
+  putTriggerUser: (id, triggerUser) => ReqExec.put(endpoints.directLinks.updateTriggerFromSql, id, triggerUser),//to:do
+  deleteTriggerUser: (triggerUser) => ReqExec.post(endpoints.procedure.deleteTriggerUser, triggerUser, triggerUser),//to:do
+  //user
+  getUserList: () => ReqExec.get(endpoints.function_end.user, null, true),
+  postUser: (user) => ReqExec.post(endpoints.directLinks.registerUser, user),//to:do
+  putUser: (id, user) => ReqExec.put(endpoints.directLinks.updateUser, id, user),//to:do
+  deleteUser: (user) => ReqExec.put(endpoints.procedure.deleteUser, user.id, user),//to:do
+  deauthUser: (user) => ReqExec.post(endpoints.procedure.deauth_user, user),
+  getRolesFromToken: (token) => ReqExec.post(endpoints.directLinks.getRolesFromToken, token),
+  //userRole
+  getUserRoleList: () => ReqExec.get(endpoints.function_end.userRole, null, true),
+  postUserRole: (userRole) => ReqExec.post(endpoints.procedure.insertUserRole, userRole),
+  deleteUserRole: (userRole) => ReqExec.post(endpoints.procedure.deleteUserRoleByUserId, userRole),
+  //permission
+  getPermissionList: () => ReqExec.get(endpoints.function_end.permission, null, true),
+  postPermission: (permission) => ReqExec.post(endpoints.procedure.postPermission, permission),
+  deletePermission: (permission) => ReqExec.post(endpoints.procedure.deletePermissions, permission, permission),
+  //schema
+  getSchemaList: () => ReqExec.get(endpoints.function_end.getSchemas, null, true),
+  postSchema: (schema) => ReqExec.post(endpoints.procedure.postSchema, schema, true),
+  deleteSchema: (schema) => ReqExec.post(endpoints.procedure.dropSchema, schema, true),
 };

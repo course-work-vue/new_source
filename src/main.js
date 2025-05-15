@@ -1,15 +1,16 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import store from "./store";
+
 import "bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FontAwesomeIcon } from './plugins/font-awesome'
 //import Select2 from 'vue3-select2-component';
-//import Toast from "vue-toastification";
 //import "vue-toastification/dist/index.css";
 
 import { createPinia } from 'pinia';
+// Import Monaco Editor CSS
+//import 'monaco-editor/min/vs/editor/editor.main.css';
 // Vuetify
 /*
 import 'vuetify/styles'
@@ -19,10 +20,22 @@ import * as directives from 'vuetify/directives'
 import * as labsComponents from 'vuetify/labs/components'
 const vuetify = createVuetify({     components:{         ...components,         ...labsComponents     },     directives,  })
 */
-//const options = {
-// You can set your toast options here
-//};
+const options = {
+  position: "top-right",
+    timeout: 5000,
+    closeOnClick: true,
+    pauseOnFocusLoss: true,
+    pauseOnHover: true,
+    draggable: true,
+    draggablePercent: 0.6,
+    showCloseButtonOnHover: false,
+    hideProgressBar: false,
+    closeButton: "button",
+    icon: true,
+    rtl: false
+};
 import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
 import 'primeicons/primeicons.css'
 import "primeflex/primeflex.css";
 
@@ -139,7 +152,130 @@ import VirtualScroller from 'primevue/virtualscroller';
 import Chart from 'primevue/chart';
 
 const app = createApp(App)
-app.use(PrimeVue, { ripple: true });
+app.use(PrimeVue, {
+  ripple: true, locale: {
+    startsWith: 'Начинается с',
+    contains: 'Содержит',
+    notContains: 'Не содержит',
+    endsWith: 'Кончается на',
+    equals: 'Равно',
+    notEquals: 'Не равно',
+    noFilter: 'Без фильтра',
+    lt: 'Меньше, чем',
+    gt: 'Больше, чем',
+    lte: 'Меньше или равно',
+    gte: 'Больше или равно',
+
+    dateIs: 'Дата равна',
+    dateIsNot: 'Дата не равна',
+    dateBefore: 'Дата до',
+    dateAfter: 'Дата после',
+    clear: 'Очистить',
+    apply: 'Применить',
+    matchAll: 'Все совпадения',
+    matchAny: 'Лыбые совпадения',
+    addRule: 'Добавить правило',
+    removeRule: 'Удалить правило',
+    accept: 'Да',
+    reject: 'Нет',
+    choose: 'Выбрать',
+    upload: 'Загрузить',
+    cancel: 'Отмена',
+    completed: 'Завершено',
+    pending: 'Ожидание',
+    fileSizeTypes: ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+    dayNames: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+    dayNamesShort: ['Вос', 'Пон', 'Вто', 'Сре', 'Чет', 'Пят', 'Суб'],
+    dayNamesMin: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+    monthNames: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+
+    monthNamesShort: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+    chooseYear: 'Выбрать год',
+    chooseMonth: 'Выбрать месяц',
+    chooseDate: 'Выбрать дату',
+    prevDecade: 'Предыдущее десятилетие',
+    nextDecade: 'Следующее десятилетие',
+    prevYear: 'Предыдущий год',
+    nextYear: 'Следующий год',
+    prevMonth: 'Предыдущий месяц',
+    nextMonth: 'Следующий месяц',
+    prevHour: 'Прошлый час',
+    nextHour: 'Следующий час',
+    prevMinute: 'Предыдущая минута',
+    nextMinute: 'Следующая минута',
+    prevSecond: 'Предыдущая секунда',
+    nextSecond: 'Следуящая секунда',
+    am: 'am',
+    pm: 'pm',
+    today: 'Сегодня',
+    weekHeader: 'Нед',
+    firstDayOfWeek: 1,
+    showMonthAfterYear: false,
+    dateFormat: 'dd/mm/yy',
+    weak: 'Слабый',
+    medium: 'Средний',
+    strong: 'Сильный',
+    passwordPrompt: 'Введите пароль',
+    searchMessage: `элементов найдено`,
+    selectionMessage: ` элементов выбрано`,
+    emptySelectionMessage: 'Нет выбранных элементов',
+    emptySearchMessage: 'Нет результатов',
+    fileChosenMessage: ` файлов`,
+    noFileChosenMessage: 'Нет выбранных файлов',
+    emptyMessage: 'Нет доступных опций',
+    aria: {
+      trueLabel: 'Истина',
+      falseLabel: 'Ложно',
+      nullLabel: 'Не выбрано',
+      star: '1 звезда',
+      stars: `звезды`,
+      selectAll: 'Все элементы выбраны',
+      unselectAll: 'Все элементы не выбраны',
+      close: 'Закрыть',
+      previous: 'Предыдущий',
+      next: 'Следующий',
+      navigation: 'Навигация',
+      scrollTop: 'Скролл наверх',
+      moveTop: 'Перейти наверх',
+      moveDown: 'Перейти вниз',
+      moveBottom: 'Перейти в конец',
+      moveToTarget: 'Перейти на цель',
+      moveToSource: 'Перейти на источник',
+      moveAllToTarget: 'Передвинуть всё на цель',
+      moveAllToSource: 'Передвинуть всё на источник',
+      pageLabel: `Страница `,
+      firstPageLabel: 'Первая страница',
+      lastPageLabel: 'Последняя страница',
+      nextPageLabel: 'Следующая страница',
+      prevPageLabel: 'Предыдущая страница',
+      rowsPerPageLabel: 'Строк на страницу',
+      jumpToPageDropdownLabel: 'Перейти на выбор страницы',
+      jumpToPageInputLabel: 'Перейти на ввод страницы',
+      selectRow: 'Выбрать строку',
+      unselectRow: 'Снять выделение',
+      expandRow: 'Раскрыть строку',
+      collapseRow: 'Свернуть строку',
+      showFilterMenu: 'Показать меню фильтров',
+      hideFilterMenu: 'Скрыть меню фильтров',
+      filterOperator: 'Оператор фильтра',
+      filterConstraint: 'Ограничение фильтра',
+      editRow: 'Редактировать строку',
+      saveEdit: 'Сохранить редактирование',
+      cancelEdit: 'Отменить редактирование',
+      listView: 'Списковое представление',
+      gridView: 'Табличное представление',
+      slide: 'Слайд',
+      slideNumber: ``,
+      zoomImage: 'Приблизить изображение',
+      zoomIn: 'Приблизить',
+      zoomOut: 'Отдалить',
+      rotateRight: 'Повернуть вправо',
+      rotateLeft: 'Повернуть влево'
+
+    }
+
+  }
+});
 app.directive('tooltip', Tooltip);
 app.directive('badge', BadgeDirective);
 app.directive('ripple', Ripple);
@@ -249,9 +385,9 @@ app.component('TreeTable', TreeTable);
 app.component('VirtualScroller', VirtualScroller);
 app
   .use(router)
-app.use(store)
-//app.use(Toast, options)
+app.use(Toast, options)
 app.use(createPinia())
+app.use(ToastService)
 // .use(vuetify)
 app.component("font-awesome-icon", FontAwesomeIcon)
 //.component('Select2', Select2)

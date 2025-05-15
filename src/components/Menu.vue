@@ -9,7 +9,7 @@
       :icon="item.icon"
       :depth="0"
       :smallMenu="smallMenu"
-      @click.prevent="index === menuTree.length - 1 ? logOut() : null"
+      @click.prevent="index === menuTree.length - 1 ? loggOut() : null"
       :class="{ 'bottom-fixed': index === menuTree.length - 1 }"
     />
   </div>
@@ -17,7 +17,8 @@
 
 <script>
 import MenuItem from "./MenuItem.vue";
-
+import { useAuthStore } from "../store2/auth";
+import { mapActions } from "pinia";
 export default {
   name: "recursive-menu",
   data: () => ({
@@ -50,7 +51,7 @@ export default {
             link: "/groups",
           },
           {
-            label: "Курсовые",
+            label: "Квал. работы",
             link: "/courseworks",
           },
         ],
@@ -73,7 +74,7 @@ export default {
             link: "/lgroups",
           },
           {
-            label: "Договора",
+            label: "Договоры",
             link: "/contracts",
           },
           {
@@ -103,7 +104,7 @@ export default {
       },
       {
         label: "Excel",
-        link: "/xlparse",
+        link: "/import",
         icon: "description",
       },
       {
@@ -122,10 +123,11 @@ export default {
     MenuItem,
   },
   methods: {
-    logOut() {
-      this.$store.dispatch("auth/logout");
-      this.$router.push("/login");
-    },
+    ...mapActions(useAuthStore, ["logout"]),
+    // loggOut() {
+    //   //this.logout();
+    //   //this.$router.push("/login");
+    // },
   },
 };
 </script>

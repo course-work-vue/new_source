@@ -1,6 +1,7 @@
 import api from '@/api/api';
 import Role from '@/model/admin-group/Role'; // Ensure this is the correct path to your Role model
 import { defineStore } from 'pinia';
+import ToastService from '@/services/ToastService';
 
 export const useRoleStore = defineStore('role', {
     state: () => ({
@@ -31,34 +32,55 @@ export const useRoleStore = defineStore('role', {
         },
 
         async postRole(role) {
-            const response = await api.postRole(role);
+            try {
+                const response = await api.postRole(role);
 
-            if (response) {
-                await this.getRoleList();
+                if (response) {
+                    await this.getRoleList();
+                    ToastService.showSuccess('Роль успешно добавлена');
+                } else {
+                    ToastService.showError('Не удалось добавить роль');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при добавлении роли');
+                throw error;
             }
-            return response;
         },
 
         async putRole(role) {
-            const response = await api.putRole(role.roleid, role);
-            if (response.success === true) {
-                const index = this.roleList.findIndex(r => r.roleid === role.roleid);
-                if (index !== -1) {
-                    this.roleList.splice(index, 1, new Role(role));
+            try {
+                const response = await api.putRole(role.roleid, role);
+                if (response.success === true) {
+                    const index = this.roleList.findIndex(r => r.roleid === role.roleid);
+                    if (index !== -1) {
+                        this.roleList.splice(index, 1, new Role(role));
+                    }
+                    ToastService.showSuccess('Информация о роли успешно обновлена');
+                } else {
+                    ToastService.showError('Не удалось обновить информацию о роли');
                 }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при обновлении информации о роли');
+                throw error;
             }
         },
 
         async deleteRole(role) {
-            const response = await api.deleteRole(role);
-            if (response.success === true) {
+            try {
+                const response = await api.deleteRole(role);
                 if (response.success === true) {
                     await this.getRoleList();
+                    ToastService.showSuccess('Роль успешно удалена');
+                } else {
+                    ToastService.showError('Не удалось удалить роль');
                 }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при удалении роли');
+                throw error;
             }
         },
-
-
-
     },
 });

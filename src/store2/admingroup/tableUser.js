@@ -40,6 +40,7 @@ export const useTableUserStore = defineStore('tableUser', {
         },
 
         async putTableUser(tableUser) {
+            console.log(tableUser)
             const response = await api.putTableUser(tableUser.id, tableUser);
             if (response) {
 
@@ -48,6 +49,7 @@ export const useTableUserStore = defineStore('tableUser', {
         },
 
         async deleteTableUser(tableUser) {
+            console.log('del')
             const response = await api.deleteTableUser(tableUser);
             if (response.success === true) {
                 await this.getTableUserList();

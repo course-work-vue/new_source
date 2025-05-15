@@ -1,55 +1,60 @@
 <template>
-  <div v-if="!loading">
-    <div class="col col-xs-9 col-lg-12 list">
-      <div class="col col-12">
-        <div class="d-inline-flex">
-          <div v-if="!spisok">
-            <h1>Список всех ролей</h1>
-          </div>
-        </div>
+  <div class="container-fluid p-0 d-flex flex-column flex-1" v-if="!loading">
+    <!-- Title Row -->
+    <div class="row g-2">
+      <div class="col-12 p-0 title-container">
+        <span v-if="!spisok">Список всех ролей</span>
+      </div>
+    </div>
 
-        <div class="col col-12">
-          <div class="float-start">
-            <button
-              @click="openCreatingForm"
-              class="btn btn-primary float-start"
-              type="button"
-            >
-              <i class="material-icons-outlined">add</i>Добавить роль
-            </button>
-          </div>
-        </div>
+    <!-- First row: Search and Clear Filters -->
+    <div class="row g-2 mb-2">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
       </div>
-      <div class="col col-12">
-        <div class="col col-6 float-start"></div>
-        <div class="col col-6 float-end d-inline-flex align-items-center">
-          <button
-            @click="clearFilters"
-            :disabled="!filters"
-            class="btn btn-sm btn-primary text-nowrap mx-2"
-            type="button"
-          >
-            <i class="material-icons-outlined">close</i>Очистить фильтры
-          </button>
-          <input
-            class="form-control"
-            type="text"
-            v-model="quickFilterValue"
-            id="filter-text-box"
-            v-on:input="onFilterTextBoxChanged()"
-            placeholder="Поиск..."
-          />
-        </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
       </div>
-      <br />
-      <div style="height: 90vh">
-        <div class="ag-grid-wrap h-100 pt-5">
+    </div>
+
+    <!-- Add Role Button Row -->
+    <div class="row g-2 mb-2">
+      <div class="col-4 p-0">
+        <button
+          @click="openCreatingForm"
+          class="btn btn-primary w-100"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">add</i>Добавить роль
+        </button>
+      </div>
+    </div>
+
+    <!-- AG Grid Row -->
+    <div class="row g-2 flex-1">
+      <div class="col-12 p-0 h-100">
+        <div class="grid-container">
           <ag-grid-vue
             class="ag-theme-alpine"
-            style="width: 100%; height: 100%"
             :columnDefs="columnDefs.value"
             :rowData="rowData.value"
+            :rowHeight="40"
             :defaultColDef="defaultColDef"
+            :localeText="localeText"
             rowSelection="multiple"
             animateRows="true"
             includeHiddenColumnsInQuickFilter="true"
@@ -63,7 +68,8 @@
       </div>
     </div>
   </div>
-  <Dialog v-model:visible="formVisible" modal header="Форма студента">
+
+  <Dialog v-model:visible="formVisible" modal header="Форма ролей">
     <div class="card flex flex-row">
       <div class="form card__form">
         <auto-form
@@ -139,9 +145,9 @@ import Role from "@/model/admin-group/Role";
 import GlobalPermission from "@/model/admin-group/GlobalPermission";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
-
+import { useSchemaStore } from "@/store2/admingroup/schema";
 import OnlyDocumentEditor from "@/components/base/OnlyDocumentEditor.vue";
-
+import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
 /* eslint-disable vue/no-unused-components */
 export default {
   name: "App",
@@ -157,6 +163,7 @@ export default {
     OnlyDocumentEditor,
   },
   setup() {
+    const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null); // Optional - for accessing Grid's API
     const gridColumnApi = ref();
 
@@ -293,7 +300,7 @@ export default {
       columnDefs,
       rowData,
       defaultColDef,
-
+      localeText,
       deselectRows: () => {
         gridApi.value.deselectAll();
       },
@@ -332,13 +339,14 @@ export default {
       scheme2: null,
       docPreview: false,
       filePath: null,
+      schemaPermissions: {}, // Store permissions for each schema
+      selectedSchema: null, // Track the currently selected schema
     };
   },
   async mounted() {
-    await this.getGroupList();
-    await this.getStudentList();
     await this.getRoleList();
     await this.getGlobalPermissionList();
+    await this.getSchemaList();
     this.loadRolesData();
     this.scheme = new FormScheme([
       new TextInput({
@@ -350,29 +358,93 @@ export default {
       }),
     ]);
     this.scheme2 = new FormScheme([
+      new ComboboxInput({
+        key: "schema_name",
+        label: "Схема",
+        placeholder: "Выберите схему",
+        options: this.schemaList.map((el) => ({
+          label: el.schemaname,
+          value: el.schemaname,
+        })),
+      }),
+
       new CheckboxInput({
-        key: "create_grant",
-        label: "create",
+        key: "grant_create_db",
+        label: "CREATE DATABASE",
         binary: true,
       }),
       new CheckboxInput({
-        key: "create_table_grant",
-        label: "create_table",
+        key: "grant_create_obj",
+        label: "CREATE OBJECT",
         binary: true,
       }),
       new CheckboxInput({
-        key: "update_table_grant",
-        label: "update_table",
+        key: "grant_usage_schema",
+        label: "USAGE SCHEMA",
         binary: true,
       }),
       new CheckboxInput({
-        key: "delete_table_grant",
-        label: "delete_table",
+        key: "grant_update_tbl",
+        label: "UPDATE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_delete_tbl",
+        label: "DELETE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_select_tbl",
+        label: "SELECT TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_insert_tbl",
+        label: "INSERT TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_truncate_tbl",
+        label: "TRUNCATE TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_references_tbl",
+        label: "REFERENCES TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_trigger_tbl",
+        label: "TRIGGER TABLE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_usage_seq",
+        label: "USAGE SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_select_seq",
+        label: "SELECT SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_update_seq",
+        label: "UPDATE SEQUENCE",
+        binary: true,
+      }),
+      new CheckboxInput({
+        key: "grant_execute_func",
+        label: "EXECUTE FUNCTION",
         binary: true,
       }),
     ]);
+    
+    // Add a watcher for schema_name changes
+    this.$watch('globalPermission.schema_name', this.handleSchemaChange);
   },
   methods: {
+    ...mapActions(useSchemaStore, ["getSchemaList"]),
     ...mapActions(useRoleStore, [
       "getRoleList",
       "postRole",
@@ -406,13 +478,31 @@ export default {
     resetRole() {
       this.role = new Role();
       this.globalPermission = new GlobalPermission();
+      this.schemaPermissions = {};
+      this.selectedSchema = null;
     },
     edit(event) {
       this.resetRole();
       this.role = event.data;
-      this.globalPermissionMap[event.data.roleid]
-        ? (this.globalPermission = this.globalPermissionMap[event.data.roleid])
-        : (this.globalPermission.roleid = event.data.roleid);
+      
+      // Store all permissions for this role by schema
+      this.schemaPermissions = {};
+      const rolePermissions = this.globalPermissionsByRole[event.data.roleid] || [];
+      
+      rolePermissions.forEach(permission => {
+        this.schemaPermissions[permission.schema_name] = permission;
+      });
+      
+      // Set initial schema and permission
+      if (rolePermissions.length > 0) {
+        this.selectedSchema = rolePermissions[0].schema_name;
+        this.globalPermission = { ...rolePermissions[0] };
+      } else {
+        this.globalPermission = new GlobalPermission();
+        this.globalPermission.roleid = event.data.roleid;
+        this.selectedSchema = this.schemaList.length > 0 ? this.schemaList[0].schemaname : null;
+      }
+      
       this.formVisible = true;
     },
     async previewDocx() {
@@ -422,6 +512,13 @@ export default {
     },
     openCreatingForm() {
       this.resetRole();
+      
+      // Initialize with the first schema if available
+      if (this.schemaList.length > 0) {
+        this.globalPermission.schema_name = this.schemaList[0].schemaname;
+        this.selectedSchema = this.schemaList[0].schemaname;
+      }
+      
       this.formVisible = true;
     },
     async validateForm() {
@@ -449,16 +546,33 @@ export default {
         console.error("Form validation failed", this.errors);
         return;
       }
+      
       let role = { ...this.role };
-      let globalPermission = { ...this.globalPermission };
+      
+      // Update the current schema's permissions in the schemaPermissions object
+      this.schemaPermissions[this.globalPermission.schema_name] = { ...this.globalPermission };
+      
       if (role.roleid) {
         await this.putRole(role);
-        await this.putGlobalPermission(globalPermission);
+        // Save permissions for each schema
+        for (const schemaName in this.schemaPermissions) {
+          const permission = this.schemaPermissions[schemaName];
+          permission.schema_name=schemaName;
+          await this.putGlobalPermission(permission);
+        }
       } else {
-        globalPermission.roleid = await this.postRole(role);
-
-        await this.postGlobalPermission(globalPermission);
+        const response = await this.postRole(role);
+        
+        // For new roles, save permissions for all schemas
+        for (const schemaName in this.schemaPermissions) {
+          const permission = { ...this.schemaPermissions[schemaName] };
+          permission.roleid = response.id;
+          await this.postGlobalPermission(permission);
+        }
       }
+
+      await this.getRoleList();
+      await this.getGlobalPermissionList();
       this.formVisible = false;
       this.resetRole();
       this.loadRolesData();
@@ -780,15 +894,51 @@ export default {
 
       this.filePath = await this.uploadGeneratedFile(blob, "Report.docx");
     },
+    handleSchemaChange(newSchema) {
+      // Save current permissions for the current schema
+      if (this.selectedSchema) {
+        this.schemaPermissions[this.selectedSchema] = { ...this.globalPermission };
+      }
+      
+      // Get selected schema
+      this.selectedSchema = newSchema;
+      
+      // If we have permissions for this schema, load them
+      if (this.schemaPermissions[this.selectedSchema]) {
+        this.globalPermission = { ...this.schemaPermissions[this.selectedSchema] };
+      } else {
+        // Create new permissions for this schema
+        const newPermission = new GlobalPermission();
+        newPermission.roleid = this.role.roleid;
+        newPermission.schema_name = this.selectedSchema;
+        this.globalPermission = newPermission;
+        this.schemaPermissions[this.selectedSchema] = newPermission;
+      }
+    },
   },
   computed: {
     ...mapState(useStudentStore, ["studentList", "activeSortedStudents"]),
     ...mapState(useRoleStore, ["roleList"]),
+    ...mapState(useSchemaStore, ["schemaList"]),
     ...mapState(useGlobalPermissionStore, [
       "globalPermissionList",
       "globalPermissionMap",
     ]),
     ...mapState(useGroupStore, ["groupList"]),
+    globalPermissionsByRole() {
+      const permissionsByRole = {};
+      
+      if (Array.isArray(this.globalPermissionList)) {
+        this.globalPermissionList.forEach(permission => {
+          if (!permissionsByRole[permission.roleid]) {
+            permissionsByRole[permission.roleid] = [];
+          }
+          permissionsByRole[permission.roleid].push(permission);
+        });
+      }
+      
+      return permissionsByRole;
+    },
   },
   async created() {},
 };
@@ -817,32 +967,51 @@ var filterParams = {
 </script>
 
 <style lang="scss" scoped>
-.ag-grid-wrap {
-  width: 100%;
-}
-.bigger {
-  font-size: 30px;
-  white-space: nowrap;
-}
-.ag-row .ag-cell {
+.title-container {
+  min-height: 25px;
+  font-size: 18px;
   display: flex;
-  justify-content: center; /* align horizontal */
+  margin-bottom: 5px;
+}
+
+.grid-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.ag-theme-alpine {
+  flex: 1;
+}
+
+.clear-filters-btn {
+  white-space: nowrap;
+  min-width: 165px;
+}
+
+.form-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.form-check-input,
+.form-check-label {
+  cursor: pointer;
+}
+
+.form-check {
+  margin-right: 10px;
+  display: flex;
   align-items: center;
 }
 
-.skeleton {
-  width: 100%;
-  height: 1.2em;
-  background-image: linear-gradient(
-    125deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
-  );
-  background-size: 200% 100%;
-  animation: skeletonShimmer 3.5s infinite linear;
-  border-radius: 4px;
-  margin: 0.2em 0;
+.form-check-label {
+  margin-left: 4px;
+  line-height: 1;
+  padding-top: 1px;
+  font-size: 14px;
 }
 
 .text-center * {
@@ -850,27 +1019,27 @@ var filterParams = {
   display: flex;
 }
 
-@keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.ag-row .ag-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-@keyframes skeletonFade {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
+/* Consistent height for all form elements */
+.btn-primary,
+.form-control,
+.form-select {
+  height: 28px;
+  line-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
 }
 
-.nmbr {
-  height: 44px;
+.form-control,
+.form-select {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn-primary {
@@ -884,39 +1053,17 @@ var filterParams = {
   justify-content: center;
   align-items: center;
 }
+
 .form-control:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
 }
+
 .form-select:focus {
   border-color: rgba(1, 20, 8, 0.815);
   box-shadow: inset 0 1px 1px rgba(6, 215, 29, 0.075),
     0 0 8px rgba(6, 215, 29, 0.6);
-}
-.page-link {
-  height: 40px;
-  width: 40px;
-  margin: 2px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.active {
-  .page-link {
-    background-color: rgb(68, 99, 52);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
-}
-.disabled {
-  .page-link {
-    background-color: rgb(57, 79, 46);
-    border: none;
-    --bs-btn-hover-bg: rgb(6 215 29);
-    --bs-btn-hover-border-color: rgb(6 215 29);
-  }
 }
 
 .card {

@@ -1,6 +1,5 @@
 const PHONE_RX = /\(\d{3}\)\s\d{7}/;
-const EMAIL_RX = /^\w+@\w+\.\w+$/;
-
+const EMAIL_RX = /^[\w.+-]+@[a-zA-Z\d-]+(\.[a-zA-Z\d-]+)*\.[a-zA-Z]{2,}$/;
 
 export function requiredRule(v) {
     if (!v) return 'Обязательно к заполнению';

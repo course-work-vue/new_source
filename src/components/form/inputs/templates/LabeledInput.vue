@@ -1,7 +1,5 @@
 <template>
-  <label v-if="label" :for="itemKey" class="mb-2 block font-medium">
-    {{ label }}
-  </label>
+  <label v-if="label" :for="itemKey" class="mb-2 block font-medium" v-html="formattedLabel"></label>
   <slot> </slot>
 </template>
 
@@ -16,5 +14,11 @@ export default {
       type: String,
     },
   },
+  computed: {
+    formattedLabel() {
+      // Заменяем \n на <br>
+      return this.label ? this.label.replace(/\n/g, '<br>') : '';
+    }
+  }
 };
 </script>

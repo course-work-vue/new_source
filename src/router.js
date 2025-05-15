@@ -3,99 +3,77 @@ import Home from "./components/Home.vue";
 import Login from "./components/Login.vue";
 import Register from "./components/Register.vue";
 import jwt_decode from "jwt-decode";
-import AuthService from './services/auth.service';
-import AppLayout from './layout/AppLayout.vue'
-
-
+import AuthService from "./services/auth.service";
+import AppLayout from "./layout/AppLayout.vue";
+import { useAuthStore } from "./store2/auth";
 
 // lazy-loaded
-const Profile = () => import("./components/Profile.vue")
+const Profile = () => import("./components/Profile.vue");
 
-const BoardUser = () => import("./components/BoardUser.vue")
+const BoardUser = () => import("./components/BoardUser.vue");
 
-const StudentList = () => import("./components/student/StudentList.vue")
+const StudentList = () => import("./components/student/StudentList.vue");
 
-const RightsTable = () => import("./components/RightsTable.vue")
-const DirectionList = () => import("./components/student/DirectionList.vue")
+const RightsTable = () => import("./components/RightsTable.vue");
+const DirectionList = () => import("./components/student/DirectionList.vue");
 
-const ProfileList = () => import("./components/student/ProfileList.vue")
+const ProfileList = () => import("./components/student/ProfileList.vue");
 
+const GroupList = () => import("./components/student/GroupList.vue");
 
-const GroupList = () => import("./components/student/GroupList.vue")
+const CWList = () => import("./components/student/CwList.vue");
 
-const CWList = () => import("./components/student/CwList.vue")
+// Импорты слушателей
 
+const ListenerList = () => import("./components/listener/ListenerList.vue");
+const PayerList = () => import("./components/listener/PayerList.vue");
+const lGroupList = () => import("./components/listener/ListenergroupList.vue");
+const ContractList = () => import("./components/listener/ContractList.vue");
+const ProgramList = () => import("./components/listener/ProgramList.vue");
+const PaymentList = () => import("./components/listener/PaymentList.vue");
 
+// Конец импортов слушателей
 
+const ScheduleLoads = () => import("./components/ScheduleLoads.vue");
 
-const ListenerList = () => import("./components/ListenerList.vue")
-const ListenerDetail = () => import("./components/ListenerDetail.vue")
-const AddListener = () => import("./components/AddListener.vue")
-
-const PayerList = () => import("./components/PayerList.vue")
-const PayerDetail = () => import("./components/PayerDetail.vue")
-const AddPayer = () => import("./components/AddPayer.vue")
-
-const ContractList = () => import("./components/ContractList.vue")
-const ContractDetail = () => import("./components/ContractDetail.vue")
-const AddContract = () => import("./components/AddContract.vue")
-
-const ScheduleLoads = () => import("./components/ScheduleLoads.vue")
-
-
-
-const ProgramList = () => import("./components/ProgramList.vue")
-const AddProgram = () => import("./components/AddProgram.vue")
-const ProgramDetail = () => import("./components/ProgramDetail.vue")
-
-const AddPayment = () => import("./components/AddPayment.vue")
-const PaymentList = () => import("./components/PaymentList.vue")
-const PaymentDetail = () => import("./components/PaymentDetail.vue")
-
-const AddCourse = () => import("./components/AddCourse.vue")
-const CourseList = () => import("./components/CourseList.vue")
-const CourseDetail = () => import("./components/CourseDetail.vue")
-
+const AddCourse = () => import("./components/AddCourse.vue");
+const CourseList = () => import("./components/CourseList.vue");
+const CourseDetail = () => import("./components/CourseDetail.vue");
 
 //Расписание
 
-const AuditList = () => import("./components/AuditList.vue")
-const ScheduleList = () => import("./components/ScheduleList.vue")
+const AuditList = () => import("./components/AuditList.vue");
+const ScheduleList = () => import("./components/ScheduleList.vue");
 
-const addLgroup = () => import("./components/AddListenergroup.vue")
-const lGroupList = () => import("./components/ListenergroupList.vue")
-const lGroupDetail = () => import("./components/LgroupDetail.vue")
+const addLgroup = () => import("./components/AddListenergroup.vue");
 
+//ЖУРНАЛ
+const TeacherList = () => import("./components/TeacherList.vue");
+const AddTeacher = () => import("./components/AddTeacher.vue");
+const TeacherDetail = () => import("./components/TeacherDetail.vue");
 
-const xlparse = () => import("./components/xlparse.vue")
-const ManageExcel = () => import("./components/ManageExcel.vue")
-const ManageExcel2 = () => import("./components/ManageExcel2.vue")
-const ManageExcel3 = () => import("./components/ManageExcel3.vue")
-const ManageExcel4 = () => import("./components/ManageExcel4.vue")
-const ManageExcel5 = () => import("./components/ManageExcel5.vue")
-const ManageExcel6 = () => import("./components/ManageExcel6.vue")
-const ManageExcel7 = () => import("./components/ManageExcel7.vue")
-const ManageExcel8 = () => import("./components/ManageExcel8.vue")
-const ManageExcel9 = () => import("./components/ManageExcel9.vue")
-const ManageExcel10 = () => import("./components/ManageExcel10.vue")
-const ManageExcel11 = () => import("./components/ManageExcel11.vue")
-const ManageExcel12 = () => import("./components/ManageExcel12.vue")
-const ManageExcel13 = () => import("./components/ManageExcel13.vue")
+const TegrsuList = () => import("./components/TegrsuList.vue");
+const AddTegrsu = () => import("./components/AddTegrsu.vue");
+const TegrsuDetail = () => import("./components/TegrsuDetail.vue");
 
-const RoleList = () => import("./components/admin/RoleList.vue")
-const ProcedureList = () => import("./components/admin/ProcedureList.vue")
-const FunctionList = () => import("./components/admin/FunctionList.vue")
-const TriggerList = () => import("./components/admin/TriggerList.vue")
-const TableList = () => import("./components/admin/TableList.vue")
-const UserList = () => import("./components/admin/UserList.vue")
+const JournalList = () => import("./components/JournalList.vue");
+//ЖУРНАЛ
+
+const ImportList = () => import("./components/import/ImportList.vue");
+
+const RoleList = () => import("./components/admin/RoleList.vue");
+const ProcedureList = () => import("./components/admin/ProcedureList.vue");
+const FunctionList = () => import("./components/admin/FunctionList.vue");
+const TriggerList = () => import("./components/admin/TriggerList.vue");
+const TableList = () => import("./components/admin/TableList.vue");
+const UserList = () => import("./components/admin/UserList.vue");
+const SchemaList = () => import("./components/admin/SchemaList.vue");
 const routes = [
-
   {
     path: "/",
     name: "home",
     component: AppLayout,
     children: [
-
       {
         path: "/home",
         component: Home,
@@ -115,144 +93,120 @@ const routes = [
         component: Profile,
       },
       {
-        path: "/xlparse",
-        name: "xlparse",
-        // lazy-loaded
-        component: xlparse,
+        path: "/import",
+        name: "Импорт данных",
+        component: ImportList,
       },
+
+      // КОМПОНЕНТЫ СТУДЕНТОВ
+
       {
-        path: "/ManageExcel",
-        name: "ManageExcel",
-        // lazy-loaded
-        component: ManageExcel,
+        path: "/students",
+        name: "Студенты",
+        component: StudentList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
       },
-      {
-        path: "/ManageExcel2",
-        name: "ManageExcel2",
-        // lazy-loaded
-        component: ManageExcel2,
-      },
-      {
-        path: "/ManageExcel3",
-        name: "ManageExcel3",
-        // lazy-loaded
-        component: ManageExcel3,
-      },
-      {
-        path: "/ManageExcel4",
-        name: "ManageExcel4",
-        // lazy-loaded
-        component: ManageExcel4,
-      },
-      {
-        path: "/ManageExcel5",
-        name: "ManageExcel5",
-        // lazy-loaded
-        component: ManageExcel5,
-      },
-      {
-        path: "/ManageExcel6",
-        name: "ManageExcel6",
-        // lazy-loaded
-        component: ManageExcel6,
-      },
-      {
-        path: "/ManageExcel7",
-        name: "ManageExcel7",
-        // lazy-loaded
-        component: ManageExcel7,
-      },
-      {
-        path: "/ManageExcel8",
-        name: "ManageExcel8",
-        // lazy-loaded
-        component: ManageExcel8,
-      },
-      {
-        path: "/ManageExcel9",
-        name: "ManageExcel9",
-        // lazy-loaded
-        component: ManageExcel9,
-      },
-      {
-        path: "/ManageExcel10",
-        name: "ManageExcel10",
-        // lazy-loaded
-        component: ManageExcel10,
-      },
-      {
-        path: "/ManageExcel11",
-        name: "ManageExcel11",
-        // lazy-loaded
-        component: ManageExcel11,
-      },
-      {
-        path: "/ManageExcel12",
-        name: "ManageExcel12",
-        // lazy-loaded
-        component: ManageExcel12,
-      },
-      {
-        path: "/ManageExcel13",
-        name: "ManageExcel13",
-        // lazy-loaded
-        component: ManageExcel13,
-      },
-      { path: '/students', component: StudentList },
 
       //{ path: '/students/:studentId', component: StudentDetail },
-      { path: '/rights/:table', component: RightsTable },
-      { path: '/directions', component: DirectionList },
+      { path: "/rights/:table", component: RightsTable },
+      {
+        path: "/directions",
+        name: "Направления",
+        component: DirectionList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
+      {
+        path: "/groups",
+        name: "Группы",
+        component: GroupList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
       //{ path: '/directions/:directionId', component: DirectionDetail },
 
-      { path: '/profiles', component: ProfileList },
+      {
+        path: "/profiles",
+        name: "Профили",
+        component: ProfileList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
       // { path: '/profiles/:profileId', component: ProfileDetail },
 
-
-      { path: '/groups', component: GroupList },
       // { path: '/groups/:groupId', component: GroupDetail },
 
+      { path: "/courses", name: "Курсы", component: CourseList },
+      { path: "/courses/:courseID", component: CourseDetail },
+      { path: "/AddCourse", component: AddCourse },
 
-      { path: '/courses', component: CourseList },
-      { path: '/courses/:courseID', component: CourseDetail },
-      { path: '/AddCourse', component: AddCourse },
+      // КОНЕЦ КОМПОНЕНТОВ СТУДЕНТОВ
+      // КОМПОНЕНТЫ ДЛЯ СЛУШАТЕЛЕЙ
 
-      { path: '/listeners', component: ListenerList },
-      { path: '/listeners/:listenerId', component: ListenerDetail },
-      { path: '/AddListener', component: AddListener },
+      {
+        path: "/listeners",
+        name: "Слушатели",
+        component: ListenerList,
+      },
+      {
+        path: "/payers",
+        name: "Плательщики",
+        component: PayerList,
+      },
+      {
+        path: "/lgroups",
+        name: "Группы слушателей",
+        component: lGroupList,
+      },
+      {
+        path: "/addlgroup",
+        name: "Добавить группу",
+        component: addLgroup,
+      },
+      {
+        path: "/contracts",
+        name: "Договоры",
+        component: ContractList,
+      },
+      {
+        path: "/programs",
+        name: "Программы",
+        component: ProgramList,
+      },
+      {
+        path: "/payments",
+        name: "Платежи",
+        component: PaymentList,
+      },
 
-      { path: '/payers', component: PayerList },
-      { path: '/payers/:payerId', component: PayerDetail },
-      { path: '/Addpayer', component: AddPayer },
+      // КОНЕЦ КОМПОНЕНТОВ ДЛЯ СЛУШАТЕЛЕЙ
 
-      { path: '/contracts', component: ContractList },
-      { path: '/contracts/:contractId', component: ContractDetail },
-      { path: '/AddContract', component: AddContract },
-
-      { path: '/ScheduleLoads', component: ScheduleLoads },
+      { path: "/ScheduleLoads", component: ScheduleLoads },
 
       //{ path: '/addcw', component: AddCw },
-      { path: '/courseworks', component: CWList },
-      //  { path: '/courseworks/:CwId', component: CWdetail },
+      {
+        path: "/courseworks",
+        component: CWList,
+        meta: { roles: ["super_admin", "superadmin", "control_student"] },
+      },
+      // { path: '/courseworks/:CwId', component: CWdetail },
 
-      { path: '/programs', component: ProgramList },
-      { path: '/programs/:programId', component: ProgramDetail },
-      { path: '/AddProgram', component: AddProgram },
-
-      { path: '/payments', component: PaymentList },
-      { path: '/payments/:paymentID', component: PaymentDetail },
-      { path: '/AddPayment', component: AddPayment },
+      { path: "/programs", component: ProgramList },
 
       //Расписание
-      { path: '/audits', component: AuditList },
-      { path: '/schedules', component: ScheduleList },
+      { path: "/audits", component: AuditList },
+      { path: "/schedules", component: ScheduleList },
 
+      //ЖУРНАЛ
+      { path: "/teachers", component: TeacherList },
+      { path: "/teachers/:teacherId", component: TeacherDetail },
+      { path: "/AddTeacher", component: AddTeacher },
 
+      { path: "/tegrsus", component: TegrsuList },
+      { path: "/tegrsus/:tegrsuId", component: TegrsuDetail },
+      { path: "/AddTegrsu", component: AddTegrsu },
 
+      { path: "/journals", component: JournalList },
+      //ЖУРНАЛ
 
-      { path: '/lgroups', component: lGroupList },
-      { path: '/addlgroup', component: addLgroup },
-      { path: '/lgroups/:groupId', component: lGroupDetail },
+      { path: "/lgroups", component: lGroupList },
       {
         path: "/user",
         name: "user",
@@ -260,50 +214,111 @@ const routes = [
         component: BoardUser,
       },
 
-      { path: '/procedures', component: ProcedureList },
-      { path: '/functions', component: FunctionList },
-      { path: '/triggers', component: TriggerList },
-      { path: '/tables', component: TableList },
-      { path: '/roles', component: RoleList },
-      { path: '/users', component: UserList },
-    ]
+      {
+        path: "/procedures",
+        name: "Процедуры",
+        component: ProcedureList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/functions",
+        name: "Функции",
+        component: FunctionList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/triggers",
+        name: "Триггеры",
+        component: TriggerList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/tables",
+        name: "Таблицы",
+        component: TableList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/roles",
+        name: "Роли",
+        component: RoleList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/users",
+        name: "Пользователи",
+        component: UserList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+      {
+        path: "/schemas",
+        name: "схемы",
+        component: SchemaList,
+        meta: { roles: ["super_admin", "superadmin"] },
+      },
+    ],
     // { path: '/AddStudent/:groupName', component: AddStudent },
   },
-
 ];
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
 });
-
-router.beforeEach((to, from, next) => {
-  const publicPages = ['/login', '/register', '/home'];
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  const publicPages = ["/login", "/register", "/home"];
   const authRequired = !publicPages.includes(to.path);
-  const loggedIn = localStorage.getItem('user');
+  const loggedIn = localStorage.getItem("user");
 
   if (authRequired && !loggedIn) {
-    next('/login'); // Redirect to login page if not logged in
-  } else if (loggedIn) {
-    const token = JSON.parse(loggedIn).accessToken;
-    try {
-      const decodedToken = jwt_decode(token);
-      const currentTime = Date.now() / 1000;
-
-      if (decodedToken.exp < currentTime) {
-        // Token has expired, perform logout and redirect to login
-        AuthService.logout();
-        next('/login');
-      } else {
-        next(); // Continue to the intended route
-      }
-    } catch (error) {
-      // Handle token decoding errors if needed
-      next();
-    }
-  } else {
-    next(); // Continue to the intended route (public page)
+    return next("/login");
   }
+
+  if (loggedIn) {
+    document.title = to.name || "Application";
+    const token = JSON.parse(loggedIn).accessToken;
+    let decodedToken;
+    try {
+      decodedToken = jwt_decode(token);
+    } catch (err) {
+      console.error("Ошибка декодирования токена:", err);
+      return next();
+    }
+
+    const currentTime = Date.now() / 1000;
+    if (decodedToken.exp < currentTime) {
+      authStore.login(); // или logout, как у вас принято
+      return next("/login");
+    }
+
+    // СРАВНИВАЕМ ИМЕНА МАРШРУТОВ (игнорим query)
+    const routeChanged = to.name !== from.name;
+    if (routeChanged) {
+      // получаем роли только при смене маршрута «по сути»
+      await authStore.getRolesFromToken({ token: authStore.user.accessToken });
+    }
+
+    // если в маршруте есть meta.roles — проверяем их
+    if (to.meta.roles) {
+      const userRoles = authStore.user?.roles || [];
+      const required = to.meta.roles;
+      const hasRole = userRoles.some((r) => required.includes(r));
+      if (!hasRole) {
+        authStore.noAccess = true;
+        // можно редиректить на /no-access или просто next()
+      } else {
+        authStore.noAccess = false;
+      }
+    } else {
+      authStore.noAccess = false;
+    }
+
+    return next();
+  }
+
+  // публичные страницы
+  next();
 });
 
 /*
