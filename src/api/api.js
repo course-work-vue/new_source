@@ -182,4 +182,21 @@ export default {
   getSchemaList: () => ReqExec.get(endpoints.function_end.getSchemas, null, true),
   postSchema: (schema) => ReqExec.post(endpoints.procedure.postSchema, schema, true),
   deleteSchema: (schema) => ReqExec.post(endpoints.procedure.dropSchema, schema, true),
+
+//ЖУРНАЛ
+  getTeacherConnections: (teacher_id) => ReqExec.post( endpointsFunction.teacher_connections, {teacher_id}, true),
+  getJournal: (wl_id) =>ReqExec.post(endpointsFunction.journal, { wl_id }, true),
+  getGradeTypes: () =>ReqExec.post(endpointsFunction.grade_types, {}, true),
+  createJournalDate: (wl_id, date) =>ReqExec.post(endpointsFunction.create_journal_date,{  wl_id,  date },true),
+  updateAttendance(student_id, date_id, present) {return ReqExec.post(endpointsFunction.upsert_attendance, {student_id,date_id,present}, true);},
+  updateGrade: (student_id, date_id, grade_type_id, value) =>ReqExec.post(endpointsFunction.upsert_grade,{ student_id, date_id, grade_type_id, value },true),
+  deleteJournalDate: (date_id) =>ReqExec.post(endpointsFunction.delete_journal_date, {date_id }, true),
+  deleteGradeTypeFromDate: (journal_date_id, grade_type_id) =>ReqExec.post(endpointsFunction.delete_grade_type_from_date,{journal_date_id,grade_type_id},true),
+  upsertDateComment: (date_id, comment) =>ReqExec.post(endpointsFunction.upsert_journal_date_comment,{ date_id, comment },true),
+  upsertJournalDateGradeType: (params) =>ReqExec.post( endpointsFunction.upsert_journal_date_grade_type,params,true),
+  addGradeTypeToDate: (params) =>ReqExec.post(endpointsFunction.upsert_journal_date_grade_type, params, true),
+  getReport: ({ wl_id, contingent_type, contingent_id, report_type }) =>ReqExec.post(endpointsFunction.get_report, { wl_id, contingent_type, contingent_id, report_type}, true),
+  getDirectionsList: () => ReqExec.post(endpointsFunction.select_directions_list, {}, true),
+  getCoursesList: () =>ReqExec.post(endpointsFunction.select_courses_list, {}, true),
+//
 };
