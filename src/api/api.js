@@ -1,4 +1,5 @@
-import endpoints from '@/api/endpoints';
+import endpoints from '@/api/endpoints';|
+import endpointsFunction from '@/api/endpoints/endpointsFunction'; 
 import ReqExec from '@/services/RequestExecutor';
 ReqExec.baseUrl = 'https://ncatbird.ru/ums/containers/prod/server';
 
