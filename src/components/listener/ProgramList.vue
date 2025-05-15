@@ -271,16 +271,17 @@ export default {
       console.error("Ошибка при загрузке данных программ:", error);
     }
     this.scheme = new FormScheme([
-      new TextInput({
-        key: "required_amount",
-        label: "\nСтоимость обучения",
-        placeholder: "Стоимость обучения",
-        validation: [requiredRule],
-      }),
+      
       new TextInput({
         key: "program_name",
         label: "\nНазвание программы",
         placeholder: "Название программы",
+        validation: [requiredRule],
+      }),
+      new TextInput({
+        key: "required_amount",
+        label: "\nСтоимость обучения",
+        placeholder: "Стоимость обучения",
         validation: [requiredRule],
       }),
       new TextInput({

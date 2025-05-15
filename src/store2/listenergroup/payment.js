@@ -16,36 +16,28 @@ export const usePaymentStore = defineStore('payment', {
     },
     actions: {
         async getPaymentList() {
-        try { // Добавим try-catch для лучшей диагностики
+        try { 
             const responseData = await api.getPaymentList();
-            console.log('Response from api.getPaymentList():', responseData);
-            console.log('Type of responseData:', typeof responseData);
-            console.log('Is responseData an array?:', Array.isArray(responseData));
 
-            // Теперь добавляем проверки перед использованием .map()
             if (Array.isArray(responseData)) {
                 this.paymentList = responseData.map((payment) => {
                     return new Payment(payment);
                 });
             } else if (responseData && responseData.data && Array.isArray(responseData.data)) {
-                // Частый случай: данные обернуты в объект { data: [...] }
-                console.log('Using responseData.data as the array');
                 this.paymentList = responseData.data.map((payment) => {
                     return new Payment(payment);
                 });
             } else if (responseData && typeof responseData === 'object' && responseData !== null) {
-                // Если API вернул один объект вместо массива (например, если был только один результат)
-                // Это предположение, возможно, понадобится другая логика
                 console.warn('api.getPaymentList() returned a single object. Wrapping it in an array.');
                 this.paymentList = [new Payment(responseData)];
             }
             else {
                 console.error('api.getPaymentList() did not return an array or a recognized object structure. Setting paymentList to empty array.');
-                this.paymentList = []; // Устанавливаем пустой массив, чтобы избежать дальнейших ошибок
+                this.paymentList = []; 
             }
         } catch (error) {
             console.error('Error in getPaymentList action:', error);
-            this.paymentList = []; // Безопасное значение в случае ошибки
+            this.paymentList = []; 
         }
     },
 

@@ -21,7 +21,6 @@ export const useImport_ProgramStore = defineStore('import_program', {
     actions: {
         async getImport_ProgramList() {
             const responseData = await api.getImport_ProgramList();
-            
             this.import_programList = responseData.map((import_program) => {
                 return new Import_Program(import_program);
             });
@@ -36,7 +35,6 @@ export const useImport_ProgramStore = defineStore('import_program', {
 
         async getImport_ProgramCodesList() {
             const responseData = await api.getImport_ProgramCodesList();
-            console.log(responseData)
             this.import_program_codesList = responseData.map((import_program_codes) => {
                 return new Import_Program_Code(import_program_codes);
             });
@@ -47,9 +45,7 @@ export const useImport_ProgramStore = defineStore('import_program', {
         },
 
         async postImport_Program(import_program) {
-            console.log(import_program);
             const response = await api.postImport_Program(import_program);
-            console.log(response);
             if (response.success !== true) {
                 throw new Error('Ошибка при загрузке файла на сервер');
             }
@@ -67,7 +63,6 @@ export const useImport_ProgramStore = defineStore('import_program', {
 
         async deleteImport_Program(import_program) {
             const response = await api.deleteImport_Program(import_program);
-            console.log(response)
             if (response.success === true) {
                 const index = this.import_programList.findIndex(s => s.id === import_program.id);
                 if (index !== -1) {

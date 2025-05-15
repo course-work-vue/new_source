@@ -28,8 +28,6 @@ export const useImport_DiscipleStore = defineStore('import_disciple', {
 
         async getImport_DiscipleSemestresList() {
                     const responseData = await api.getImport_DiscipleSemestresList();
-                    console.log("Семестры")
-                    console.log(responseData)
                     this.import_disciple_semestresList = responseData.map((import_disciple_semestres) => {
                         return new Import_Disciple_Semester(import_disciple_semestres);
                     });
@@ -37,7 +35,6 @@ export const useImport_DiscipleStore = defineStore('import_disciple', {
         
                 async getImport_DiscipleDepartmentsList() {
                     const responseData = await api.getImport_DiscipleDepartmentsList();
-                    console.log(responseData);
                     this.import_disciple_departmentsList = responseData.map((import_disciple_departments) => {
                         return new Import_Disciple_Department(import_disciple_departments);
                     });
@@ -48,9 +45,7 @@ export const useImport_DiscipleStore = defineStore('import_disciple', {
         },
 
         async postImport_Disciple(import_disciple) {
-            console.log(import_disciple);
             const response = await api.postImport_Disciple(import_disciple);
-            console.log(response);
             if (response.success !== true) {
                 throw new Error('Ошибка при загрузке файла на сервер');
             }
@@ -68,7 +63,6 @@ export const useImport_DiscipleStore = defineStore('import_disciple', {
 
         async deleteImport_Disciple(import_disciple) {
             const response = await api.deleteImport_Disciple(import_disciple);
-            console.log(response)
             if (response.success === true) {
                 const index = this.import_discipleList.findIndex(s => s.id === import_disciple.id);
                 if (index !== -1) {

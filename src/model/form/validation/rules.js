@@ -1,4 +1,4 @@
-const PHONE_RX = /\(\d{3}\)\s\d{7}/;
+const PHONE_RX_MASKED = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
 const EMAIL_RX = /^[\w.+-]+@[a-zA-Z\d-]+(\.[a-zA-Z\d-]+)*\.[a-zA-Z]{2,}$/;
 
 export function requiredRule(v) {
@@ -24,6 +24,10 @@ export function emailRule(v) {
 
 
 export function phoneRule(v) {
-    if (!PHONE_RX.test(v)) return 'Номер телофона должен быть в формате (999) 9999999';
+    if (!v) return true; 
+
+    if (!PHONE_RX_MASKED.test(v)) {
+        return 'Номер телефона должен быть в формате +7 (XXX) XXX-XX-XX';
+    }
     return true;
 }

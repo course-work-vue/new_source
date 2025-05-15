@@ -70,9 +70,17 @@ export default {
   putL_Wish_Day: (id, l_wish_day) =>
     ReqExec.put(endpoints.rest.l_wish_day, id, l_wish_day),
   deleteL_Wish_Day: (l_wish_day) =>
-    ReqExec.put(endpoints.procedure.l_wish_day, l_wish_day.l_wish_day_id, l_wish_day),
+    ReqExec.put(endpoints.procedure.l_wish_day, l_wish_day.l_wish_day_id, l_wish_day),  
 
-  
+  getL_Group_Wish_DayList: () => ReqExec.get(endpoints.rest.l_group_wish_day, null, true),
+  postL_Group_Wish_Day: (l_group_wish_day) => 
+    ReqExec.post(endpoints.rest.l_group_wish_day, l_group_wish_day),
+  putL_Group_Wish_Day: (id, l_group_wish_day) =>
+    ReqExec.put(endpoints.rest.l_group_wish_day, id, l_group_wish_day),
+  deleteL_Group_Wish_Day: (l_group_wish_day) =>
+    ReqExec.put(
+      endpoints.procedure.l_group_wish_day, l_group_wish_day.l_group_wish_day_id,l_group_wish_day
+    ),
 
   getContractList: () => ReqExec.get(endpoints.rest.contract, null, true),
   postContract: (contract) => ReqExec.post(endpoints.rest.contract, contract),
@@ -87,6 +95,12 @@ export default {
     ReqExec.put(endpoints.rest.l_group, id, l_group),
   deleteListenergroup: (l_group) =>
     ReqExec.put(endpoints.procedure.l_group, l_group.id, l_group),
+  
+  postListenersGroup: (listenersGroup) =>
+  ReqExec.post(endpoints.rest.listeners_group, listenersGroup),
+deleteListenersGroup: ({ listener_id, l_group_id }) =>
+    ReqExec.put(endpoints.procedure.listeners_group_delete, { listener_id, l_group_id }, { listener_id, l_group_id }),
+
 
   getPayerList: () => ReqExec.get(endpoints.rest.payer, null, true),
   postPayer: (payer) => ReqExec.post(endpoints.rest.payer, payer),

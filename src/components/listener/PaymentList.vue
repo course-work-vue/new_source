@@ -89,7 +89,7 @@
       </div>
 
       <Button class="btn btn-primary float-start mt-3" @click="submit">
-        Сохранить (Оплатить)
+        Сохранить
       </Button>
       <Button
         v-if="payment.id"
@@ -110,6 +110,7 @@ import { useRoute } from "vue-router";
 import { mapState, mapActions } from "pinia";
 import { usePaymentStore } from "@/store2/listenergroup/payment";
 import { useContractStore } from "@/store2/listenergroup/contract";
+import { useProgramStore } from "@/store2/listenergroup/program";
 import AutoForm from "@/components/form/AutoForm.vue";
 import { FormScheme } from "@/model/form/FormScheme";
 import {
@@ -158,6 +159,9 @@ export default {
     AutoForm,
   },
   setup() {
+    const contractStore = useContractStore();
+    const programStore = useProgramStore();
+
     const localeText = AG_GRID_LOCALE_RU;
     const gridApi = ref(null);
     const gridColumnApi = ref(null);
@@ -176,6 +180,28 @@ export default {
         'paid_100': 'Оплачен полностью'
     };
 
+    const getCalculatedAllSumForRow = (rowData, contractMap, programMap) => {
+  if (!rowData || rowData.contract_id == null) {
+    return rowData && rowData.all_sum !== undefined ? parseFloat(rowData.all_sum) : 0; // Фоллбэк на сохраненное или 0
+  }
+  const contractId = rowData.contract_id;
+
+  if (!contractMap || !programMap) {
+    // Карты не готовы, возвращаем сохраненное значение или 0
+    return rowData && rowData.all_sum !== undefined ? parseFloat(rowData.all_sum) : 0;
+  }
+
+  const contract = contractMap[contractId];
+  if (contract && contract.program_id != null) {
+    const program = programMap[contract.program_id];
+    if (program && program.required_amount !== undefined) {
+      return parseFloat(program.required_amount);
+    }
+  }
+  // Если что-то пошло не так, фоллбэк на сохраненное значение all_sum или 0
+  return rowData && rowData.all_sum !== undefined ? parseFloat(rowData.all_sum) : 0;
+};
+
     const columnDefs = reactive({
       value: [
         {
@@ -187,7 +213,18 @@ export default {
           maxWidth: 50,
           resizable: false,
         },
-        { field: "contract_id", headerName: "Номер договора" },
+        { headerName: "Номер договора",
+          valueGetter: params => {
+            if (!params.data || params.data.contract_id == null) {
+              return ''; 
+            }
+            const contractId = params.data.contract_id;
+            if (contractStore.contractMap && contractStore.contractMap[contractId]) {
+              return contractStore.contractMap[contractId].contr_number;
+            }
+            return `ID: ${contractId}`; 
+          },
+        },
         {
           field: "status",
           headerName: "Статус",
@@ -210,9 +247,71 @@ export default {
           valueFormatter: formatDateValue,
           hide:true,
         },
-        { field: "all_sum", headerName: "Вся сумма" },
-        { field: "deposited_amount", headerName: "Внесено" },
-        { field: "left_to_pay", headerName: "Осталось оплатить" },
+        {
+      headerName: "Вся сумма",
+      valueGetter: params => {
+        // Используем вспомогательную функцию
+        return getCalculatedAllSumForRow(params.data, contractStore.contractMap, programStore.programMap);
+      },
+      filter: 'agNumberColumnFilter',
+      valueFormatter: params => {
+        if (params.value === null || params.value === undefined) return '';
+        return Number(params.value).toFixed(2);
+      }
+    },
+    
+        {
+      headerName: "Внесено",
+      // field: "deposited_amount", // Убираем field, если хотим всегда пересчитывать
+      valueGetter: params => {
+        if (!params.data) return 0;
+        const calculatedAllSum = getCalculatedAllSumForRow(params.data, contractStore.contractMap, programStore.programMap);
+        const status = params.data.status; // Статус из данных строки
+
+        if (status === 'paid_40') {
+          return calculatedAllSum * 0.4;
+        } else if (status === 'paid_100') {
+          return calculatedAllSum;
+        } else { // not_paid или другой статус
+          // Если для 'not_paid' вы хотите показать 0, а не сохраненное deposited_amount:
+          return 0;
+          // Или, если у вас deposited_amount может быть частично внесено даже при 'not_paid':
+          // return parseFloat(params.data.deposited_amount) || 0;
+        }
+      },
+      filter: 'agNumberColumnFilter',
+      valueFormatter: params => {
+        if (params.value === null || params.value === undefined) return '0.00';
+        return Number(params.value).toFixed(2);
+      }
+    },
+    {
+      headerName: "Осталось",
+      // field: "left_to_pay", // Убираем field, если хотим всегда пересчитывать
+      valueGetter: params => {
+        if (!params.data) return 0;
+        const calculatedAllSum = getCalculatedAllSumForRow(params.data, contractStore.contractMap, programStore.programMap);
+        const status = params.data.status;
+
+        let deposited = 0;
+        if (status === 'paid_40') {
+          deposited = calculatedAllSum * 0.4;
+        } else if (status === 'paid_100') {
+          deposited = calculatedAllSum;
+        } else {
+          // Если для 'not_paid' внесенная сумма всегда 0 для расчета "Осталось":
+          deposited = 0;
+          // Или, если deposited_amount может быть частично внесено даже при 'not_paid':
+          // deposited = parseFloat(params.data.deposited_amount) || 0;
+        }
+        return calculatedAllSum - deposited;
+      },
+      filter: 'agNumberColumnFilter',
+      valueFormatter: params => {
+        if (params.value === null || params.value === undefined) return '0.00';
+        return Number(params.value).toFixed(2);
+      }
+    },
         { field: "bank", headerName: "Банк", hide: true },
       ],
     });
@@ -264,7 +363,8 @@ export default {
     try {
       await Promise.all([
         this.getPaymentList(),
-        this.getContractList()
+        this.getContractList(),
+        this.getProgramList()
       ]);
       this.loadPaymentsData();
       this.updateSidebarStyles();
@@ -284,10 +384,34 @@ export default {
       "deletePayment",
     ]),
     ...mapActions(useContractStore, ["getContractList"]),
+    ...mapActions(useProgramStore, ["getProgramList"]),
 
     onSidebarHide() {
         this.errors = {};
     },
+
+    updateAllSumBasedOnContract(contractId) {
+  if (contractId && this.contractMap && this.programMap) {
+    const selectedContract = this.contractMap[contractId];
+    if (selectedContract && selectedContract.program_id != null) { 
+      const programId = selectedContract.program_id;
+      const selectedProgram = this.programMap[programId];
+
+      if (selectedProgram && selectedProgram.required_amount !== undefined) {
+        this.payment.all_sum = parseFloat(selectedProgram.required_amount).toFixed(2);
+
+      } else {
+        this.payment.all_sum = (0).toFixed(2); 
+        console.warn(`Программа с ID ${programId} (из договора ${contractId}) не найдена или не имеет required_amount.`);
+      }
+    } else {
+      this.payment.all_sum = (0).toFixed(2); 
+       if(selectedContract) console.warn(`Договор ID ${contractId} не содержит program_id.`);
+    }
+  } else {
+    this.payment.all_sum = (0).toFixed(2); 
+  }
+},
 
     updatePaymentAmounts() {
       const totalSum = parseFloat(this.payment.all_sum) || 0;
@@ -317,6 +441,7 @@ export default {
           key: "all_sum",
           label: "Вся сумма",
           placeholder: "Сумма",
+          readonly: true,
           type: "number",
           validation: [requiredRule],
         }),
@@ -386,19 +511,19 @@ export default {
 
     edit(event) {
       this.payment = new Payment(event.data);
-      this.updatePaymentAmounts();
-      this.generateScheme();
+      //this.updatePaymentAmounts();
+      //this.generateScheme();
       this.showSidebar = true;
     },
 
     resetPayment() {
       this.payment = new Payment();
-      this.updatePaymentAmounts();
+      //this.updatePaymentAmounts();
     },
 
     openSidebar() {
       this.resetPayment();
-      this.generateScheme();
+      //this.generateScheme();
       this.showSidebar = true;
     },
 
@@ -564,24 +689,56 @@ export default {
       this.updatePaymentAmounts();
     },
     showSidebar(newValue) {
-      if (newValue) {
-        this.updatePaymentAmounts();
-        this.generateScheme();
+    if (newValue) {
+      // При открытии сайдбара (особенно для редактирования существующего платежа)
+      // нужно сразу установить all_sum, если contract_id уже есть в payment.
+      if (this.payment.contract_id) {
+         this.updateAllSumBasedOnContract(this.payment.contract_id);
       } else {
-        this.errors = {};
+         // Если открываем для нового платежа и contract_id еще не выбран
+         this.payment.all_sum = (0).toFixed(2); // Установим в 0, чтобы поля были консистентны
       }
+      this.updatePaymentAmounts(); // Пересчитает deposited_amount и left_to_pay
+      this.generateScheme();
+    } else {
+      this.errors = {};
     }
+  },
+  // НОВЫЙ или ИЗМЕНЕННЫЙ WATCHER
+  'payment.contract_id'(newContractId, oldContractId) {
+    if (newContractId !== oldContractId) {
+      this.updateAllSumBasedOnContract(newContractId);
+    }
+  }
   },
   computed: {
     ...mapState(usePaymentStore, ["paymentList"]),
     ...mapState(useContractStore, ["contractList", "contractMap"]),
+    ...mapState(useProgramStore, ["programList", "programMap"]),
     contractOptions() {
-      if (!this.contractMap) return [];
+      if (!this.contractMap || !this.paymentList) return [];
+
+      const paidContractIds = new Set();
+      this.paymentList
+        .filter(p => p.deleted_at === null && p.contract_id != null)
+        .forEach(p => {
+          if (!(this.payment && this.payment.id && p.id === this.payment.id)) {
+            paidContractIds.add(p.contract_id);
+          }
+        });
+
       return Object.values(this.contractMap)
-        .filter(item => item.deleted_at === null)
+        .filter(contract => contract.deleted_at === null) 
+        .filter(contract => {
+
+          if (this.payment && this.payment.id && contract.id === this.payment.contract_id) {
+            return true;
+          }
+          return !paidContractIds.has(contract.id);
+        })
         .map((item) => ({
           value: item.id,
-          label: `${item.contr_number}`,
+          label: `${item.contr_number}`, 
         }));
     }
   },

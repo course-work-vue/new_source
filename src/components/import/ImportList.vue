@@ -100,9 +100,27 @@
   <Sidebar v-model:visible="showCompare" position="bottom" modal header="Пересечение учебных планов"
     class="custom-sidebar h-auto" :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
-      <auto-form v-model="formValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
-      </auto-form>
+  <div class="row g-2 mb-2 align-items-center">
+      <div class="col ps-0 py-0 pe-3">
+        <input
+          class="form-control"
+          type="text"
+          v-model="quickFilterValue"
+          id="filter-text-box"
+          v-on:input="onFilterTextBoxChanged()"
+          placeholder="Поиск..."
+        />
+      </div>
+      <div class="col-auto p-0">
+        <button
+          @click="clearFilters"
+          :disabled="!filters"
+          class="btn btn-primary clear-filters-btn d-flex align-items-center"
+          type="button"
+        >
+          <i class="material-icons-outlined me-1">close</i>Очистить фильтры
+        </button>
+      </div>
     </div>
 
     <div style="height: 50vh"> <!-- Keep height for sidebar content -->
@@ -127,43 +145,206 @@
     </div>
   </Sidebar>
 
-  <Sidebar v-model:visible="showDisciple" @hide="resetDiscipleFilters" position="bottom" modal header="Дисциплины" class="custom-sidebar h-auto"
-    :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
-
-    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
-      <auto-form v-model="discipleFormValues" v-model:errors="errors" :scheme="discipleScheme" class="custom-form">
-      </auto-form>
+  <Sidebar
+  v-model:visible="showDisciple"
+  @hide="resetDiscipleFilters"
+  position="bottom"
+  modal
+  header="Все Дисциплины"
+  class="custom-sidebar h-auto"
+  :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
+>
+  <div class="d-flex flex-column mb-3">
+        <div class="search-container d-flex align-items-center mb-2">
+            <div class="search-input-wrapper position-relative flex-grow-1">
+                <i class="material-icons-outlined search-icon">search</i>
+                <input class="form-control search-input" type="text"
+                        v-model="detailQuickFilterValue"
+                        id="detail-filter-text-box"
+                        v-on:input="onDetailFilterTextBoxChanged()"
+                        placeholder="Поиск"
+                        style="width: 100%; padding-left: 35px;" />
+            </div>
+            <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
+                    class="btn btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
+                <i class="material-icons-outlined" style="font-size: 18px;">close</i>
+                <span class="ms-1">Очистить</span>
+            </button>
+        </div>
+        
     </div>
 
-    <div style="height: 50vh"> <!-- Keep height for sidebar content -->
-      <div class="h-100"> <!-- Removed pt-2 -->
-        <ag-grid-vue
-          class="ag-theme-alpine grid-compact"
-          style="width: 100%; height: 100%;"
-          :columnDefs="detailColumnDefs.value"
-          :rowData="filteredDiscipleDataForAllPrograms"
-          :defaultColDef="defaultColDef"
-          :localeText="localeText"
-          rowSelection="multiple"
-          animateRows="true"
-          :rowHeight="35"
-          @cell-clicked="cellWasClicked"
-          @grid-ready="onGridReadyDetails"
-          @firstDataRendered="onFirstDataRendered"
-          @filter-changed="onDetailFilterChanged"
-          :pagination="true"
-          :paginationPageSize="paginationPageSize">
-        </ag-grid-vue>
+  
+  <div class="row g-2 mb-2">
+    <!-- Фильтр по семестру -->
+    <div class="col-4 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="group_id">Семестр:</label>
+        <select
+          id="group_id"
+          class="form-select"
+          v-model="myValue"
+          @change="handleSelectChange(myValue)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="group in filteredGroups"
+            :key="group.group_number"
+            :value="group.group_number"
+          >
+            {{ group.group_number }}
+          </option>
+        </select>
       </div>
     </div>
-  </Sidebar>
+
+    <!-- Фильтр по кафедре -->
+    <div class="col-4 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="subgroup_id">Кафедра:</label>
+        <select
+          id="subgroup_id"
+          class="form-select"
+          v-model="myValue4"
+          @change="handleSelectChange2(myValue4)"
+        >
+          <option value="">Нет</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="col-4 p-0">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="third_filter">Направление:</label>
+        <select
+          id="third_filter"
+          class="form-select"
+          v-model="myValue2"
+          @change="handleSelectChange3(myValue2)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="program in filteredPrograms"
+            :key="program.id"
+            :value="program.id"
+          >
+            {{ program.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- остальной контент -->
+  <div style="height: 50vh">
+    <div class="h-100">
+      <ag-grid-vue
+        class="ag-theme-alpine grid-compact"
+        style="width: 100%; height: 100%;"
+        :columnDefs="detailColumnDefs.value"
+        :rowData="filteredDiscipleDataForAllPrograms"
+        :defaultColDef="defaultColDef"
+        :localeText="localeText"
+        rowSelection="multiple"
+        animateRows="true"
+        :rowHeight="35"
+        @cell-clicked="cellWasClicked"
+        @grid-ready="onGridReadyDetails"
+        @firstDataRendered="onFirstDataRendered"
+        @filter-changed="onDetailFilterChanged"
+        :pagination="true"
+        :paginationPageSize="paginationPageSize"
+      />
+    </div>
+  </div>
+</Sidebar>
 
   <Sidebar v-model:visible="showArchive" @hide="resetArchiveFilters" position="bottom" modal header="Архив" class="custom-sidebar h-auto"
     :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container mb-3"> <!-- Added margin bottom -->
-      <auto-form v-model="archiveFormValues" v-model:errors="errors" :scheme="archiveScheme" class="custom-form">
-      </auto-form>
+    <div class="d-flex flex-column mb-3">
+        <div class="search-container d-flex align-items-center mb-2">
+            <div class="search-input-wrapper position-relative flex-grow-1">
+                <i class="material-icons-outlined search-icon">search</i>
+                <input class="form-control search-input" type="text"
+                        v-model="detailQuickFilterValue"
+                        id="detail-filter-text-box"
+                        v-on:input="onDetailFilterTextBoxChanged()"
+                        placeholder="Поиск"
+                        style="width: 100%; padding-left: 35px;" />
+            </div>
+            <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
+                    class="btn btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
+                <i class="material-icons-outlined" style="font-size: 18px;">close</i>
+                <span class="ms-1">Очистить</span>
+            </button>
+        </div>
+        
+    </div>
+
+    <div class="row g-2 mb-2">
+
+      <div class="col-4 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="group_id">Направление:</label>
+        <select
+          id="group_id"
+          class="form-select"
+          v-model="myValue"
+          @change="handleSelectChange(myValue)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="group in filteredGroups"
+            :key="group.group_number"
+            :value="group.group_number"
+          >
+            {{ group.group_number }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Фильтр по кафедре -->
+    <div class="col-4 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="subgroup_id">Учебный год:</label>
+        <select
+          id="subgroup_id"
+          class="form-select"
+          v-model="myValue4"
+          @change="handleSelectChange2(myValue4)"
+        >
+          <option value="">Нет</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Новый третий фильтр -->
+    <div class="col-4 p-0">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="third_filter">Год актуализации:</label>
+        <select
+          id="third_filter"
+          class="form-select"
+          v-model="myValue2"
+          @change="handleSelectChange3(myValue2)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="program in filteredPrograms"
+            :key="program.id"
+            :value="program.id"
+          >
+            {{ program.name }}
+          </option>
+        </select>
+      </div>
+    </div>
     </div>
 
     <div style="height: 50vh"> <!-- Keep height for sidebar content -->
@@ -173,7 +354,7 @@
           style="width: 100%; height: 100%;"
           :columnDefs="archiveColumnDefs.value"
           :rowData="filteredRowDataArchive"
-          :defaultColDef="archiveColumnDefs"
+          :defaultColDef="defaultColDef"
           :localeText="localeText"
           rowSelection="multiple"
           animateRows="true"
@@ -188,15 +369,14 @@
     </div>
   </Sidebar>
 
-  <Sidebar v-model:visible="showDetails" @hide="resetDetailsFilters" position="bottom" modal :header="`Программа ${selectedDisciplineCodeForTemplate}`"
+  <Sidebar v-model:visible="showDetails" @hide="" position="bottom" modal :header="`Направление ${selectedDisciplineCodeForTemplate}`"
     class="custom-sidebar h-auto" :style="{ width: '80%', maxHeight: '80vh', height: 'auto', margin: 'auto' }">
 
-    <!-- Stack Filter and AutoForm vertically -->
     <div class="d-flex flex-column mb-3">
         <div class="search-container d-flex align-items-center mb-2">
             <div class="search-input-wrapper position-relative flex-grow-1">
                 <i class="material-icons-outlined search-icon">search</i>
-                <input class="form-control form-control-sm search-input" type="text"
+                <input class="form-control search-input" type="text"
                         v-model="detailQuickFilterValue"
                         id="detail-filter-text-box"
                         v-on:input="onDetailFilterTextBoxChanged()"
@@ -204,15 +384,54 @@
                         style="width: 100%; padding-left: 35px;" />
             </div>
             <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
-                    class="btn btn-sm btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
+                    class="btn btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
                 <i class="material-icons-outlined" style="font-size: 18px;">close</i>
                 <span class="ms-1">Очистить</span>
             </button>
         </div>
-        <div class="filters-container">
-            <auto-form v-model="detailsFormValues" v-model:errors="errors" :scheme="detailScheme" class="custom-form">
-            </auto-form>
+        
+    </div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-6 p-0 pe-3">
+        <div class="form-group d-flex align-items-center">
+          <label class="form-label me-3" for="group_id"
+            >Семестр:</label
+          >
+          <select
+            class="form-select"
+            id="group_id"
+            v-model="myValue"
+            @change="handleSelectChange(myValue)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option
+              v-for="group in filteredGroups"
+              :key="group.group_number"
+              :value="group.group_number"
+            >
+              {{ group.group_number }}
+            </option>
+          </select>
         </div>
+      </div>
+      <div class="col-6 p-0">
+        <div class="form-group d-flex align-items-center">
+          <label class="form-label ms-3 me-3" for="subgroup_id"
+            >Кафедра:</label
+          >
+          <select
+            class="form-select"
+            id="subgroup_id"
+            v-model="myValue4"
+            @change="handleSelectChange2(myValue4)"
+          >
+            <option selected="selected" value="">Нет</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div style="height: 50vh">
@@ -241,10 +460,109 @@
   <Sidebar v-model:visible="showWorkload" position="bottom" modal header="Нагрузка" class="custom-sidebar h-auto"
     :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
-    <div class="year-selector-container mb-3">
-      <auto-form v-model="workloadFormValues" v-model:errors="errors" :scheme="workloadScheme" class="custom-form">
-      </auto-form>
+    <div class="d-flex flex-column mb-3">
+        <div class="search-container d-flex align-items-center mb-2">
+            <div class="search-input-wrapper position-relative flex-grow-1">
+                <i class="material-icons-outlined search-icon">search</i>
+                <input class="form-control search-input" type="text"
+                        v-model="detailQuickFilterValue"
+                        id="detail-filter-text-box"
+                        v-on:input="onDetailFilterTextBoxChanged()"
+                        placeholder="Поиск"
+                        style="width: 100%; padding-left: 35px;" />
+            </div>
+            <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
+                    class="btn btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
+                <i class="material-icons-outlined" style="font-size: 18px;">close</i>
+                <span class="ms-1">Очистить</span>
+            </button>
+        </div>
+        
     </div>
+
+    <div class="row g-2 mb-2">
+    <!-- Фильтр по семестру -->
+    <div class="col-6 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="group_id">Направление:</label>
+        <select
+          id="group_id"
+          class="form-select"
+          v-model="myValue"
+          @change="handleSelectChange(myValue)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="group in filteredGroups"
+            :key="group.group_number"
+            :value="group.group_number"
+          >
+            {{ group.group_number }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Фильтр по кафедре -->
+    <div class="col-6 p-0 pe-3">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="subgroup_id">Кафедра:</label>
+        <select
+          id="subgroup_id"
+          class="form-select"
+          v-model="myValue4"
+          @change="handleSelectChange2(myValue4)"
+        >
+          <option value="">Нет</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Новый третий фильтр -->
+    <div class="col-6 p-0">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="third_filter">Год:</label>
+        <select
+          id="third_filter"
+          class="form-select"
+          v-model="myValue2"
+          @change="handleSelectChange3(myValue2)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="program in filteredPrograms"
+            :key="program.id"
+            :value="program.id"
+          >
+            {{ program.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <!-- Новый третий фильтр -->
+    <div class="col-6 p-0">
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label me-2" for="third_filter">Семестр:</label>
+        <select
+          id="third_filter"
+          class="form-select"
+          v-model="myValue2"
+          @change="handleSelectChange3(myValue2)"
+        >
+          <option value="">Нет</option>
+          <option
+            v-for="program in filteredPrograms"
+            :key="program.id"
+            :value="program.id"
+          >
+            {{ program.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
 
     <div style="height: 50vh">
       <div class="h-100">
@@ -343,6 +661,50 @@ export default {
     const detailQuickFilterValue = ref(''); 
     const detailFiltersActive = ref(false); 
     const detailRowData = ref({});
+    const gridApiCompare = ref(null);
+    const compareQuickFilterValue = ref('');
+
+    const onGridReadyCompare = (params) => {
+      console.log("Compare Grid is ready");
+      gridApiCompare.value = params.api;
+      // gridColumnApiCompare.value = params.columnApi; // Если необходимо
+    };
+
+    const onCompareFilterTextBoxChanged = () => {
+      if (gridApiCompare.value) {
+        gridApiCompare.value.setQuickFilter(compareQuickFilterValue.value);
+      }
+    };
+
+    const compareFiltersActive = computed(() => {
+      let agGridFiltersActive = false;
+      if (gridApiCompare.value) {
+        const quick = gridApiCompare.value.getQuickFilter();
+        const model = gridApiCompare.value.getFilterModel();
+        agGridFiltersActive = !!quick || (!!model && Object.keys(model).length > 0);
+      }
+      // Доступ к formValues из data() через instance.proxy
+      const formFiltersActive = instance?.proxy?.formValues?.codes || instance?.proxy?.formValues?.years;
+      return agGridFiltersActive || formFiltersActive || !!compareQuickFilterValue.value;
+    });
+
+    const clearCompareFilters = () => {
+      if (gridApiCompare.value) {
+        gridApiCompare.value.setFilterModel(null);
+        gridApiCompare.value.setQuickFilter(null);
+      }
+      compareQuickFilterValue.value = "";
+      if (instance?.proxy?.formValues) {
+        instance.proxy.formValues.codes = null; // или ""
+        instance.proxy.formValues.years = null; // или ""
+      }
+    };
+
+    const onCompareGridFilterChangedInternal = () => {
+      // Эта функция вызывается при изменении внутренних фильтров AG Grid.
+      // compareFiltersActive (computed) автоматически обновит состояние кнопки.
+      console.log("Compare grid AG-Grid filters changed.");
+    };
 
     const gridColumnApi = ref();
     const gridColumnApiDetails = ref();
@@ -412,7 +774,7 @@ const selectedCount = computed(() => {
     });
 
     
-    const compareRowData = ref({});
+    const compareRowData = ref([]);
     const codes = reactive([]);
     const years = reactive([]);
 
@@ -440,8 +802,8 @@ const selectedCount = computed(() => {
           flex: 1,
         },
         {
-          field: "code",
-          headerName: 'Код направления',
+          field: "qualification",
+          headerName: 'Квалификация',
           flex: 1,
         },
         {
@@ -450,8 +812,8 @@ const selectedCount = computed(() => {
           flex: 3,
         },
         {
-          field: "years",
-          headerName: 'Учебный год',
+          field: "current_course",
+          headerName: 'Курс',
           flex: 1,
         },
         {
@@ -544,6 +906,14 @@ const selectedCount = computed(() => {
           headerName: 'Наименование',
           flex: 3,
           minWidth: 250,
+        },
+                {
+          field: "semester",
+          headerName: 'Семестр',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 80,
+          flex: 1,
         },
         {
           field: "hours",
@@ -869,24 +1239,19 @@ const clearDetailFilters = () => {
 
 
       selectedPrograms.forEach(program => {
-    // Проверяем, что у программы есть необходимые данные (id, code)
     if (program && program.id !== undefined && program.code !== undefined) {
         columns.push({
-          // Используем код и, возможно, часть профиля для заголовка
           headerName: `${program.code} (${program.profile ? program.profile.substring(0,15)+'...' : 'Профиль N/A'})`,
-          // Уникальный ID колонки важен для valueGetter и фильтрации/сортировки
           colId: `program_${program.id}`,
           valueGetter: (params) => {
-            // params.data - это объект дисциплины из rowDataForComparison
-            // { disciple_name: '...', hoursByProgram: { prog_id1: hours1, prog_id2: hours2 } }
-            // Достаем часы для ID программы ЭТОЙ КОЛОНКИ
-            return params.data?.hoursByProgram?.[program.id] ?? 0; // Возвращаем 0, если часов нет
+
+            return params.data?.hoursByProgram?.[program.id] ?? 0; 
           },
-          width: 120,              // Ширина колонки с часами
-          type: 'numericColumn',   // Для правильной сортировки и фильтрации чисел
-          filter: 'agNumberColumnFilter', // Фильтр для чисел
+          width: 120,              
+          type: 'numericColumn',   
+          filter: 'agNumberColumnFilter', 
           resizable: true,
-          sortable: true,          // Сортировка по часам
+          sortable: true,          
         });
     } else {
         console.warn("[Computed] dynamicColumnDefs: Пропуск программы из-за отсутствия id/code:", program);
@@ -912,14 +1277,76 @@ const clearDetailFilters = () => {
         semestres: null,
         departments: null,
     });
-    const detailsFormValues = reactive({
-        semestres: null,
-        departments: null,
-    });
 
     const selectedDisciplineCode = ref(null); // Для заголовка
     const selectedProgramId = ref(null);      // ID для фильтрации деталей <--- ВАЖНО!
 
+
+     const editFunction = (event) => {
+      if (instance.proxy.resetUpd) { // Check if method exists on proxy
+          instance.proxy.resetUpd();
+      }
+      // selectedDisciplineCode is in data(), access via instance.data or instance.proxy
+      instance.data.selectedDisciplineCode = event.data.code;
+      selectedProgramId.value = event.data.id; // This is already a ref
+      console.log(`Установлен selectedProgramId (from setup): ${selectedProgramId.value}`);
+      if (instance.proxy.openDetailsForm) {
+          instance.proxy.openDetailsForm();
+      }
+    };
+
+    const cellWasClicked = (event) => {
+      // Check if the click was on the button cell (empty headerName)
+      if (event.colDef && event.colDef.headerName === "") {
+        editFunction(event);
+      }
+    };
+
+    const onFirstDataRendered = (params) => {
+      // The gridApi from onGridReady should be the one for the main grid.
+      // This function is bound to multiple grids.
+      // If this logic is only for the main grid, we might need a condition.
+      // For now, let's assume it could apply to any grid that has these query params.
+
+      const currentGridApi = params.api; // Use the API of the grid that triggered the event
+
+      const filterModelQuery = route.query.filterModel;
+      if (filterModelQuery) {
+        try {
+          const filterModel = JSON.parse(filterModelQuery);
+          currentGridApi.setFilterModel(filterModel);
+          // If this is the main grid, update its specific filters state
+          if (currentGridApi === gridApi.value) {
+            filters.value = true;
+          }
+        } catch (e) {
+          console.error("Error parsing filterModel from query:", e);
+        }
+      }
+
+      const quickFilterQuery = route.query.quickFilter;
+      if (quickFilterQuery) {
+        try {
+          // The quickFilter is usually a string, not JSON, but your code had JSON.parse
+          // If it's just a string: const quickFilter = quickFilterQuery;
+          const quickFilter = JSON.parse(quickFilterQuery); // Assuming it's a JSON string
+          currentGridApi.setQuickFilter(quickFilter);
+          // If this is the main grid, update its specific quickFilterValue
+          if (currentGridApi === gridApi.value) {
+            quickFilterValue.value = quickFilter;
+            filters.value = true;
+          }
+        } catch (e) {
+          console.error("Error parsing quickFilter from query:", e);
+           // Fallback if it's not JSON
+          // currentGridApi.setQuickFilter(quickFilterQuery);
+          // if (currentGridApi === gridApi.value) {
+          //   quickFilterValue.value = quickFilterQuery;
+          //   filters.value = true;
+          // }
+        }
+      }
+    };
 
 const filteredRowDataArchive = computed(() => {
   const programs = import_programList.value || []; // Используем .value
@@ -937,12 +1364,10 @@ const filteredRowDataArchive = computed(() => {
     const startYearMatch = !filters.start_year || String(program.start_year) === String(filters.start_year); // Поле Год начала
     const actualizationYearMatch = !filters.actualization_year || String(program.actualization_year) === String(filters.actualization_year); // Поле Год актуализации
 
-    // Возвращаем true, если все условия совпали
     return codeMatch && academicYearMatch && startYearMatch && actualizationYearMatch;
   });
 });
 
-// Фильтр для сайдбара "Дисциплины" (все программы)
 const filteredDiscipleDataForAllPrograms = computed(() => {
   const disciples = import_discipleList.value || []; // Используем .value
   const programs = import_programList.value || [];   // Нужны для поиска ID по коду
@@ -959,7 +1384,6 @@ const filteredDiscipleDataForAllPrograms = computed(() => {
       }
   }
 
-  // Если нет активных фильтров (код, семестр, кафедра)
   if (!targetProgramId && !filters.semestres && !filters.departments) {
       return disciples; // Возвращаем все дисциплины
   }
@@ -974,30 +1398,6 @@ const filteredDiscipleDataForAllPrograms = computed(() => {
   });
 });
 
-// Фильтр для сайдбара "Детали" (конкретная программа)
-const filteredDiscipleDataForSelectedProgram = computed(() => {
-    const disciples = import_discipleList.value || []; // Используем .value
-    const currentProgramId = selectedProgramId.value; // <-- Используем ID выбранной программы
-    const filters = detailsFormValues; // Используем фильтры этого сайдбара
-
-    // 1. Сначала фильтруем по ID выбранной программы
-    const disciplesForProgram = currentProgramId
-        ? disciples.filter(d => d.program_id === currentProgramId)
-        : []; // Если ID не выбран, показываем пусто (хотя сайдбар не должен открыться)
-
-    // 2. Затем применяем фильтры по семестру и кафедре из формы деталей
-    if (!filters.semestres && !filters.departments) {
-        return disciplesForProgram; // Нет доп. фильтров
-    }
-
-    return disciplesForProgram.filter(disciple => {
-        const semesterMatch = !filters.semestres || String(disciple.semester) === String(filters.semestres);
-        const departmentMatch = !filters.departments || String(disciple.department) === String(filters.departments);
-        return semesterMatch && departmentMatch;
-    });
-});
-
-// --- Reset Filter Methods ---
 const resetArchiveFilters = () => {
     Object.keys(archiveFormValues).forEach(key => archiveFormValues[key] = null);
     console.log("Archive filters reset");
@@ -1005,12 +1405,6 @@ const resetArchiveFilters = () => {
 const resetDiscipleFilters = () => {
     Object.keys(discipleFormValues).forEach(key => discipleFormValues[key] = null);
      console.log("Disciple filters reset");
-};
-const resetDetailsFilters = () => {
-    Object.keys(detailsFormValues).forEach(key => detailsFormValues[key] = null);
-    // Также сбрасываем быстрый фильтр для деталей, если он есть
-    clearDetailFilters(); // Предполагается, что clearDetailFilters уже существует
-     console.log("Details filters reset");
 };
 
 const workloadFormValues = reactive({
@@ -1025,7 +1419,6 @@ watch(
     console.log("[ИЗМЕНЕНИЕ ФИЛЬТРА] Кафедра изменена:");
     console.log("  Новое значение workloadFormValues.department:", newValue);
     console.log("  Старое значение:", oldValue);
-    // Для отладки можно сразу посмотреть, что выдает computed свойство
     // console.log("  Текущее filteredWorkloadData:", filteredWorkloadData.value);
   },
   { deep: true } // Можно использовать deep, если workloadFormValues - сложный объект,
@@ -1041,17 +1434,26 @@ const workloadColumnDefs = reactive({
       minWidth: 250,
     },
     {
-      field: "department",
       headerName: 'Код направления',
+      // field: "department", // Incorrect, department is a property of disciple
+      valueGetter: (params) => {
+        if (!params.data || params.data.program_id === undefined) return null;
+        // Assuming import_programList is accessible in this scope (e.g., from Pinia store)
+        // and has been fetched.
+        const program = import_programList.value.find(p => p.id === params.data.program_id);
+        return program ? program.code : 'N/A';
+      },
       flex: 2,
       minWidth: 150,
     },
     {
-      field: "department",
-      headerName: 'Курс',
-      flex: 2,
-      minWidth: 150,
-    },
+          field: "semester",
+          headerName: 'Семестр',
+          type: 'numericColumn',
+          filter: 'agNumberColumnFilter',
+          width: 80,
+          flex: 1,
+        },
     {
       field: "lecture_hours",
       headerName: 'Лекции',
@@ -1077,14 +1479,27 @@ const workloadColumnDefs = reactive({
       flex: 1,
     },
     {
-      field: "hours",
-      headerName: 'Всего часов',
+      field: "hours", // This usually means total hours for the discipline itself
+      headerName: 'Всего часов', // Clarified header
       type: 'numericColumn',
       filter: 'agNumberColumnFilter',
       width: 120,
       flex: 1,
     },
-    
+    // If you need a sum of lecture, practice, lab for workload, that would be a valueGetter
+    // Example:
+    // {
+    //   headerName: 'Всего аудиторных',
+    //   valueGetter: (params) => {
+    //     if (!params.data) return 0;
+    //     return (params.data.lecture_hours || 0) + 
+    //            (params.data.practice_hours || 0) + 
+    //            (params.data.lab_hours || 0);
+    //   },
+    //   type: 'numericColumn',
+    //   width: 130,
+    //   flex: 1,
+    // }
   ],
 });
 
@@ -1103,7 +1518,6 @@ const filteredWorkloadData = computed(() => {
   }
 
   const filtered = disciples.filter(disciple => {
-    // Фильтр по программе (если есть)
     const program = import_programList.value?.find(p => p.id === disciple.program_id);
     const codeMatch = !filters.codes || (program && program.code === filters.codes);
 
@@ -1174,25 +1588,39 @@ const filteredWorkloadData = computed(() => {
       clearDetailFilters,          
       onDetailFilterChanged,            
 
-      selectedDisciplineCodeForTemplate,
+      compareQuickFilterValue,
+      compareFiltersActive,
+      onGridReadyCompare,
+      onCompareFilterTextBoxChanged,
+      clearCompareFilters,
+      onCompareGridFilterChangedInternal,
+      
+      formValues: instance?.proxy?.formValues,
 
+      programsOptions, 
+      yearsOptions,    
+      localeText,
+      defaultColDef,
+      dynamicColumnDefs,
+      rowDataForComparison,
+      cellWasClicked, 
+      onFirstDataRendered, 
+      paginationPageSize,
+
+      selectedDisciplineCodeForTemplate,
       paginationPageSize,
       dataFromApi,
       dataLoaded,
-
       isLoading,
       successMessage,
       errorMessage,
 
       archiveFormValues,
       discipleFormValues ,
-      detailsFormValues,
       filteredRowDataArchive,
       filteredDiscipleDataForAllPrograms,
-      filteredDiscipleDataForSelectedProgram,
       resetArchiveFilters,
       resetDiscipleFilters,
-      resetDetailsFilters,
       workloadFormValues,
       workloadColumnDefs,
       filteredWorkloadData,
@@ -1212,7 +1640,6 @@ const filteredWorkloadData = computed(() => {
       firstScheme: null,
       archiveScheme: null,
       discipleScheme: null,
-      detailScheme: null,
       workloadScheme: null,
       uploaded_file: new Uploaded_File(),
       import_program: new Import_Program(),
@@ -1228,8 +1655,8 @@ const filteredWorkloadData = computed(() => {
       filteredRowData1: [],
 
       formValues: {
-        codes: null, // выбранная программа
-        years: null, // выбранный год
+        codes: null, 
+        years: null, 
       },
 
       detailFilter: {
@@ -1253,8 +1680,20 @@ const filteredWorkloadData = computed(() => {
 
       this.workloadScheme = new FormScheme([
         new ComboboxInput({
+          key: "department",
+          label: "Кафедра",
+          placeholder: "Выберите кафедру",
+          options: this.departmentsOptions,
+        }),
+        new ComboboxInput({
           key: "codes",
-          label: "Программа",
+          label: "Направление",
+          placeholder: "Выберите программу",
+          options: this.programsOptions,
+        }),
+        new ComboboxInput({
+          key: "codes",
+          label: "Семестр",
           placeholder: "Выберите программу",
           options: this.programsOptions,
         }),
@@ -1264,12 +1703,7 @@ const filteredWorkloadData = computed(() => {
           placeholder: "Выберите год",
           options: this.yearsOptions,
         }),
-        new ComboboxInput({
-          key: "department",
-          label: "Кафедра",
-          placeholder: "Выберите кафедру",
-          options: this.departmentsOptions,
-        }),
+        
       ]);
 
     } catch (error) {
@@ -1285,6 +1719,8 @@ const filteredWorkloadData = computed(() => {
       }),
     ])
 
+    
+
     this.archiveScheme = new FormScheme([
   new ComboboxInput({
     key: "codes", // Оставляем как есть
@@ -1299,18 +1735,28 @@ const filteredWorkloadData = computed(() => {
     options: this.yearsOptions,
   }),
   new ComboboxInput({
-    key: "start_year", // <-- Уникальный ключ для года начала
-    label: "Год начала",
-    placeholder: "Выберите год",
-    options: this.timeYearsOptions, // Используем общие опции годов
-  }),
-  new ComboboxInput({
     key: "actualization_year", // <-- Уникальный ключ для года актуализации
     label: "Год актуализации",
     placeholder: "Выберите год",
     options: this.timeYearsOptions, // Используем общие опции годов
   }),
 ]);
+
+this.compareFormScheme = new FormScheme([
+  new ComboboxInput({
+    key: "codes",
+    label: "Программа (Код)",
+    placeholder: "Выберите код программы",
+    options: this.programsOptions,
+  }),
+  new ComboboxInput({
+    key: "years",
+    label: "Учебный год",
+    placeholder: "Выберите учебный год",
+    options: this.yearsOptions,
+  }),
+]);
+
       this.discipleScheme = new FormScheme([
       new ComboboxInput({
         key: "codes",
@@ -1331,28 +1777,6 @@ const filteredWorkloadData = computed(() => {
         options: this.departmentsOptions,
       }),
 
-    ])
-
-    this.detailScheme = new FormScheme([
-      new ComboboxInput({
-        key: "semestres",
-        label: "Семестр",
-        placeholder: "Выберите семестр",
-        options: this.semestresOptions,
-        style: {
-          width: '150px',
-          marginRight: '10px'
-        }
-      }),
-      new ComboboxInput({
-        key: "departments",
-        label: "Кафедра",
-        placeholder: "Выберите кафедру",
-        options: this.departmentsOptions,
-        style: {
-          width: '150px'
-        }
-      }),
     ])
   },
 
@@ -1377,29 +1801,26 @@ const filteredWorkloadData = computed(() => {
       "putImport_Disciple",
       "deleteImport_Disciple",
     ]),
-    cellWasClicked(event) {
-      if (event.colDef && event.colDef.headerName === "") {
-        this.edit(event);
-      }
-    },
+    
     resetUpd() {
       this.uploaded_file = new Uploaded_File();
     },
     edit(event) {
       this.resetUpd();
-      this.selectedDisciplineCode = event.data.code; // Устанавливаем код (из setup ref)
-  this.selectedProgramId = event.data.id;       // <-- ВАЖНО: Устанавливаем ID (из setup ref)
-  console.log(`Установлен selectedProgramId: ${this.selectedProgramId}`); // Для отладки
+      this.selectedDisciplineCode = event.data.code;
+  this.selectedProgramId = event.data.id;       
+  console.log(`Установлен selectedProgramId: ${this.selectedProgramId}`); 
   this.openDetailsForm();
     },
 
-async onFileChange(event) {
+async onFileChange2(event) {
 
   const successMessage = ref('')
   const errorMessage   = ref('')
   const isLoading      = ref(false)
 
   console.log("MEOW!");
+  
   const files = Array.from(event.target.files)
   if (!files.length) return
 
@@ -1438,7 +1859,7 @@ async onFileChange(event) {
 },
 
 
-    async onFileChange2(event) {
+    async onFileChange(event) {
       const files = event.target.files;
       const programsData = [];
 
@@ -1462,18 +1883,42 @@ async onFileChange(event) {
                 code: "Не найден",
                 profile: "Не найден",
                 years: "Не найден",
+                qualification:"Не найден",
+                start_year:"Не найден",
+                current_course:"Не найден",
               };
 
               const rawProgramName = sheet["D29"] ? sheet["D29"].v : null;
               extractedData.program_name = rawProgramName
                 ? rawProgramName
-                    .replace(/[\r\n]+/g, " ")                      // убираем переводы строк
-                    .replace(/^Направление подготовки\s*\d+\.\d+\.\d+\s*/i, "") // удаляем "Направление подготовки 01.03.02 "
+                    .replace(/[\r\n]+/g, " ")                      
+                    .replace(/^Направление подготовки\s*\d+\.\d+\.\d+\s*/i, "") 
                     .trim()
                 : null;
               extractedData.code = sheet["D27"] ? sheet["D27"].v : null;
               extractedData.profile = sheet["D30"] ? sheet["D30"].v : null;
+              
+              const rawQualification = sheet["C40"] ? sheet["C40"].v : null;
+              extractedData.qualification = rawQualification
+              ? rawQualification
+                  .replace(/[\r\n]+/g, " ")
+                  .replace(/^Квалификация:?\s*/i, "") 
+                  .trim()
+              : null;
+
               extractedData.years = sheet["W41"] ? sheet["W41"].v : null;
+              extractedData.start_year = sheet["W40"] ? sheet["W40"].v : null;
+
+              if (extractedData.start_year && extractedData.years) {
+                  const startYear = parseInt(extractedData.start_year, 10);
+                  const yearStartStr = extractedData.years.split("-")[0];
+                  const yearStart = parseInt(yearStartStr, 10);
+
+                  const course = yearStart - startYear + 1;
+                  extractedData.current_course = course > 0 ? course : null;
+              } else {
+                  extractedData.current_course = null;
+              }
 
               console.log(extractedData);
               await this.postImport_Program(extractedData);
@@ -1540,7 +1985,7 @@ async onFileChange(event) {
                         semester: validatedSemester
                       };
 
-                      allDisciplePromises.push(this.postImport_Disciple(import_disciple));
+                      //allDisciplePromises.push(this.postImport_Disciple(import_disciple));
                     }
                   }
                 } else {
@@ -1589,9 +2034,13 @@ async onFileChange(event) {
               const xmlDoc = parser.parseFromString(textContent, "text/xml");
 
               let extractedData = {
+                program_name: "Не найден",
                 code: "Не найден",
                 profile: "Не найден",
                 years: "Не найден",
+                qualification:"Не найден",
+                start_year:"Не найден",
+                current_course:"Не найден",
               };
 
               const allElements = xmlDoc.getElementsByTagName("*");
@@ -1623,7 +2072,7 @@ async onFileChange(event) {
               }
 
               console.log(extractedData);
-              await this.postImport_Program(extractedData);
+              //await this.postImport_Program(extractedData);
               await this.getImport_ProgramList();
               this.loadImportPrograms();
 
@@ -1716,9 +2165,6 @@ async onFileChange(event) {
 
           this.detailRowData = allFiles;
 
-          console.log("ДЕТАЛИ");
-          console.log(this.detailRowData);
-
         } else if (this.import_discipleList && this.import_discipleList.deleted_at === null) {
           this.detailRowData = [this.import_discipleList];
         } else {
@@ -1755,18 +2201,6 @@ async onFileChange(event) {
     openCreatingForm() {
       this.resetList();
       this.formVisible = true;
-    },
-
-    async submit() {
-      let student = { ...this.student };
-
-      if (student.student_id) {
-        await this.putStudent(student);
-      } else {
-        await this.postStudent(student);
-      }
-      this.formVisible = false;
-      this.resetStd();
     },
 
     onFirstDataRendered(params) {
@@ -1861,7 +2295,6 @@ async onFileChange(event) {
     },
 
       async fetchInitialData() {
-   console.log("Fetching initial data...");
    try {
        await Promise.all([
            this.getImport_ProgramList(),
@@ -2068,6 +2501,7 @@ async onFileChange(event) {
 }
 
 .btn-primary,
+.btn-outline-secondary,
 .form-control,
 .form-select {
   height: 28px;
@@ -2075,12 +2509,20 @@ async onFileChange(event) {
   padding-top: 0;
   padding-bottom: 0;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .form-control,
 .form-select {
-  padding-top: 0;
-  padding-bottom: 0;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  justify-content: flex-start; 
+}
+
+.form-select {
+   padding-right: 2.25rem;
 }
 
 .page-link {
@@ -2127,6 +2569,7 @@ async onFileChange(event) {
 .clear-filter-btn {
     border: 1px solid #dee2e6;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .clear-filter-btn:hover:not(:disabled) {
@@ -2140,36 +2583,9 @@ async onFileChange(event) {
 }
 
 .filters-container {
-    padding: 8px;
-    border-radius: 6px;
+    padding-top: 8px; /* Добавляем немного отступа сверху */
+    padding-bottom: 8px; /* И снизу */
     width: 100%;
 }
 
-:deep(.custom-form) {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin: 0;
-    width: 100%;
-}
-
-:deep(.custom-form .form-group) {
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-}
-
-:deep(.custom-form .form-group label) {
-    margin: 0;
-    margin-right: 8px;
-    white-space: nowrap;
-    font-size: 0.9rem;
-}
-
-:deep(.custom-form .form-group select) {
-    height: 28px;
-    padding: 0 8px;
-    font-size: 0.9rem;
-    width: 150px;
-}
 </style>

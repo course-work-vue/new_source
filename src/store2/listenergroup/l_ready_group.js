@@ -17,7 +17,6 @@ export const useL_Ready_GroupStore = defineStore('l_ready_group', {
     actions: {
         async getL_Ready_GroupList() {
             const responseData = await api.getL_Ready_GroupList();
-            console.log(responseData);
             this.l_ready_groupList = responseData.map((l_ready_group) => {
                 return new L_Ready_Group(l_ready_group);
             });

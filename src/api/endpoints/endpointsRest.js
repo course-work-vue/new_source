@@ -30,10 +30,12 @@ export default Object.freeze({
     listener_wish:prefix + 'listener_wishes',
     day: prefix + 'days',
     l_wish_day: prefix + 'l_wish_days',
+    l_group_wish_day: prefix + 'l_group_wish_days',
     l_group_status: prefix + 'l_group_status',
     l_ready_group: prefix + 'l_ready_groups',
 
     l_group: prefix + 'l_groups',
+    listeners_group: prefix + 'listeners_groups',
     contract: prefix + 'contracts',
     payer: prefix + 'payers',
     pay_graph: prefix + 'pay_graph',

@@ -460,20 +460,6 @@ export default {
         placeholder: "Количество человек",
         validation: [requiredRule],
       }),
-      new TextInput({
-        key: "hours",
-        label: "Количество часов",
-        placeholder: "Количество часов",
-        validation: [requiredRule],
-      }),
-      new DateInput({
-        key: "start_date",
-        label: "Начало:",
-      }),
-      new DateInput({
-        key: "end_date",
-        label: "Конец:",
-      }),
     ]);
     this.thirdScheme = new FormScheme([
       new TextareaInput({
@@ -668,7 +654,12 @@ export default {
 
       if (!this.listener || !this.listener.id) {
         let listener = { ...this.listener };
-        await this.postListener(listener);
+        const payload = {
+          ...listener,
+          group_ids: `{${listener.group_ids.join(',')}}`,
+          program_ids: `{${listener.program_ids.join(',')}}`  
+        };
+        await this.postListener(payload);
         this.resetLst();
         this.loadListenersData();
         this.showWishes = true;

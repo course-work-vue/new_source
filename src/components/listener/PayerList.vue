@@ -163,11 +163,34 @@ export default {
       gridColumnApi.value = params.columnApi;
      
     };
+
+    const formatPhoneNumberForDisplay = (phoneNumber) => {
+      if (!phoneNumber || typeof phoneNumber !== 'string') {
+        return phoneNumber;
+      }
+      let cleaned = phoneNumber.replace(/[^\d+]/g, '');
+      if (cleaned.startsWith('8') && cleaned.length === 11) {
+        cleaned = '+7' + cleaned.substring(1);
+      } else if (cleaned.length === 10 && !cleaned.startsWith('+')) {
+        cleaned = '+7' + cleaned;
+      } else if (cleaned.startsWith('7') && cleaned.length === 11 && !cleaned.startsWith('+')) {
+          cleaned = '+' + cleaned;
+      }
+      if (cleaned.startsWith('+7') && cleaned.length === 12) {
+        const countryCode = cleaned.substring(0, 2);
+        const areaCode = cleaned.substring(2, 5);
+        const firstPart = cleaned.substring(5, 8);
+        const secondPart = cleaned.substring(8, 10);
+        const thirdPart = cleaned.substring(10, 12);
+        return `${countryCode} (${areaCode}) ${firstPart}-${secondPart}-${thirdPart}`;
+      }
+      return phoneNumber;
+    };
+
     const navigateToStudent = () => {};
 
-    const rowData = reactive({}); // Set rowData to Array of Objects, one Object per Row
+    const rowData = reactive({}); 
 
-    // Each Column Definition results in one Column.
     const columnDefs = reactive({
       value: [
       {
@@ -190,9 +213,10 @@ export default {
             headerName: 'email', hide: true
            },
            {
-            field: 'phone_number',
-            headerName: 'Телефон'
-           }
+          field: 'phone_number',
+          headerName: 'Телефон',
+          valueFormatter: params => formatPhoneNumberForDisplay(params.value)
+        }
       ],
     });
 
@@ -304,11 +328,12 @@ async mounted() {
     placeholder: "СНИЛС",
     validation: [requiredRule],
   }),
-  new TextInput({
+  new MaskInput({
     key: "phone_number",
     label: "Телефон",
-    placeholder: "Номер телефона",
-    validation: [requiredRule],
+    placeholder: "+7 (___) ___-__-__", 
+    mask: "+7 (999) 999-99-99",      
+    validation: [requiredRule, phoneRule],
   }),
   new TextInput({
     key: "email",

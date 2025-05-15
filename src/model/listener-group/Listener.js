@@ -20,6 +20,8 @@ export default class Listener {
   program_ids;
   group_ids;
 
+  birth_date;
+
   constructor(listener) {
     this.id = listener?.id ?? null;
     this.name = listener?.name ?? null;
@@ -37,6 +39,8 @@ export default class Listener {
 
     this.program_ids = Array.isArray(listener?.program_ids) ? listener.program_ids : [];
     this.group_ids = Array.isArray(listener?.group_ids) ? listener.group_ids : [];
+
+    this.birth_date = listener?.birth_date ?? null;
   }
 
   get listenergroup_number() {
