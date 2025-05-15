@@ -1861,61 +1861,7 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
-  getTeachSchedule(group_id) {
-    const query = {
-      query: `SELECT 
-    CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name, 
-    s.subject_name,
-    ts.time,
-    ts.day_id,
-    g.group_number
-    FROM 
-        teachschedule ts
-    JOIN 
-        workload wl ON ts.wl_id = wl.wl_id
-    JOIN 
-        teachers t ON wl.teacher_id = t.teacher_id
-    JOIN 
-        subjects s ON wl.subject_id = s.subject_id
-    JOIN 
-        groups g ON wl.group_id = g.group_id
-    JOIN 
-        days d ON ts.day_id = d.day_id
-    WHERE 
-        g.group_id = '${group_id}'
-    
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
 
-  getGroupSchedule(teacher_id) {
-    const query = {
-      query: `SELECT 
-    CONCAT_WS(' ', t.last_name, t.first_name, t.patronymic) AS full_name, 
-    s.subject_name,
-    ts.time,
-    ts.day_id,
-    g.group_number
-    FROM 
-        teachschedule ts
-    JOIN 
-        workload wl ON ts.wl_id = wl.wl_id
-    JOIN 
-        teachers t ON wl.teacher_id = t.teacher_id
-    JOIN 
-        subjects s ON wl.subject_id = s.subject_id
-    JOIN 
-        groups g ON wl.group_id = g.group_id
-    JOIN 
-        days d ON ts.day_id = d.day_id
-    WHERE 
-        t.teacher_id = '${teacher_id}'
-    
-    ;`,
-    };
-    return axios.post(API_URL, query, { headers: authHeader() });
-  }
 
 
 
@@ -2158,6 +2104,7 @@ updateJournalById(j_id, status,grade,gradekr,gradekol,status2, grade2) {
 
   return axios.post(API_URL, query, { headers: authHeader() });
 }
+
 
 
 }
