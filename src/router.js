@@ -58,7 +58,11 @@ const TegrsuDetail = () => import("./components/TegrsuDetail.vue");
 
 const JournalList = () => import("./components/JournalList.vue");
 //ЖУРНАЛ
-
+//ЖУРНАЛНОВЫЙ
+const TeacherListNew = () => import("./components/newjournal/TeacherListNew.vue")
+const JournalListNew = () => import("./components/newjournal/JournalListNew.vue")
+const TegrsuListNew = () => import("./components/newjournal/TegrsuListNew.vue")
+//ЖУРНАЛНОВЫЙ
 const ImportList = () => import("./components/import/ImportList.vue");
 
 const RoleList = () => import("./components/admin/RoleList.vue");
@@ -205,7 +209,23 @@ const routes = [
 
       { path: "/journals", component: JournalList },
       //ЖУРНАЛ
-
+      //НОВЫЙЖУРНАЛ
+      { path: '/teacherListNew', component: TeacherListNew },
+      
+      {
+        path: '/TeacherGroupsSubjects/:teacher_id/',
+        name: 'TeacherGroupsSubjects',
+        component: TegrsuListNew,
+        props: true
+      },
+      
+      {
+        path: '/journal/:wl_id',
+        name: 'JournalListNew',
+        component: JournalListNew,
+        props: true
+      },
+      //
       { path: "/lgroups", component: lGroupList },
       {
         path: "/user",

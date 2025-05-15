@@ -15,4 +15,20 @@ export default Object.freeze({
     selectRole:prefix+'ums.select_roles',
     postRole:prefix+'ums.insert_role',
     getSchemas:prefix+'ums.get_schemas_json',
+
+//журнал
+    teacher_connections: prefix + 'select_teacher_connections',
+    journal: prefix + 'select_journal',
+    grade_types: prefix + 'select_grade_types',
+    create_journal_date: prefix + 'create_journal_date',
+    add_grade_type_to_date: prefix + 'add_grade_type_to_date',
+    upsert_attendance: prefix + 'upsert_attendance',
+    upsert_grade: prefix + 'upsert_grade',
+    delete_journal_date: prefix + 'delete_journal_date',
+    delete_grade_type_from_date: prefix + 'delete_grade_type_from_date',
+    upsert_journal_date_comment: prefix + 'upsert_journal_date_comment',
+    upsert_journal_date_grade_type: prefix +'upsert_journal_date_grade_type',
+    get_report: prefix + 'get_report',
+    select_directions_list: prefix + 'select_directions_list',
+    select_courses_list: prefix + 'select_courses_list',
 });
