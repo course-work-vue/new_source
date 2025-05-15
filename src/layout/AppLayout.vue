@@ -1,13 +1,23 @@
 <script setup>
-import { computed, watch, ref } from "vue";
+import { computed, watch, ref, onMounted } from "vue";
 import AppTopbar from "./AppTopbar.vue";
 import AppSidebar from "./AppSidebar.vue";
 import { useAuthStore } from "../store2/auth";
 import { useLayout } from "@/layout/composables/layout";
 import AppLoadingMask from "@/components/base/AppLoadingMask.vue";
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
+import ToastService from '@/services/ToastService';
+
+const toast = useToast();
 const { layoutConfig, layoutState, isSidebarActive } = useLayout();
 const authStore = useAuthStore();
 const outsideClickListener = ref(null);
+
+onMounted(() => {
+  // Инициализируем Toast сервис
+  ToastService.setToast(toast);
+});
 
 watch(isSidebarActive, (newVal) => {
   if (newVal) {
@@ -63,6 +73,7 @@ const isOutsideClicked = (event) => {
 </script>
 
 <template>
+  <Toast />
   <AppLoadingMask></AppLoadingMask>
   <div class="layout-wrapper" :class="containerClass">
     <app-topbar></app-topbar>

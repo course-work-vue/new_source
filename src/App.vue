@@ -48,6 +48,7 @@
       </div>
     </nav>
 -->
+    <Toast />
     <div class="mycontainer">
       <router-view />
     </div>
@@ -56,6 +57,7 @@
 
 <script>
 import Menu from "./components/Menu.vue";
+import Toast from 'primevue/toast';
 
 import { useAuthStore } from "./store2/auth";
 import { mapState, mapActions } from "pinia";
@@ -64,7 +66,9 @@ export default {
     this.checkTokenExpiration();
   },
 
-  components: {},
+  components: {
+    Toast
+  },
   computed: {
     ...mapState(useAuthStore, ["noAccess"]),
     /*

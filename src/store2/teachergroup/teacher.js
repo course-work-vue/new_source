@@ -43,7 +43,32 @@ export const useTeacherStore = defineStore('teacher', {
                 }
             }
         },
-
+        async getTeacherConnections(teacher_id) {
+            try {
+              // POST-запрос без /:id, тело { p_teacher_id }
+              const response = await api.getTeacherConnections(teacher_id);
+      
+              // Берём либо response.data, либо response
+              console.log("API response in getTeacherConnections:", response);
+              const raw = response.data ?? response;
+              console.log("→ extracted raw:", raw);
+              if (!Array.isArray(raw)) {
+                console.error('Unexpected response format:', raw);
+                throw new Error('Некорректный формат данных');
+              }
+              
+        
+              return raw.map(item => ({
+                wl_id: item.wl_id,
+                group_number: item.group.group_number,
+                subject_name:  item.subject.subject_name
+              }));
+      
+            } catch (error) {
+              console.error('Ошибка получения связей:', error);
+              throw error;
+            }
+          },
         async deleteTeacher(teacher) {
             const response = await api.deleteTeacher(teacher);
             if (response.success === true) {
