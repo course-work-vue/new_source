@@ -151,7 +151,7 @@ const model = ref([
       {
         label: "Журнал",
         icon: "pi pi-fw pi-book",
-        to: "/teachers",
+        to: "/teacherListNew",
       },
 
       {
