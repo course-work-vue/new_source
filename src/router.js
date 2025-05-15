@@ -58,7 +58,11 @@ const TegrsuDetail = () => import("./components/TegrsuDetail.vue");
 
 const JournalList = () => import("./components/JournalList.vue");
 //ЖУРНАЛ
-
+//ЖУРНАЛНОВЫЙ
+const TeacherListNew = () => import("./components/newjournal/TeacherListNew.vue")
+const JournalListNew = () => import("./components/newjournal/JournalListNew.vue")
+const TegrsuListNew = () => import("./components/newjournal/TegrsuListNew.vue")
+//ЖУРНАЛНОВЫЙ
 const ImportList = () => import("./components/import/ImportList.vue");
 
 const RoleList = () => import("./components/admin/RoleList.vue");
