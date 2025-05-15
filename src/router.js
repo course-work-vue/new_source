@@ -205,7 +205,23 @@ const routes = [
 
       { path: "/journals", component: JournalList },
       //ЖУРНАЛ
-
+      //НОВЫЙЖУРНАЛ
+      { path: '/teacherListNew', component: TeacherListNew },
+      
+      {
+        path: '/TeacherGroupsSubjects/:teacher_id/',
+        name: 'TeacherGroupsSubjects',
+        component: TegrsuListNew,
+        props: true
+      },
+      
+      {
+        path: '/journal/:wl_id',
+        name: 'JournalListNew',
+        component: JournalListNew,
+        props: true
+      },
+      //
       { path: "/lgroups", component: lGroupList },
       {
         path: "/user",
