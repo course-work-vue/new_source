@@ -1543,7 +1543,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #bfbfbf3b;
+  background-color: #a8a8a83b;
   color: white;
 }
 
