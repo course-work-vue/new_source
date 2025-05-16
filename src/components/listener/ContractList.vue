@@ -732,18 +732,15 @@ export default {
     new Paragraph({ 
         alignment: AlignmentType.CENTER, 
         style: "ConsPlusTitle" 
-        // Если этот абзац должен быть пустым для отступа, можно оставить так.
-        // Если в нем должен быть текст, но его нет в вашем примере, его нужно добавить.
-        // В вашем текущем коде он пустой.
-    }), // Paragraph index 0
+    }), 
+    
+    // Paragraph index 0
 
     new Paragraph({ 
         alignment: AlignmentType.CENTER, 
         style: "ConsPlusTitle", 
         children: [
-            // Предполагаем, что contract.number содержит номер договора
             new TextRun({ text: `ДОГОВОР N ${contractNumber || "_______"}`, font: "Arial", size: 16 }) 
-            // Убрал лишние TextRun с подчеркиваниями, если номер уже включает их или будет вставлен
         ] 
     }), 
     

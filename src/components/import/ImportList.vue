@@ -96,7 +96,6 @@
     </div>
   </div>
 
-  <!-- Sidebars remain outside the main container -->
   <Sidebar v-model:visible="showCompare" position="bottom" modal header="Пересечение учебных планов"
     class="custom-sidebar h-auto" :style="{ width: '55%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
 
@@ -150,7 +149,7 @@
   @hide="resetDiscipleFilters"
   position="bottom"
   modal
-  header="Все Дисциплины"
+  header="Все дисциплины"
   class="custom-sidebar h-auto"
   :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
 >
@@ -175,24 +174,22 @@
     </div>
 
   
-  <div class="row g-2 mb-2">
+   <div class="row g-2 mb-2">
     <!-- Фильтр по семестру -->
     <div class="col-4 p-0 pe-3">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="group_id">Семестр:</label>
+        <label class="form-label me-2" for="disciple_semester_filter">Семестр:</label>
         <select
-          id="group_id"
+          id="disciple_semester_filter"
           class="form-select"
-          v-model="myValue"
-          @change="handleSelectChange(myValue)"
+          v-model="discipleFormValues.semestres"
         >
-          <option value="">Нет</option>
           <option
-            v-for="group in filteredGroups"
-            :key="group.group_number"
-            :value="group.group_number"
+            v-for="semesterOption in semestresOptions"
+            :key="semesterOption.value"
+            :value="semesterOption.value"
           >
-            {{ group.group_number }}
+            {{ semesterOption.label }}
           </option>
         </select>
       </div>
@@ -201,36 +198,38 @@
     <!-- Фильтр по кафедре -->
     <div class="col-4 p-0 pe-3">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="subgroup_id">Кафедра:</label>
+        <label class="form-label ms-2 me-2" for="disciple_department_filter">Кафедра:</label>
         <select
-          id="subgroup_id"
+          id="disciple_department_filter"
           class="form-select"
-          v-model="myValue4"
-          @change="handleSelectChange2(myValue4)"
+          v-model="discipleFormValues.departments"
         >
-          <option value="">Нет</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
+          <option
+            v-for="deptOption in departmentsOptions"
+            :key="deptOption.value"
+            :value="deptOption.value"
+          >
+            {{ deptOption.label }}
+          </option>
         </select>
       </div>
     </div>
 
     <div class="col-4 p-0">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="third_filter">Направление:</label>
+        <label class="form-label ms-2 me-2" for="disciple_program_filter">Направление:</label>
         <select
-          id="third_filter"
+          id="disciple_program_filter"
           class="form-select"
-          v-model="myValue2"
-          @change="handleSelectChange3(myValue2)"
+          v-model="discipleFormValues.codes"
         >
-          <option value="">Нет</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
           <option
-            v-for="program in filteredPrograms"
-            :key="program.id"
-            :value="program.id"
+            v-for="programOption in programsOptions"
+            :key="programOption.value"
+            :value="programOption.value"
           >
-            {{ program.name }}
+            {{ programOption.label }}
           </option>
         </select>
       </div>
@@ -288,59 +287,59 @@
 
       <div class="col-4 p-0 pe-3">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="group_id">Направление:</label>
+        <label class="form-label me-2" for="archive_program_filter">Направление:</label>
         <select
-          id="group_id"
+          id="archive_program_filter"
           class="form-select"
-          v-model="myValue"
-          @change="handleSelectChange(myValue)"
+          v-model="archiveFormValues.codes"
         >
-          <option value="">Нет</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
           <option
-            v-for="group in filteredGroups"
-            :key="group.group_number"
-            :value="group.group_number"
+            v-for="programOption in programsOptions"
+            :key="programOption.value"
+            :value="programOption.value"
           >
-            {{ group.group_number }}
+            {{ programOption.label }}
           </option>
         </select>
       </div>
     </div>
 
-    <!-- Фильтр по кафедре -->
     <div class="col-4 p-0 pe-3">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="subgroup_id">Учебный год:</label>
+        <label class="form-label ms-2 me-2" for="archive_academic_year_filter">Учебный год:</label>
         <select
-          id="subgroup_id"
+          id="archive_academic_year_filter"
           class="form-select"
-          v-model="myValue4"
-          @change="handleSelectChange2(myValue4)"
+          v-model="archiveFormValues.academic_year"
         >
-          <option value="">Нет</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
+          <option
+            v-for="yearOption in yearsOptions"
+            :key="yearOption.value"
+            :value="yearOption.value"
+          >
+            {{ yearOption.label }}
+          </option>
         </select>
       </div>
     </div>
 
-    <!-- Новый третий фильтр -->
     <div class="col-4 p-0">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="third_filter">Год актуализации:</label>
+        <label class="form-label ms-2 me-2" for="archive_actualization_year_filter">Год актуализации:</label>
         <select
-          id="third_filter"
+          id="archive_actualization_year_filter"
           class="form-select"
-          v-model="myValue2"
-          @change="handleSelectChange3(myValue2)"
+          v-model="archiveFormValues.actualization_year"
         >
-          <option value="">Нет</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
           <option
-            v-for="program in filteredPrograms"
-            :key="program.id"
-            :value="program.id"
+            v-for="yearOption in timeYearsOptions" 
+            :key="yearOption.value"
+            :value="yearOption.value"
           >
-            {{ program.name }}
+            {{ yearOption.label }}
           </option>
         </select>
       </div>
@@ -395,40 +394,41 @@
     <div class="row g-2 mb-2">
       <div class="col-6 p-0 pe-3">
         <div class="form-group d-flex align-items-center">
-          <label class="form-label me-3" for="group_id"
+          <label class="form-label me-3" for="details_semester_filter"
             >Семестр:</label
           >
           <select
             class="form-select"
-            id="group_id"
-            v-model="myValue"
-            @change="handleSelectChange(myValue)"
+            id="details_semester_filter"
+            v-model="detailFilter.semestres" 
           >
-            <option selected="selected" value="">Нет</option>
             <option
-              v-for="group in filteredGroups"
-              :key="group.group_number"
-              :value="group.group_number"
+              v-for="semesterOption in semestresOptions"
+              :key="semesterOption.value"
+              :value="semesterOption.value"
             >
-              {{ group.group_number }}
+              {{ semesterOption.label }}
             </option>
           </select>
         </div>
       </div>
       <div class="col-6 p-0">
         <div class="form-group d-flex align-items-center">
-          <label class="form-label ms-3 me-3" for="subgroup_id"
+          <label class="form-label ms-3 me-3" for="details_department_filter"
             >Кафедра:</label
           >
           <select
             class="form-select"
-            id="subgroup_id"
-            v-model="myValue4"
-            @change="handleSelectChange2(myValue4)"
+            id="details_department_filter"
+            v-model="detailFilter.departments"
           >
-            <option selected="selected" value="">Нет</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
+            <option
+              v-for="deptOption in departmentsOptions"
+              :key="deptOption.value"
+              :value="deptOption.value"
+            >
+            {{ deptOption.label }}
+            </option>
           </select>
         </div>
       </div>
@@ -484,80 +484,79 @@
     <!-- Фильтр по семестру -->
     <div class="col-6 p-0 pe-3">
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="group_id">Направление:</label>
+        <label class="form-label me-2" for="workload_program_filter">Направление:</label>
         <select
-          id="group_id"
+          id="workload_program_filter"
           class="form-select"
-          v-model="myValue"
-          @change="handleSelectChange(myValue)"
+          v-model="workloadFormValues.codes"
         >
-          <option value="">Нет</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
           <option
-            v-for="group in filteredGroups"
-            :key="group.group_number"
-            :value="group.group_number"
+            v-for="programOption in programsOptions"
+            :key="programOption.value"
+            :value="programOption.value"
           >
-            {{ group.group_number }}
+            {{ programOption.label }}
           </option>
         </select>
       </div>
     </div>
 
     <!-- Фильтр по кафедре -->
-    <div class="col-6 p-0 pe-3">
+    <div class="col-6 p-0"> <!-- Убрал pe-3 для последнего элемента в ряду из 2-х колонок -->
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="subgroup_id">Кафедра:</label>
+        <label class="form-label ms-2 me-2" for="workload_department_filter">Кафедра:</label>
         <select
-          id="subgroup_id"
+          id="workload_department_filter"
           class="form-select"
-          v-model="myValue4"
-          @change="handleSelectChange2(myValue4)"
+          v-model="workloadFormValues.department"
         >
-          <option value="">Нет</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Новый третий фильтр -->
-    <div class="col-6 p-0">
-      <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="third_filter">Год:</label>
-        <select
-          id="third_filter"
-          class="form-select"
-          v-model="myValue2"
-          @change="handleSelectChange3(myValue2)"
-        >
-          <option value="">Нет</option>
-          <option
-            v-for="program in filteredPrograms"
-            :key="program.id"
-            :value="program.id"
+           <option
+            v-for="deptOption in departmentsOptions"
+            :key="deptOption.value"
+            :value="deptOption.value"
           >
-            {{ program.name }}
+            {{ deptOption.label }}
           </option>
         </select>
       </div>
     </div>
-    <!-- Новый третий фильтр -->
-    <div class="col-6 p-0">
+
+    <!-- Фильтр по Году -->
+    <div class="col-6 p-0 pe-3 mt-2"> <!-- Добавил mt-2 для отступа сверху для новой строки -->
       <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="third_filter">Семестр:</label>
+        <label class="form-label me-2" for="workload_academic_year_filter">Год:</label>
         <select
-          id="third_filter"
+          id="workload_academic_year_filter"
           class="form-select"
-          v-model="myValue2"
-          @change="handleSelectChange3(myValue2)"
+          v-model="workloadFormValues.academic_year"
         >
-          <option value="">Нет</option>
+          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
           <option
-            v-for="program in filteredPrograms"
-            :key="program.id"
-            :value="program.id"
+            v-for="yearOption in yearsOptions"
+            :key="yearOption.value"
+            :value="yearOption.value"
           >
-            {{ program.name }}
+            {{ yearOption.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <!-- Фильтр по Семестру -->
+    <div class="col-6 p-0 mt-2"> <!-- Добавил mt-2, убрал pe-3 -->
+      <div class="form-group d-flex align-items-center">
+        <label class="form-label ms-2 me-2" for="workload_semester_filter">Семестр:</label>
+        <select
+          id="workload_semester_filter"
+          class="form-select"
+          v-model="workloadFormValues.semester" 
+        >
+          <option
+            v-for="semesterOption in semestresOptions"
+            :key="semesterOption.value"
+            :value="semesterOption.value"
+          >
+            {{ semesterOption.label }}
           </option>
         </select>
       </div>
@@ -660,7 +659,6 @@ export default {
     const gridApiDetails = ref(null); 
     const detailQuickFilterValue = ref(''); 
     const detailFiltersActive = ref(false); 
-    const detailRowData = ref({});
     const gridApiCompare = ref(null);
     const compareQuickFilterValue = ref('');
 
@@ -1152,25 +1150,28 @@ const selectedCount = computed(() => {
 
 
     const semestresOptions = computed(() => {
-       console.log('[LOG] Calculating semestresOptions. Source:', importDiscipleStore.import_disciple_semestresList);
-       const options = importDiscipleStore.import_disciple_semestresList.map(item => {
-         return {
-           label: item.semester,
-           value: item.semester
-         };
-       });
-       console.log('[LOG] Generated semestresOptions:', options);
-       return [{ label: "Не выбрано", value: null }, ...options];
-     });
-    const departmentsOptions = computed(() => {
-      console.log('[LOG] Calculating departments. Source:', importDiscipleStore.import_disciple_departmentsList);
-      return importDiscipleStore.import_disciple_departmentsList.map(item => {
-        return {
-          label: item.department,
-          value: item.department
-        };
-      });
-    });
+   const options = importDiscipleStore.import_disciple_semestresList
+    .filter(item => item.semester !== null && item.semester !== undefined)
+    .map(item => {
+     return {
+       label: String(item.semester),
+       value: item.semester 
+     };
+   });
+   return [{ label: "Не выбрано", value: null }, ...options];
+ });
+
+const departmentsOptions = computed(() => {
+  const options = importDiscipleStore.import_disciple_departmentsList
+    .filter(item => item.department !== null && item.department !== undefined)
+    .map(item => {
+    return {
+      label: String(item.department),
+      value: item.department
+    };
+  });
+  return [{ label: "Не выбрано", value: null }, ...options];
+});
 
     const onFilterTextBoxChanged = () => {
       console.log('MAIN filter input changed:', quickFilterValue.value);
@@ -1281,6 +1282,13 @@ const clearDetailFilters = () => {
     const selectedDisciplineCode = ref(null); // Для заголовка
     const selectedProgramId = ref(null);      // ID для фильтрации деталей <--- ВАЖНО!
 
+    const detailRowData = computed(() => {
+  if (!selectedProgramId.value) {
+    return [];
+  }
+  const allDisciplesFromStore = import_discipleList.value || [];
+  return allDisciplesFromStore.filter(disciple => disciple.program_id === selectedProgramId.value);
+});
 
      const editFunction = (event) => {
       if (instance.proxy.resetUpd) { // Check if method exists on proxy
@@ -1369,30 +1377,31 @@ const filteredRowDataArchive = computed(() => {
 });
 
 const filteredDiscipleDataForAllPrograms = computed(() => {
-  const disciples = import_discipleList.value || []; // Используем .value
-  const programs = import_programList.value || [];   // Нужны для поиска ID по коду
-  const filters = discipleFormValues; // Используем фильтры этого сайдбара
+  const disciples = import_discipleList.value || [];
+  const programs = import_programList.value || [];
+  const filters = discipleFormValues;
 
-  // Ищем ID программы по выбранному коду (если выбран)
   let targetProgramId = null;
   if (filters.codes) {
       const selectedProgram = programs.find(p => String(p.code) === String(filters.codes));
       if (selectedProgram) {
           targetProgramId = selectedProgram.id;
       } else {
-          return []; // Код выбран, но программа не найдена -> пусто
+          return []; 
       }
   }
 
-  if (!targetProgramId && !filters.semestres && !filters.departments) {
-      return disciples; // Возвращаем все дисциплины
+  // Проверка, если ни один фильтр не активен
+  if (!targetProgramId && filters.semestres === null && filters.departments === null) {
+      return disciples;
   }
 
   return disciples.filter(disciple => {
-      // Проверяем совпадение по ID программы (если код был выбран), семестру и кафедре
       const programMatch = !targetProgramId || disciple.program_id === targetProgramId;
-      const semesterMatch = !filters.semestres || String(disciple.semester) === String(filters.semestres);
-      const departmentMatch = !filters.departments || String(disciple.department) === String(filters.departments);
+      // ИЗМЕНЕНО: Проверка на null для семестра
+      const semesterMatch = filters.semestres === null || String(disciple.semester) === String(filters.semestres);
+      // ИЗМЕНЕНО: Проверка на null для кафедры
+      const departmentMatch = filters.departments === null || String(disciple.department) === String(filters.departments);
 
       return programMatch && semesterMatch && departmentMatch;
   });
@@ -1411,6 +1420,7 @@ const workloadFormValues = reactive({
   codes: null,
   academic_year: null,
   department: null,
+  semester: null,
 });
 
 watch(
@@ -1419,10 +1429,8 @@ watch(
     console.log("[ИЗМЕНЕНИЕ ФИЛЬТРА] Кафедра изменена:");
     console.log("  Новое значение workloadFormValues.department:", newValue);
     console.log("  Старое значение:", oldValue);
-    // console.log("  Текущее filteredWorkloadData:", filteredWorkloadData.value);
   },
-  { deep: true } // Можно использовать deep, если workloadFormValues - сложный объект,
-                 // но для простого свойства department это не обязательно.
+  { deep: true } 
 );
 
 const workloadColumnDefs = reactive({
@@ -1504,42 +1512,26 @@ const workloadColumnDefs = reactive({
 });
 
 const filteredWorkloadData = computed(() => {
-  const disciples = import_discipleList.value || []; // Все дисциплины из стора
-  const filters = workloadFormValues; // Текущие значения фильтров, включая filters.department
+  const disciples = import_discipleList.value || [];
+  const filters = workloadFormValues;
 
-  // console.log('[WORKLOAD] Current filters:', filters);
-  // console.log('[WORKLOAD] Selected department:', filters.department);
-  // console.log('[WORKLOAD] Total disciples before filtering:', disciples.length);
-
-  // Если ни один фильтр не активен (включая department), показываем все
-  if (!filters.codes && !filters.academic_year && !filters.department) {
-    // console.log('[WORKLOAD] No filters applied, returning all disciples');
+  // Проверка, если ни один фильтр не активен
+  if (!filters.codes && !filters.academic_year && filters.department === null && filters.semester === null) {
     return disciples;
   }
 
-  const filtered = disciples.filter(disciple => {
+  return disciples.filter(disciple => {
     const program = import_programList.value?.find(p => p.id === disciple.program_id);
-    const codeMatch = !filters.codes || (program && program.code === filters.codes);
-
-    // Фильтр по учебному году (если есть)
-    const yearMatch = !filters.academic_year || (program && program.years === filters.academic_year);
-
-    // ФИЛЬТР ПО КАФЕДРЕ
-    const departmentMatch = !filters.department || disciple.department === filters.department;
-    // ^^^^ ЭТА СТРОКА КЛЮЧЕВАЯ ^^^^
-    // Если filters.department не задан (null), то !filters.department будет true,
-    // и условие departmentMatch будет истинным для любой дисциплины.
-    // Если filters.department задан, то будет проверяться точное совпадение
-    // disciple.department с выбранным значением.
-
-    // ... (логи для отладки, если нужны) ...
-
-    // Дисциплина проходит, если все активные фильтры совпали
-    return codeMatch && yearMatch && departmentMatch;
+    const codeMatch = !filters.codes || (program && String(program.code) === String(filters.codes)); // Убедимся, что сравниваем строки, если codes это число
+    const yearMatch = !filters.academic_year || (program && String(program.years) === String(filters.academic_year)); // Аналогично для years
+    
+    // ИЗМЕНЕНО: Проверка на null для кафедры
+    const departmentMatch = filters.department === null || disciple.department === filters.department;
+    // ДОБАВЛЕНО: Проверка на null для семестра
+    const semesterMatch = filters.semester === null || disciple.semester === filters.semester; 
+    
+    return codeMatch && yearMatch && departmentMatch && semesterMatch;
   });
-
-  // console.log('[WORKLOAD] Filtered disciples count:', filtered.length);
-  return filtered;
 });
 
     return {
@@ -1814,49 +1806,46 @@ this.compareFormScheme = new FormScheme([
     },
 
 async onFileChange2(event) {
+  const successMessage = ref('');
+  const errorMessage = ref('');
+  const isLoading = ref(false);
 
-  const successMessage = ref('')
-  const errorMessage   = ref('')
-  const isLoading      = ref(false)
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
 
-  console.log("MEOW!");
-  
-  const files = Array.from(event.target.files)
-  if (!files.length) return
-
-  isLoading.value = true
-  successMessage.value = ''
-  errorMessage.value   = ''
+  isLoading.value = true;
+  successMessage.value = '';
+  errorMessage.value = '';
 
   for (const file of files) {
     try {
+      // Получение pre-signed URL
       const { data } = await axios.get('/api/upload/pre-signed', {
         params: { fileName: file.name }
-      })
-      console.log('PRE-SIGNED response:', data)
+      });
 
-      const uploadUrl = data.url
+      const uploadUrl = data.url;
 
-      // 2️⃣ PUT-файл в Yandex S3
+      // Загрузка файла в хранилище
       await axios.put(uploadUrl, file, {
         headers: { 'Content-Type': 'application/octet-stream' }
-      })
+      });
 
-      console.log(`✔ ${file.name} загружен`)
-      // 3️⃣ Сбор статистики
+      console.log(`✔ ${file.name} загружен`);
+
+      // ✅ Дополнительно парсим на фронте
+      //await this.parseUploadedFile(file);
+
       successMessage.value += `${file.name} `;
-      
-      // 4️⃣ (опц.) сообщить бэкенду, что можно парсить
-      // await axios.post('/api/upload/trigger-processing', { fileUrl: uploadUrl })
-
     } catch (err) {
-      console.error(`❌ Ошибка загрузки ${file.name}:`, err)
-      errorMessage.value += `${file.name} `
+      console.error(`❌ Ошибка загрузки ${file.name}:`, err);
+      errorMessage.value += `${file.name} `;
     }
   }
 
-  isLoading.value = false
+  isLoading.value = false;
 },
+
 
 
     async onFileChange(event) {
@@ -1876,6 +1865,15 @@ async onFileChange2(event) {
               const sheet = workbook.Sheets[sheetName];
               if (!sheet) {
                 throw new Error(`Лист "${sheetName}" не найден`);
+              }
+
+              const sheetName2 = "План";
+              const sheet2 = workbook.Sheets[sheetName2];
+              if (!sheet2) {
+                console.log("ПЛАНА НЕТ");
+              }
+              else {
+                console.log("ПЛАН ЕСТЬ")
               }
 
               let extractedData = {
@@ -1921,7 +1919,7 @@ async onFileChange2(event) {
               }
 
               console.log(extractedData);
-              await this.postImport_Program(extractedData);
+              //await this.postImport_Program(extractedData);
               await this.getImport_ProgramList(); 
 
               const courseSheets = ["Курс 4"];
@@ -2003,10 +2001,12 @@ async onFileChange2(event) {
             console.log("Дисциплины для добавления не найдены.");
         }
 
-        this.loadImportPrograms();
-        this.loadImportDisciples();
+        
 
         resolve(extractedData); 
+
+        this.loadImportPrograms();
+        this.loadImportDisciples();
 
 
             } catch (error) {
