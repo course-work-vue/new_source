@@ -1,6 +1,7 @@
 import api from '@/api/api';
 import TableUser from '@/model/admin-group/TableUser'; // Убедитесь, что это правильный путь к модели TableUser
 import { defineStore } from 'pinia';
+import ToastService from '@/services/ToastService';
 
 export const useTableUserStore = defineStore('tableUser', {
     state: () => ({
@@ -32,27 +33,51 @@ export const useTableUserStore = defineStore('tableUser', {
         },
 
         async postTableUser(tableUser) {
-            const response = await api.postTableUser(tableUser);
+            try {
+                const response = await api.postTableUser(tableUser);
 
-            if (response) {
-                await this.getTableUserList();
+                if (response) {
+                    await this.getTableUserList();
+                    ToastService.showSuccess('Таблица пользователя успешно добавлена');
+                } else {
+                    ToastService.showError('Не удалось добавить таблицу пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при добавлении таблицы пользователя');
+                throw error;
             }
         },
 
         async putTableUser(tableUser) {
-            console.log(tableUser)
-            const response = await api.putTableUser(tableUser.id, tableUser);
-            if (response) {
-
-                await this.getTableUserList();
+            try {
+                const response = await api.putTableUser(tableUser.id, tableUser);
+                if (response) {
+                    await this.getTableUserList();
+                    ToastService.showSuccess('Таблица пользователя успешно обновлена');
+                } else {
+                    ToastService.showError('Не удалось обновить таблицу пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при обновлении таблицы пользователя');
+                throw error;
             }
         },
 
         async deleteTableUser(tableUser) {
-            console.log('del')
-            const response = await api.deleteTableUser(tableUser);
-            if (response.success === true) {
-                await this.getTableUserList();
+            try {
+                const response = await api.deleteTableUser(tableUser);
+                if (response.success === true) {
+                    await this.getTableUserList();
+                    ToastService.showSuccess('Таблица пользователя успешно удалена');
+                } else {
+                    ToastService.showError('Не удалось удалить таблицу пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при удалении таблицы пользователя');
+                throw error;
             }
         },
     },

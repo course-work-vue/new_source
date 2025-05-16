@@ -1,6 +1,7 @@
 import api from '@/api/api';
 import TriggerUser from '@/model/admin-group/TriggerUser'; // Убедитесь, что это правильный путь к модели TriggerUser
 import { defineStore } from 'pinia';
+import ToastService from '@/services/ToastService';
 
 export const useTriggerUserStore = defineStore('triggerUser', {
     state: () => ({
@@ -32,25 +33,51 @@ export const useTriggerUserStore = defineStore('triggerUser', {
         },
 
         async postTriggerUser(triggerUser) {
-            const response = await api.postTriggerUser(triggerUser);
+            try {
+                const response = await api.postTriggerUser(triggerUser);
 
-            if (response) {
-                await this.getTriggerUserList();
+                if (response) {
+                    await this.getTriggerUserList();
+                    ToastService.showSuccess('Триггер пользователя успешно добавлен');
+                } else {
+                    ToastService.showError('Не удалось добавить триггер пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при добавлении триггера пользователя');
+                throw error;
             }
         },
 
         async putTriggerUser(triggerUser) {
-            const response = await api.putTriggerUser(triggerUser.id, triggerUser);
-            if (response) {
-
-                await this.getTriggerUserList();
+            try {
+                const response = await api.putTriggerUser(triggerUser.id, triggerUser);
+                if (response) {
+                    await this.getTriggerUserList();
+                    ToastService.showSuccess('Триггер пользователя успешно обновлен');
+                } else {
+                    ToastService.showError('Не удалось обновить триггер пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при обновлении триггера пользователя');
+                throw error;
             }
         },
 
         async deleteTriggerUser(triggerUser) {
-            const response = await api.deleteTriggerUser(triggerUser);
-            if (response.success === true) {
-                await this.getTriggerUserList();
+            try {
+                const response = await api.deleteTriggerUser(triggerUser);
+                if (response.success === true) {
+                    await this.getTriggerUserList();
+                    ToastService.showSuccess('Триггер пользователя успешно удален');
+                } else {
+                    ToastService.showError('Не удалось удалить триггер пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при удалении триггера пользователя');
+                throw error;
             }
         },
     },

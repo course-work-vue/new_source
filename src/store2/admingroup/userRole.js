@@ -67,7 +67,7 @@ export const useUserRoleStore = defineStore('userRole', {
         async deleteUserRoleByUserId(userRole) {
             try {
                 const response = await api.deleteUserRole(userRole);
-                if (response === true) {
+                if (response.success === true) {
                     await this.getUserRoleList();
                     ToastService.showSuccess('Роль пользователя успешно удалена');
                 } else {

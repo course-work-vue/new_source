@@ -1,6 +1,7 @@
 import api from '@/api/api';
 import ProcedureUser from '@/model/admin-group/ProcedureUser'; // Убедитесь, что это правильный путь к модели ProcedureUser
 import { defineStore } from 'pinia';
+import ToastService from '@/services/ToastService';
 
 export const useProcedureUserStore = defineStore('procedureUser', {
     state: () => ({
@@ -32,25 +33,51 @@ export const useProcedureUserStore = defineStore('procedureUser', {
         },
 
         async postProcedureUser(procedureUser) {
-            const response = await api.postProcedureUser(procedureUser);
+            try {
+                const response = await api.postProcedureUser(procedureUser);
 
-            if (response) {
-                await this.getProcedureUserList();
+                if (response) {
+                    await this.getProcedureUserList();
+                    ToastService.showSuccess('Процедура пользователя успешно добавлена');
+                } else {
+                    ToastService.showError('Не удалось добавить процедуру пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при добавлении процедуры пользователя');
+                throw error;
             }
         },
 
         async putProcedureUser(procedureUser) {
-            const response = await api.putProcedureUser(procedureUser.id, procedureUser);
-            if (response) {
-
-                await this.getProcedureUserList();
+            try {
+                const response = await api.putProcedureUser(procedureUser.id, procedureUser);
+                if (response) {
+                    await this.getProcedureUserList();
+                    ToastService.showSuccess('Процедура пользователя успешно обновлена');
+                } else {
+                    ToastService.showError('Не удалось обновить процедуру пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при обновлении процедуры пользователя');
+                throw error;
             }
         },
 
         async deleteProcedureUser(procedureUser) {
-            const response = await api.deleteProcedureUser(procedureUser);
-            if (response.success === true) {
-                await this.getProcedureUserList();
+            try {
+                const response = await api.deleteProcedureUser(procedureUser);
+                if (response.success === true) {
+                    await this.getProcedureUserList();
+                    ToastService.showSuccess('Процедура пользователя успешно удалена');
+                } else {
+                    ToastService.showError('Не удалось удалить процедуру пользователя');
+                }
+                return response;
+            } catch (error) {
+                ToastService.showError('Ошибка при удалении процедуры пользователя');
+                throw error;
             }
         },
     },

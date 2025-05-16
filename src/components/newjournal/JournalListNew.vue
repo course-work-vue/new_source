@@ -294,21 +294,34 @@
         <option disabled value="">– Выберите –</option>
         <option value="grades">Успеваемость</option>
         <option value="attendance">Посещаемость</option>
+        <option value="full">Полный (посещаемость + успеваемость)</option>
       </select>
     </div>
   </div>
   <template #footer>
     <Button
-  label="Скачать Excel"
-  icon="pi pi-file-excel"
-  class="p-button-text"
-  @click="exportFilteredReport"
-  :disabled="!students.length"
-/>
-
-    <Button label="Закрыть" class="p-button-text" @click="closeNotifyModal"/>
+      label="Скачать Excel"
+      icon="pi pi-file-excel"
+      class="p-button-text"
+      @click="exportFilteredReport"
+      :disabled="!students.length"
+    />
+    <!-- Новая кнопка CSV -->
+    <Button
+      label="Скачать CSV"
+      icon="pi pi-file"
+      class="p-button-text"
+      @click="exportCsvReport"
+      :disabled="!students.length"
+    />
+    <Button
+      label="Закрыть"
+      class="p-button-text"
+      @click="closeNotifyModal"
+    />
   </template>
 </Dialog>
+
     </div>
   </div>
 </template>
@@ -413,74 +426,124 @@ export default {
   },
   
   methods: {
-    exportFilteredReport() {
-    // 1) Метаданные
-    const groupCode    = this.meta.group.code;
-    const teacherName  = this.meta.teacher.fullName;
-    const subjectName  = this.meta.subject.name;
-    const totalClasses = this.dates.length || 1;
+    exportCsvReport() {
+  const groupCode   = this.meta.group.code;
+  const teacherName = this.meta.teacher.fullName;
+  const subjectName = this.meta.subject.name;
+  const totalClasses = this.dates.length || 1;
 
-    // 2) Собираем статистику из rowData
-    const stats = this.rowData.map(r => ({
-      fullName:    r.fullName,
-      absences:    r.absencesCount,
-      totalClasses,
-      absencePct:  +(100 * r.absencesCount / totalClasses).toFixed(1),
-      avgGrade:    parseFloat(r.avgScore) || 0
-    }));
+  // Собираем статистику
+  const stats = this.rowData.map(r => ({
+    fullName:   r.fullName,
+    absences:   r.absencesCount,
+    absencePct: +(100 * r.absencesCount / totalClasses).toFixed(1),
+    avgGrade:   parseFloat(r.avgScore) || 0
+  }));
 
-    // 3) В зависимости от типа уведомления фильтруем
-    const sheets = [];
+  const lines = [
+    `Группа,${groupCode}`,
+    `Преподаватель,${teacherName}`,
+    `Дисциплина,${subjectName}`,
+    '' // пустая строка перед таблицами
+  ];
 
-    if (this.notify.type === 'attendance') {
-      // Только посещаемость ≥70%
-      const absenters = stats.filter(s => s.absencePct >= 50);
-      const sheet1 = [
-        ['Группа', groupCode],
-        ['Преподаватель', teacherName],
-        ['Дисциплина', subjectName],
-        [],
-        ['ФИО студента', 'Пропусков', '% пропусков']
-      ];
-      absenters.forEach(s => {
-        sheet1.push([ s.fullName, s.absences, s.absencePct ]);
-      });
-      sheets.push({ name: 'Посещаемость', data: sheet1 });
-    }
+  // Функция для добавления блока
+  const appendBlock = (title, header, rows) => {
+    lines.push(title);
+    lines.push(header.join(','));
+    rows.forEach(r => lines.push(r.join(',')));
+    lines.push(''); // разделитель блоков
+  };
 
-    if (this.notify.type === 'grades') {
-      // Только успеваемость 0<avg<2.5
-      const lowPerf = stats.filter(s => s.avgGrade > 0 && s.avgGrade < 2.5);
-      const sheet2 = [
-        ['Группа', groupCode],
-        ['Преподаватель', teacherName],
-        ['Дисциплина', subjectName],
-        [],
-        ['ФИО студента', 'Ср. балл']
-      ];
-      lowPerf.forEach(s => {
-        sheet2.push([ s.fullName, s.avgGrade ]);
-      });
-      sheets.push({ name: 'Успеваемость', data: sheet2 });
-    }
+  if (this.notify.type === 'attendance' || this.notify.type === 'full') {
+    const absenters = stats.filter(s => s.absencePct >= 50)
+                           .map(s => [s.fullName, s.absences, s.absencePct]);
+    appendBlock('=== Посещаемость ===',
+      ['ФИО студента','Пропусков','% пропусков'],
+      absenters);
+  }
 
-    // 4) Создаём книгу и добавляем необходимые листы
-    const wb = XLSX.utils.book_new();
-    sheets.forEach(({name, data}) => {
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, name);
-    });
+  if (this.notify.type === 'grades' || this.notify.type === 'full') {
+    const lowPerf = stats.filter(s => s.avgGrade > 0 && s.avgGrade < 2.5)
+                        .map(s => [s.fullName, s.avgGrade]);
+    appendBlock('=== Успеваемость ===',
+      ['ФИО студента','Ср. балл'],
+      lowPerf);
+  }
 
-    // 5) Скачиваем
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob  = new Blob([wbout], { type: 'application/octet-stream' });
-    const url   = URL.createObjectURL(blob);
-    const a     = document.createElement('a');
-    a.href      = url;
-    a.download  = `Report_${groupCode}_${this.notify.type}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-  },
+  // Формируем CSV
+  const csvContent = lines.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `Report_${groupCode}_${this.notify.type}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+},
+exportFilteredReport() {
+  // 1) Метаданные
+  const groupCode   = this.meta.group.code;
+  const teacherName = this.meta.teacher.fullName;
+  const subjectName = this.meta.subject.name;
+  const totalClasses = this.dates.length || 1;
+
+  // 2) Собираем статистику
+  const stats = this.rowData.map(r => ({
+    fullName:   r.fullName,
+    absences:   r.absencesCount,
+    absencePct: +(100 * r.absencesCount / totalClasses).toFixed(1),
+    avgGrade:   parseFloat(r.avgScore) || 0
+  }));
+
+  // 3) Список листов
+  const sheets = [];
+
+  // Посещаемость
+  if (this.notify.type === 'attendance' || this.notify.type === 'full') {
+    const absenters = stats.filter(s => s.absencePct >= 50);
+    const data = [
+      ['Группа', groupCode],
+      ['Преподаватель', teacherName],
+      ['Дисциплина', subjectName],
+      [],
+      ['ФИО студента', 'Пропусков', '% пропусков']
+    ];
+    absenters.forEach(s => data.push([s.fullName, s.absences, s.absencePct]));
+    sheets.push({ name: 'Посещаемость', data });
+  }
+
+  // Успеваемость
+  if (this.notify.type === 'grades' || this.notify.type === 'full') {
+    const lowPerf = stats.filter(s => s.avgGrade > 0 && s.avgGrade < 2.5);
+    const data = [
+      ['Группа', groupCode],
+      ['Преподаватель', teacherName],
+      ['Дисциплина', subjectName],
+      [],
+      ['ФИО студента', 'Ср. балл']
+    ];
+    lowPerf.forEach(s => data.push([s.fullName, s.avgGrade]));
+    sheets.push({ name: 'Успеваемость', data });
+  }
+
+  // 4) Создаём книгу и добавляем листы
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(({ name, data }) => {
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  });
+
+  // 5) Скачиваем
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob  = new Blob([wbout], { type: 'application/octet-stream' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href      = url;
+  a.download  = `Report_${groupCode}_${this.notify.type}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+},
 openNotifyModal() {
     this.notifyModalVisible = true;
   },
@@ -717,9 +780,11 @@ async saveComment() {
   // рассчитываем порог
   const min = gt.minValue ?? gt.min_value;
   const max = gt.maxValue ?? gt.max_value;
-  const pass = this.selectedEvalMethod==='custom'
-    ? (gt.passScore ?? 50)
-    : gt.passScore;
+  const pass = (gt.passScore != null)
+  ? gt.passScore
+  : ((min >= 2 && max <= 5)
+     ? 3
+     : 0);
 
   if (isNaN(value)) return null;
 
