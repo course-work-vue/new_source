@@ -595,18 +595,36 @@ editWorkload(wl_id, teacher_id, audtype){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-addWorkload(group_id, subject_id, teacher_id){
+deleteWorkload(subject_id){
   const query = {
-    query: `INSERT INTO "workload" (
-      "group_id",
-      "subject_id",
-      "teacher_id"
-  ) VALUES (
-      '${group_id}',
-      '${subject_id}',
-      '${teacher_id}'
-  );`,
+    query: `
+      UPDATE workload 
+      SET deleted_at = CURRENT_DATE
+      WHERE subject_id = '${subject_id}'
+      AND deleted_at IS NULL
+    `,
+    params: [subject_id]
   };
+
+  console.log(API_URL, query);
+  
+  return axios.post(API_URL, query, { headers: authHeader() });
+}
+
+addWorkload(subject_id, teacher_id){
+  const query = {
+    query: `
+      INSERT INTO workload (subject_id, teacher_id)
+      VALUES (
+        '${subject_id}',
+        '${teacher_id}'
+      )`,
+    params: [subject_id, teacher_id]
+  };
+
+
+  console.log(API_URL, query);
+  
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
@@ -707,9 +725,12 @@ deleteGroupById(group_id){
 }
 
   getAllGroups(){
-    
-    return axios.get(API_URL + 'groups', { headers: authHeader() });
+    const apiUrl = `${API}/Groups`;
+
+    return axios.get(apiUrl, { headers: authHeader() });
   }
+
+  
 
   getGroupByDir(dir_id){
     const query = {
