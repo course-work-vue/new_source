@@ -69,7 +69,7 @@
 
             <!-- Предметы -->
             <div class="col-4">
-                <table class="table w-100" v-if="filteredDisciples.length && showSubjects">
+                <table class="table w-100" v-if="filteredSubjects.length && showSubjects">
                     <thead class="table-light">
                         <tr><th>Предмет</th></tr>
                     </thead>
@@ -116,7 +116,7 @@
                     </div> -->
 
                     <div class="row p-1">
-                        <div class="col-7 d-flex gap-4 align-items-center p-1">
+                        <!-- <div class="col-7 d-flex gap-4 align-items-center p-2">
                             <h5 class="mb-0">Группа:</h5>
                             <select 
                                 required
@@ -135,8 +135,7 @@
                                 </option>
                             </select>
 
-                            <!-- <span>Контингент: <b>{{ selectedGroupObj.students_count || 0 }}</b></span> -->
-                        </div>
+                        </div> -->
 
                         <!-- <div class="mb-3">
                             <span>Тип занятия: <b>{{ getSubjectType() || 'Не указан' }}</b></span>
@@ -163,8 +162,9 @@
                     </div> 
 
                     <div class="mb-3">
-                        <h5>Преподаватели:</h5>
-                        <div v-if="teachers.length">
+                        <h5>Преподаватели: {{ teachersSelectionStatus }}</h5>
+                        <div v-if="allTeachers.length">
+                            
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
@@ -175,24 +175,33 @@
                                 </thead>
                                 <tbody>
                                     <tr 
-                                        v-for="teacher in teachers" 
+                                        v-for="teacher in allTeachers" 
                                         :key="teacher.teacher_id"
-                                        :class="{ 'table-active': selectedTeacherObj?.teacher_id === teacher.teacher_id }"
+                                        :class="{ 'table-active': isTeacherSelected(teacher) }"
                                     >
                                         <td>{{ formatTeacherName(teacher) }}</td>
-                                        <td>0 ч</td> <!-- Временное значение -->
+                                        <td>
+                                            <span class="" :class="{
+                                                'bg-primary': getTeacherWorkloadDetails(teacher.teacher_id).total > 0,
+                                                'bg-secondary': getTeacherWorkloadDetails(teacher.teacher_id).total === 0
+                                            }">
+                                                {{ getTeacherWorkloadDetails(teacher.teacher_id) }} ч
+                                            </span>
+                                        </td>
                                         <td>
                                             <button 
-                                                class="btn btn-sm btn-warning me-2"
+                                                class="btn btn-sm btn-outline-warning me-2"
                                                 @click="showTeacherDetails(teacher)"
                                             >
                                                 Подробнее
                                             </button>
                                             <button 
-                                                class="btn btn-sm btn-outline-success"
-                                                @click="selectTeacher(teacher)"
+                                                class="btn btn-sm"
+                                                :class="isTeacherSelected(teacher) ? 'btn-outline-danger' : 'btn-outline-success'"
+                                                @click="toggleTeacherSelection(teacher)"
+                                                :disabled="!isTeacherSelectionAvailable(teacher)"
                                             >
-                                                Выбрать
+                                                {{ isTeacherSelected(teacher) ? 'Отменить' : 'Выбрать' }}
                                             </button>
                                         </td>
                                     </tr>
@@ -203,17 +212,27 @@
                             Нет доступных преподавателей для выбранной дисциплины
                         </div>
                     </div>
-
-                    <div class="mb-3">
-                        <span v-if="selectedTeacherObj != null">
-                            Выбран преподаватель: 
-                            <b>{{ formatTeacherName(selectedTeacherObj) }}</b>
-                        </span>
-                        <span v-else class="text-muted">
-                            Преподаватель не выбран
-                        </span>
-                        {{ selectedTeacherObj }}
-                    </div>
+                    
+                    <!-- <div class="mb-3">
+                        <h5>{{ teachersSelectionStatus }}</h5>
+                        <div v-if="selectedTeachers.length" class="d-flex flex-wrap gap-2 mt-2">
+                            <span 
+                                v-for="teacher in selectedTeachers" 
+                                :key="teacher.teacher_id"
+                                class="badge bg-primary"
+                            >
+                                {{ formatTeacherName(teacher) }}
+                                <button 
+                                    class="btn-close btn-close-white ms-2"
+                                    @click.stop="toggleTeacherSelection(teacher)"
+                                    aria-label="Удалить"
+                                ></button>
+                            </span>
+                        </div>
+                        <div v-else class="text-muted">
+                            Преподаватели не выбраны
+                        </div>
+                    </div> -->
 
 
 
@@ -276,7 +295,7 @@
             </button>
         </div>
 
-        <div class="input-group mb-4 ml-5">
+        <!-- <div class="input-group mb-4 ml-5">
             <input 
                 type="text" 
                 class="form-control"
@@ -290,8 +309,53 @@
                 >
                     Отправить
                 </button>
-        </div>
+        </div> -->
         
+        <!-- <div v-for="e in this.workloads">
+            {{ e }}
+        </div> -->
+
+        <!-- Собственное модальное окно без Bootstrap -->
+        <div class="custom-modal" v-if="showTeacherModal">
+        <div class="modal-overlay" @click="showTeacherModal = false"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+            <h3>
+                Нагрузка преподавателя: {{ detailedTeacher.last_name }} 
+                {{ detailedTeacher.first_name?.[0] }}.{{ detailedTeacher.patronymic?.[0] }}.
+            </h3>
+            <button class="close-btn" @click="showTeacherModal = false">×</button>
+            </div>
+            <div class="modal-body">
+            <table class="workload-table">
+                <thead>
+                <tr>
+                    <th>Дисциплина</th>
+                    <th>Тип занятия</th>
+                    <th>Часы</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="subject in detailedTeacherWorkload" :key="subject.subject_id">
+                    <td>{{ subject.subject_name }}</td>
+                    <td>{{ subject.sub_type }}</td>
+                    <td>{{ subject.hours }} ч</td>
+                </tr>
+                <tr v-if="!detailedTeacherWorkload.length">
+                    <td colspan="3" class="no-data">Нет назначенных дисциплин</td>
+                </tr>
+                </tbody>
+                <tfoot v-if="detailedTeacherWorkload.length">
+                <tr class="total-row">
+                    <td>Итого:</td>
+                    <td></td>
+                    <td>{{ detailedTeacherWorkload.reduce((sum, s) => sum + s.hours, 0) }} ч</td>
+                </tr>
+                </tfoot>
+            </table>
+            </div>
+        </div>
+        </div>
     </div>
 </template>
 
@@ -322,6 +386,10 @@ export default {
             subjects: [],
             groups: [],
             teachers: [],
+            selectedTeachers: [],
+            allTeachers: [], // вместо teachers
+            workloads: [], // для хранения всех нагрузок
+
             tgz: [],
             showSelector: false,
             modalTitle: '',
@@ -333,10 +401,14 @@ export default {
             subjectsMessage: 'Выберите направление',
             q: ``,
             programs: [], 
-            subjectsList: [], 
+            subjectsList: [],
+            filt_subjects: [],
             i_disciples: [],
             rowData: [],
-            selectedGroupId: ""
+            selectedGroupId: "",
+            detailedTeacher: {},
+            detailedTeacherWorkload: [],
+            showTeacherModal: false 
         };
     },
 
@@ -368,23 +440,36 @@ export default {
                 'alert-danger': this.notifyType === 'error'
             };
         },
+        // isFormValid() {
+        //     return this.selectedGroupId 
+        //         && this.selectedTeacherObj?.teacher_id;
+        // },
+
         isFormValid() {
-            return this.selectedGroupId 
-                && this.selectedTeacherObj?.teacher_id;
+            return this.selectedSubjectObj?.subject_id && 
+                this.isTeachersSelectionValid;
         },
+
 
         absoluteSemester() {
             return (this.selectedCourse - 1) * 2 + this.selectedSem;
         },
 
         filteredSubjects() {
-            if (!this.selectedProgram?.id || !this.subjectsList?.length) return [];
+            // console.log(this.selectedProgram?.id);
             
-            return this.subjectsList.filter(subject => 
+            if (!this.selectedProgram?.id || !this.subjectsList?.length) return [];
+
+            const ggg = this.subjectsList.filter(subject => 
                 subject.program_id === this.selectedProgram.id &&
                 subject.sub_type !== 'Лекционное занятие' &&
-                subject.semester === this.absoluteSemester
+                subject.semester === this.absoluteSemester &&
+            subject.department === 'Информационных технологий'
             );
+
+            console.log('Фильтр предметов:', ggg);
+                        
+            return ggg;
         },
 
         selectedProgram() {
@@ -394,6 +479,63 @@ export default {
 
         selectedGroupObj() {
             return this.filteredGroups.find(g => g.group_id === this.selectedGroupId) || {};
+        },
+
+        selectedTeachersNames() {
+            return this.selectedTeachers
+                .map(t => this.formatTeacherName(t))
+                .join(', ');
+        },
+
+        maxTeachersAllowed() {
+            if (!this.selectedSubjectObj?.sub_type) return 0;
+            
+            if (this.selectedSubjectObj.sub_type === 'Лабораторное занятие') {
+                return this.filteredGroups.length || 0;
+            }
+            if (this.selectedSubjectObj.sub_type === 'Практическое занятие') {
+                return 1;
+            }
+            return 0;
+        },
+
+            teachersSelectionStatus() {
+                return `[${this.selectedTeachers.length}/${this.maxTeachersAllowed}]:`;
+        },
+
+        isTeachersSelectionValid() {
+            return this.selectedTeachers.length > 0 && 
+                this.selectedTeachers.length <= this.maxTeachersAllowed;
+        },
+
+        currentSubjectWorkloads() {
+            return this.workloads.filter(w => 
+                w.subject_id === this.selectedSubjectObj?.subject_id &&
+                !w.deleted_at
+            );
+        },
+        
+        // Суммарная нагрузка преподавателя по всем дисциплинам
+        teacherWorkloads() {
+            const result = {};
+            this.workloads
+                .filter(w => !w.deleted_at)
+                .forEach(w => {
+                    if (!result[w.teacher_id]) {
+                        result[w.teacher_id] = 0;
+                    }
+                    result[w.teacher_id] += 1; // или w.hours, если есть поле с часами
+                });
+            return result;
+        },
+        
+        // ID уже выбранных преподавателей для текущей дисциплины
+        selectedTeacherIds() {
+            return this.currentSubjectWorkloads.map(w => w.teacher_id);
+        },
+
+        totalTeacherHours() {
+            return this.detailedTeacherWorkload.reduce((sum, subject) => sum + subject.hours, 0);
         },
 
         
@@ -416,14 +558,21 @@ export default {
         // }
 
         filteredDisciples() {
+
+            // console.log(this.i_disciples?.length, this.selectedDir?.dir_code, this.programs?.length);
+            
+            
             if (!this.i_disciples?.length || 
                 !this.selectedDir?.dir_code || 
                 !this.programs?.length) return [];
 
+            // console.log(123);
+            
+
             const program = this.programs.find(p => p.code === this.selectedDir.dir_code);
             if (!program) return [];
 
-            return this.i_disciples.filter(d => 
+            return this.subjectsList.filter(d => 
                 d.program_id === program.id &&
                 d.kurs === this.selectedCourse &&
                 d.semester === this.absoluteSemester
@@ -439,7 +588,24 @@ export default {
         selectedDir(newVal) {
             if (newVal.dir_id) {
                 this.loadSubjects();
-            }
+                // console.log(this.subjectsList);
+                
+            };
+
+            // console.log('ProgramId:', this.selectedProgram?.id);
+            
+            if (!this.selectedProgram?.id || !this.subjectsList?.length) return [];
+
+            const ggg = this.subjectsList.filter(subject => 
+                subject.program_id === this.selectedProgram.id &&
+                subject.sub_type !== 'Лекционное занятие' &&
+                subject.semester === this.absoluteSemester &&
+            subject.department === 'Информационных технологий'
+            );
+
+            console.log('Фильтр предметов:', ggg);
+                        
+            this.filt_subjects = ggg;
         },
 
         selectedCourse() {
@@ -492,6 +658,19 @@ export default {
             }
         },
 
+        isTeacherSelectionAvailable(teacher) {
+            if (this.isTeacherSelected(teacher)) return true;
+            
+            if (this.selectedSubjectObj.sub_type === 'Практическое занятие') {
+                return this.selectedTeachers.length < 1;
+            }
+            else if (this.selectedSubjectObj.sub_type === 'Лабораторное занятие') {
+                return this.selectedTeachers.length < this.filteredGroups.length;
+            }
+            return true;
+        },
+
+
         getSubjectType() {
             if (!this.selectedSubjectObj) return '';
             
@@ -520,9 +699,97 @@ export default {
         },
 
         showTeacherDetails(teacher) {
-            // Заглушка для реализации подробной информации
-            alert(`Подробная информация:\n${teacher.last_name} ${teacher.first_name} ${teacher.patronymic}`)
+            // Сохраняем выбранного преподавателя
+            this.detailedTeacher = teacher;
+            
+            // Формируем детальную нагрузку
+            this.detailedTeacherWorkload = this.workloads
+                .filter(w => 
+                    w.teacher_id === teacher.teacher_id && 
+                    w.deleted_at.length === undefined // или другое условие проверки на удаление
+                )
+                .map(w => {
+                    const subject = this.subjectsList.find(s => s.subject_id === w.subject_id) || {};
+                    return {
+                        subject_id: w.subject_id,
+                        subject_name: subject.subject_name || 'Неизвестная дисциплина',
+                        sub_type: subject.sub_type || 'Не указан',
+                        hours: subject.hours || 0
+                    };
+                })
+                ;
+
+            console.log('отрисовка', teacher.teacher_id, this.detailedTeacherWorkload);
+            
+            
+            // Показываем модальное окно (просто устанавливаем флаг)
+            this.showTeacherModal = true;
         },
+
+        isTeacherSelected(teacher) {
+            return this.selectedTeachers.some(t => t.teacher_id === teacher.teacher_id);
+        },
+
+        toggleTeacherSelection(teacher) {
+            if (this.isTeacherSelected(teacher)) {
+                // Удаление преподавателя из выбранных
+                this.selectedTeachers = this.selectedTeachers.filter(
+                    t => t.teacher_id !== teacher.teacher_id
+                );
+            } else {
+                // Проверка на максимальное количество
+                if (this.selectedTeachers.length >= this.maxTeachersAllowed) {
+                    this.showNotification(
+                        `Максимальное количество преподавателей: ${this.maxTeachersAllowed}`,
+                        'warning'
+                    );
+                    return;
+                }
+                // Добавление преподавателя
+                this.selectedTeachers.push(teacher);
+            }
+        },
+
+        getSelectedTeachersForSubject(subjectId) {
+            if (!this.workloads?.length) return [];
+
+            const ggg = this.workloads
+                .filter(w => 
+                    w.subject_id === subjectId && 
+                    w.deleted_at.length === undefined
+                )
+                .map(w => w.teacher_id);
+
+            console.log(ggg);
+                
+
+            return 
+        },
+        
+        getTeacherWorkloadDetails(teacherId) {
+            if (!this.workloads?.length) return 0;
+
+            const ggg = this.workloads
+                .filter(w => 
+                    w.teacher_id === teacherId && 
+                    w.deleted_at.length === undefined
+                )
+                .reduce((sum, w) => {
+                    const subject = this.subjectsList.find(s => s.subject_id === w.subject_id);
+                    return sum + (subject ? subject.hours : 0);
+                }, 0);
+            
+
+                // console.log(teacherId, ggg);
+                
+
+            return ggg;
+        },
+
+
+
+
+
 
 
         resetSelections() {
@@ -631,20 +898,92 @@ export default {
         },
 
        
-        async saveRel() {
-            try {
-                let group_id = this.selectedGroupId;
-                let subject_id = this.selectedSubjectObj.subject_id;
-                let teacher_id = this.selectedTeacherObj.teacher_id;
+        // async saveRel() {
+        //     try {
+        //         let group_id = this.selectedGroupId;
+        //         let subject_id = this.selectedSubjectObj.subject_id;
+        //         let teacher_id = this.selectedTeacherObj.teacher_id;
                             
-                await UserService.addWorkload(group_id, subject_id, teacher_id);
-                this.showNotification('Связь успешно сохранена', 'success');
-                // this.resetDependentSelections();
+        //         await UserService.addWorkload(group_id, subject_id, teacher_id);
+        //         this.showNotification('Связь успешно сохранена', 'success');
+        //         // this.resetDependentSelections();
                 
+        //     } catch (error) {
+        //         console.error('Ошибка сохранения:', error);
+        //         this.showNotification('Ошибка сохранения', 'error');
+        //     }
+        // },
+
+        // async saveRel() {
+        //     if (!this.isFormValid) return;
+
+        //     try {
+        //         // Сначала помечаем старые записи как удаленные
+        //         await UserService.deleteWorkload(
+        //             this.selectedGroupId,
+        //             this.selectedSubjectObj.subject_id
+        //         );
+
+        //         // Затем создаем новые связи для каждого выбранного преподавателя
+        //         for (const teacher of this.selectedTeachers) {
+        //             await UserService.addWorkload(
+        //                 this.selectedGroupId,
+        //                 this.selectedSubjectObj.subject_id,
+        //                 teacher.teacher_id
+        //             );
+        //         }
+
+        //         this.showNotification('Связи успешно обновлены', 'success');
+        //         this.selectedTeachers = [];
+        //         await this.loadTeachers(); // Обновляем список преподавателей
+        //     } catch (error) {
+        //         console.error('Ошибка сохранения:', error);
+        //         this.showNotification('Ошибка обновления связей', 'error');
+        //     }
+        // },
+
+
+        async saveRel() {
+            if (!this.isFormValid) return;
+
+            try {
+                // Помечаем старые записи как удаленные
+                await UserService.deleteWorkload(
+                    this.selectedSubjectObj.subject_id
+                );
+
+                // Создаем новые связи
+                for (const teacher of this.selectedTeachers) {
+                    await UserService.addWorkload(
+                        // group_id не указываем
+                        this.selectedSubjectObj.subject_id,
+                        teacher.teacher_id
+                    );
+                }
+
+                // Обновляем локальное хранилище нагрузок
+                const response = await UserService.getAllWorkloads();
+                this.workloads = response.data;
+                
+                this.showNotification('Связи успешно обновлены', 'success');
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
-                this.showNotification('Ошибка сохранения', 'error');
+                this.showNotification('Ошибка обновления связей', 'error');
             }
+        },
+
+
+        getTeacherWorkload(teacherId) {
+            if (!this.workloads?.length) return 0;
+            
+            const activeHours = this.workloads
+                .filter(w => 
+                    w.teacher_id === teacherId &&
+                    w.deleted_at.length === undefined
+                )
+                .reduce((sum, w) => sum + (w.hours || 0), 0);
+            
+            return activeHours;
         },
 
         resetDependentSelections() {
@@ -696,17 +1035,35 @@ export default {
         },
 
 
-        async findWorkload(groupId, subjectId) {
+        async findWorkload() {
             try {
-                const response = await UserService.getWorkloads();
-                const workload = response.data.find(w => 
-                    w.group_id === groupId && 
-                    w.subject_id === subjectId
-                );
-                return workload ? workload.teacher_id : -1;
+                // Получаем и сохраняем все нагрузки
+                const response = await UserService.getAllWorkloads();
+                this.workloads = response.data;
+
+                // console.log(this.workloads);
+                // console.log(this.selectedSubjectObj.subject_id);
+
+                // this.workloads.forEach(element => {
+                //     console.log(element.deleted_at.length === undefined);
+                    
+                // });                
+
+                const ggg = this.workloads
+                    .filter(w => 
+                        w.deleted_at.length === undefined &&
+                        // w.group_id === this.selectedGroupId &&
+                        w.subject_id == this.selectedSubjectObj.subject_id
+                    );
+
+                // console.log(ggg);
+                                               
+                // Возвращаем только активные нагрузки (без deleted_at) для текущей группы и предмета
+                return ggg;
             } catch (error) {
-                console.error('Ошибка поиска нагрузки:', error);
-                return -1;
+                console.error('Ошибка получения нагрузок:', error);
+                this.workloads = [];
+                return [];
             }
         },
 
@@ -799,32 +1156,101 @@ export default {
         //     }
         // },
 
+        // async loadTeachers() {
+        //     try {
+        //         // Получаем всех преподавателей
+        //         const teachersResponse = await UserService.getAllTeachers();
+        //         const allTeachers = teachersResponse.data;
+
+        //         // Фильтруем связи tgz по выбранной дисциплине
+        //         const teacherIds = this.tgz
+        //             .filter(t => t.disciple_id === this.selectedSubjectObj.disciple_id)
+        //             .map(t => t.teacher_id);
+
+        //         // Убираем дубликаты и фильтруем преподавателей
+        //         this.teachers = allTeachers.filter(t => 
+        //             [...new Set(teacherIds)].includes(t.teacher_id)
+        //         );
+
+        //         // console.log(allTeachers);
+        //         // console.log(teacherIds);
+                
+                
+
+        //     } catch (error) {
+        //         console.error('Error loading teachers:', error);
+        //         this.teachers = [];
+        //     }
+        // },
+
+        // async loadTeachers() {
+        //     try {
+        //         // Получаем всех преподавателей
+        //         const teachersResponse = await UserService.getAllTeachers();
+        //         this.allTeachers = teachersResponse.data;
+
+        //         // Получаем активные нагрузки для текущей группы и предмета
+        //         const activeTeacherIds = await this.findWorkload(
+        //             this.selectedGroupId,
+        //             this.selectedSubjectObj.subject_id
+        //         );
+
+        //         // Предварительно выбираем преподавателей с активными нагрузками
+        //         this.selectedTeachers = this.allTeachers.filter(teacher =>
+        //             activeTeacherIds.includes(teacher.teacher_id)
+        //         );
+
+        //     } catch (error) {
+        //         console.error('Error loading teachers:', error);
+        //         this.allTeachers = [];
+        //         this.selectedTeachers = [];
+        //     }
+        // },
+
+        // async loadTeachers() {
+        //     try {
+        //         // Получаем всех преподавателей
+        //         const teachersResponse = await UserService.getAllTeachers();
+        //         this.allTeachers = teachersResponse.data;
+
+        //         // Получаем активные нагрузки для текущей группы и предмета
+        //         const activeWorkloads = await this.findWorkload();
+
+        //         // Предварительно выбираем преподавателей с активными нагрузками
+        //         this.selectedTeachers = this.allTeachers.filter(teacher =>
+        //             activeWorkloads.some(w => w.teacher_id === teacher.teacher_id)
+        //         );
+
+        //     } catch (error) {
+        //         console.error('Error loading teachers:', error);
+        //         this.allTeachers = [];
+        //         this.selectedTeachers = [];
+        //     }
+        // },
+
         async loadTeachers() {
             try {
                 // Получаем всех преподавателей
                 const teachersResponse = await UserService.getAllTeachers();
-                const allTeachers = teachersResponse.data;
+                this.allTeachers = teachersResponse.data;
 
-                // Фильтруем связи tgz по выбранной дисциплине
-                const teacherIds = this.tgz
-                    .filter(t => t.disciple_id === this.selectedSubjectObj.disciple_id)
-                    .map(t => t.teacher_id);
+                const activeWorkloads = await this.findWorkload();
 
-                // Убираем дубликаты и фильтруем преподавателей
-                this.teachers = allTeachers.filter(t => 
-                    [...new Set(teacherIds)].includes(t.teacher_id)
+                // console.log(activeWorkloads);
+                
+
+                // Предварительно выбираем преподавателей
+                this.selectedTeachers = this.allTeachers.filter(teacher =>
+                    activeWorkloads.some(w => w.teacher_id === teacher.teacher_id)
                 );
-
-                // console.log(allTeachers);
-                // console.log(teacherIds);
-                
-                
 
             } catch (error) {
                 console.error('Error loading teachers:', error);
-                this.teachers = [];
+                this.allTeachers = [];
+                this.selectedTeachers = [];
             }
         },
+
 
 
         openSelector(type, title, items) {
@@ -1076,6 +1502,87 @@ export default {
 .relbtn {
     left: 300px  !important;
     bottom: 12px !important;
+}
+
+/* Стили для модального окна */
+.custom-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #bfbfbf3b;
+  color: white;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.workload-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.workload-table th, .workload-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.workload-table th {
+  background-color: #f5f5f5;
+  font-weight: 500;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+}
+
+.total-row {
+  font-weight: bold;
+  background-color: rgba(68, 99, 52, 0.1);
 }
 
 </style>
