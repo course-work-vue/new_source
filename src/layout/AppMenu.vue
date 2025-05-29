@@ -94,6 +94,11 @@ const model = ref([
             to: "/ScheduleLoads",
           },
           {
+            label: "Потоки",
+            icon: "pi pi-fw pi-calendar-times",
+            to: "/ScheduleFlow",
+          },
+          {
             label: "Расписание",
             icon: "pi pi-fw pi-calendar",
             to: "/schedules",

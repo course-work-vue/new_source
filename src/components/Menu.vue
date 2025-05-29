@@ -97,6 +97,10 @@ export default {
             link: "/ScheduleLoads",
           },
           {
+            label: "Потоки",
+            link: "/ScheduleFlow",
+          },
+          {
             label: "Аудитории",
             link: "/audits",
           },

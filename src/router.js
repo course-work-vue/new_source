@@ -35,6 +35,7 @@ const PaymentList = () => import("./components/listener/PaymentList.vue");
 // Конец импортов слушателей
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue");
+const ScheduleFlow = () => import("./components/ScheduleFlow.vue");
 
 const AddCourse = () => import("./components/AddCourse.vue");
 const CourseList = () => import("./components/CourseList.vue");
@@ -183,6 +184,7 @@ const routes = [
       // КОНЕЦ КОМПОНЕНТОВ ДЛЯ СЛУШАТЕЛЕЙ
 
       { path: "/ScheduleLoads", component: ScheduleLoads },
+      { path: "/ScheduleFlow", component: ScheduleFlow },
 
       //{ path: '/addcw', component: AddCw },
       {
