@@ -1,12 +1,12 @@
 <template>
   <div class="schedule-flow">
-    <h2>Потоки (по профилям)</h2>
+    <h2>Потоки (по направлениям)</h2>
 
     <div class="mb-3 d-flex gap-3">
-      <select class="form-select w-auto" v-model="selectedDirection" @change="filterByDirection">
-        <option value="">Все направления</option>
-        <option v-for="dir in directionList" :key="dir.dir_id" :value="dir.dir_id">
-          {{ dir.dir_code }} - {{ dir.dir_name }}
+      <select class="form-select w-auto" v-model="selectedProfile" @change="filterByProfile">
+        <option value="">Все профили</option>
+        <option v-for="prof in profileList" :key="prof.prof_id" :value="prof.prof_id">
+          {{ prof.prof_name }}
         </option>
       </select>
 
@@ -21,15 +21,15 @@
     <div class="table-responsive">
       <table class="table table-sm table-bordered">
         <thead>
-          <tr>
+            <tr><th @click="sort('direction')" class="sortable" rowspan="2">
+              Направление <i class="bi" :class="getSortIcon('direction')"></i>
+            </th>
             <th @click="sort('profile')" class="sortable" rowspan="2">
               Профиль <i class="bi" :class="getSortIcon('profile')"></i>
             </th>
+            
             <th @click="sort('course')" class="sortable" rowspan="2">
               Курс <i class="bi" :class="getSortIcon('course')"></i>
-            </th>
-            <th @click="sort('direction')" class="sortable" rowspan="2">
-              Направление <i class="bi" :class="getSortIcon('direction')"></i>
             </th>
             <th colspan="2">Контингент</th>
             <th rowspan="2">Кол-во потоков</th>
@@ -48,53 +48,37 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="item in sortedTableData" :key="item.profile + item.course">
+          <template v-for="item in sortedTableData" :key="item.id">
             <tr>
-              <td :rowspan="getRowspanForProfileItem(item)">{{ item.profile }}</td>
-              <td :rowspan="getRowspanForProfileItem(item)">{{ item.course }}</td>
-              <td>{{ item.directions[0].directionCode }} - {{ item.directions[0].direction }}</td>
-              <td :rowspan="getRowspanForProfileItem(item)">{{ item.budgetCount }}</td>
-              <td :rowspan="getRowspanForProfileItem(item)">{{ item.contractCount }}</td>
-              <td :rowspan="getRowspanForProfileItem(item)">
+              <td :rowspan="item.groups.length || 1">{{ item.directionCode }} - {{ item.direction }}</td>
+              <td :rowspan="item.groups.length || 1">{{ item.profile }}</td>
+              <td :rowspan="item.groups.length || 1">{{ item.course }}</td>
+              <td :rowspan="item.groups.length || 1">{{ item.budgetCount }}</td>
+              <td :rowspan="item.groups.length || 1">{{ item.contractCount }}</td>
+              <td :rowspan="item.groups.length || 1">
                 <select v-model="item.flowCount" class="form-select form-select-sm">
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
                 </select>
               </td>
-              <td v-if="item.directions[0].groups.length">
-                <router-link :to="'/groups/' + item.directions[0].groups[0].id" class="group-link">
-                  {{ item.directions[0].groups[0].number }}
+              <td v-if="item.groups.length">
+                <router-link :to="'/groups/' + item.groups[0].id" class="group-link">
+                  {{ item.groups[0].number }}
                 </router-link>
               </td>
               <td v-else>-</td>
-              <td v-if="item.directions[0].groups.length">{{ item.directions[0].groups[0].subgroupCount }}</td>
+              <td v-if="item.groups.length">{{ item.groups[0].subgroupCount }}</td>
               <td v-else>-</td>
             </tr>
-            <!-- Остальные направления для того же профиля и курса -->
-            <tr v-for="direction in item.directions.slice(1)" :key="direction.directionCode">
-              <td>{{ direction.directionCode }} - {{ direction.direction }}</td>
-              <td v-if="direction.groups.length">
-                <router-link :to="'/groups/' + direction.groups[0].id" class="group-link">
-                  {{ direction.groups[0].number }}
+            <tr v-for="group in item.groups.slice(1)" :key="group.id">
+              <td>
+                <router-link :to="'/groups/' + group.id" class="group-link">
+                  {{ group.number }}
                 </router-link>
               </td>
-              <td v-else>-</td>
-              <td v-if="direction.groups.length">{{ direction.groups[0].subgroupCount }}</td>
-              <td v-else>-</td>
+              <td>{{ group.subgroupCount }}</td>
             </tr>
-            <!-- Дополнительные группы для всех направлений -->
-            <template v-for="direction in item.directions" :key="direction.directionCode">
-              <tr v-for="group in direction.groups.slice(1)" :key="group.id">
-                <td>{{ direction.directionCode }} - {{ direction.direction }}</td>
-                <td>
-                  <router-link :to="'/groups/' + group.id" class="group-link">
-                    {{ group.number }}
-                  </router-link>
-                </td>
-                <td>{{ group.subgroupCount }}</td>
-              </tr>
-            </template>
           </template>
         </tbody>
       </table>
@@ -111,14 +95,13 @@ import { useGroupStore } from '@/store2/studentgroup/group';
 import UserService from '@/services/user.service';
 
 export default {
-  name: 'ScheduleFlow',
+  name: 'ScheduleFlowByDirection',
   setup() {
     const tableData = ref([]);
     const programs = ref([]);
     const studentsList = ref([]);
-    const selectedDirection = ref('');
+    const selectedProfile = ref('');
     const selectedCourse = ref('');
-    const displayMode = ref('profile');
     const sortConfig = ref({
       key: null,
       direction: 'asc'
@@ -128,9 +111,8 @@ export default {
       tableData,
       programs,
       studentsList,
-      selectedDirection,
+      selectedProfile,
       selectedCourse,
-      displayMode,
       sortConfig
     };
   },
@@ -142,10 +124,10 @@ export default {
     filteredTableData() {
       let filtered = this.tableData;
       
-      if (this.selectedDirection) {
+      if (this.selectedProfile) {
         filtered = filtered.filter(item => {
-          const direction = this.directionList.find(d => d.dir_name === item.direction);
-          return direction && direction.dir_id === this.selectedDirection;
+          const profile = this.profileList.find(p => p.prof_name === item.profile);
+          return profile && profile.prof_id === this.selectedProfile;
         });
       }
       
@@ -156,62 +138,7 @@ export default {
       return filtered;
     },
 
-    groupedTableData() {
-      // Группируем данные по профилю и курсу
-      const grouped = {};
-      this.filteredTableData.forEach(item => {
-        const key = `${item.profile}-${item.course}`;
-        if (!grouped[key]) {
-          grouped[key] = {
-            profile: item.profile,
-            course: item.course,
-            directions: [],
-            budgetCount: 0,
-            contractCount: 0,
-            groups: [],
-            flowCount: 1
-          };
-        }
-        grouped[key].directions.push({
-          direction: item.direction,
-          directionCode: item.directionCode,
-          budgetCount: item.budgetCount,
-          contractCount: item.contractCount,
-          groups: item.groups,
-          flowCount: item.flowCount
-        });
-        grouped[key].budgetCount += item.budgetCount;
-        grouped[key].contractCount += item.contractCount;
-        grouped[key].groups = grouped[key].groups.concat(item.groups);
-      });
-      return Object.values(grouped);
-    },
-
     sortedTableData() {
-      if (!this.sortConfig.key) return this.groupedTableData;
-
-      return [...this.groupedTableData].sort((a, b) => {
-        let aValue = a[this.sortConfig.key];
-        let bValue = b[this.sortConfig.key];
-
-        // Для сортировки по направлению используем первое направление из списка
-        if (this.sortConfig.key === 'direction') {
-          aValue = a.directions[0]?.direction || '';
-          bValue = b.directions[0]?.direction || '';
-        }
-
-        if (typeof aValue === 'string') {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return this.sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return this.sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    },
-
-    originalSortedData() {
       if (!this.sortConfig.key) return this.filteredTableData;
 
       return [...this.filteredTableData].sort((a, b) => {
@@ -227,6 +154,29 @@ export default {
         if (aValue > bValue) return this.sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
+    },
+
+    groupedTableData() {
+      const grouped = {};
+      const sorted = [...this.sortedTableData].sort((a, b) => {
+        // Sort by profile first, then direction
+        const profileCompare = a.profile.localeCompare(b.profile);
+        if (profileCompare !== 0) return profileCompare;
+        return a.direction.localeCompare(b.direction);
+      });
+
+      sorted.forEach(item => {
+        const key = `${item.profile}-${item.direction}`;
+        if (!grouped[key]) {
+          grouped[key] = [];
+        }
+        grouped[key].push(item);
+      });
+      return grouped;
+    },
+
+    getTotalRowSpan(items) {
+      return items.reduce((total, item) => total + Math.max(1, item.groups.length), 0);
     }
   },
   methods: {
@@ -248,7 +198,7 @@ export default {
       return this.sortConfig.direction === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down';
     },
 
-    filterByDirection() {
+    filterByProfile() {
       // Фильтрация происходит автоматически через computed свойство
     },
 
@@ -293,32 +243,7 @@ export default {
         await this.loadStudents();
 
         const processedData = [];
-        
-        // Calculate student counts for each direction/profile/course combination
-        const studentCounts = {};
-        this.studentsList.forEach(student => {
-            if (student.deleted_at.length > 0) return;
-          
 
-          const group = this.groupList.find(g => g.group_id === student.group_id);
-          if (!group) return;
-          
-          const key = `${group.group_dir_id}-${group.group_prof_id}-${group.course}`;
-          if (!studentCounts[key]) {
-            studentCounts[key] = {
-              budgetCount: 0,
-              contractCount: 0
-            };
-          }
-          
-          if (student.is_budget) {
-            studentCounts[key].budgetCount++;
-          } else {
-            studentCounts[key].contractCount++;
-          }
-        });
-
-        // Process all programs regardless of whether they have groups
         this.programs.forEach(program => {
           const profile = this.profileList.find(p => p.prof_id === program.profile_id);
           if (!profile || profile.deleted_at) return;
@@ -327,7 +252,6 @@ export default {
           if (!direction || direction.deleted_at) return;
 
           const course = this.calculateCourse(program.start_year);
-          const key = `${direction.dir_id}-${profile.prof_id}-${course}`;
           
           // Get all groups for this combination
           const relevantGroups = this.groupList
@@ -342,17 +266,27 @@ export default {
               subgroupCount: this.getSubgroupCount(group.group_id)
             }));
 
-          // Get student counts, defaulting to 0 if no students
-          const stats = studentCounts[key] || { budgetCount: 0, contractCount: 0 };
+          // Calculate student counts
+          const students = this.studentsList.filter(s => {
+            if (s.deleted_at) return false;
+            const group = this.groupList.find(g => g.group_id === s.group_id);
+            return group && 
+                   group.group_dir_id === direction.dir_id && 
+                   group.group_prof_id === profile.prof_id && 
+                   group.course === course;
+          });
+
+          const budgetCount = students.filter(s => s.is_budget).length;
+          const contractCount = students.filter(s => !s.is_budget).length;
 
           processedData.push({
-            id: key,
+            id: `${direction.dir_id}-${profile.prof_id}-${course}`,
             direction: direction.dir_name,
             directionCode: direction.dir_code,
             profile: profile.prof_name,
             course: course,
-            budgetCount: stats.budgetCount,
-            contractCount: stats.contractCount,
+            budgetCount,
+            contractCount,
             flowCount: 1,
             groups: relevantGroups
           });
@@ -362,18 +296,6 @@ export default {
       } catch (error) {
         console.error('Error loading data:', error);
       }
-    },
-
-    getRowspanForProfileItem(item) {
-      // Считаем общее количество строк для профиля-курса:
-      // 1 строка на каждое направление + дополнительные строки для групп каждого направления
-      let totalRows = item.directions.length; // По одной строке на каждое направление
-      item.directions.forEach(direction => {
-        if (direction.groups.length > 1) {
-          totalRows += direction.groups.length - 1; // Добавляем строки для дополнительных групп
-        }
-      });
-      return totalRows;
     }
   },
   async mounted() {
@@ -410,8 +332,8 @@ export default {
 }
 
 .table thead {
-    margin-bottom: 10px;
-    border-bottom: 2px solid #2f3b29;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #2f3b29;
 }
 
 .sortable {
@@ -453,13 +375,13 @@ tbody tr:hover td {
   background-color: #f8f9fa;
 }
 
-a {
+.group-link {
   color: #446334;
   text-decoration: none;
 }
 
-a:hover {
+.group-link:hover {
   color: #385429;
   text-decoration: underline;
 }
-</style>
+</style> 

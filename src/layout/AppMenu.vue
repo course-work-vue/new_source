@@ -96,7 +96,18 @@ const model = ref([
           {
             label: "Потоки",
             icon: "pi pi-fw pi-calendar-times",
-            to: "/ScheduleFlow",
+            items: [
+              {
+                label: "По профилям",
+                icon: "pi pi-fw pi-list",
+                to: "/ScheduleFlow"
+              },
+              {
+                label: "По направлениям",
+                icon: "pi pi-fw pi-sitemap",
+                to: "/ScheduleFlowByDirection"
+              }
+            ]
           },
           {
             label: "Расписание",

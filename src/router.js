@@ -36,6 +36,7 @@ const PaymentList = () => import("./components/listener/PaymentList.vue");
 
 const ScheduleLoads = () => import("./components/ScheduleLoads.vue");
 const ScheduleFlow = () => import("./components/ScheduleFlow.vue");
+const ScheduleFlowByDirection = () => import("./components/ScheduleFlowByDirection.vue");
 
 const AddCourse = () => import("./components/AddCourse.vue");
 const CourseList = () => import("./components/CourseList.vue");
@@ -185,6 +186,7 @@ const routes = [
 
       { path: "/ScheduleLoads", component: ScheduleLoads },
       { path: "/ScheduleFlow", component: ScheduleFlow },
+      { path: "/ScheduleFlowByDirection", component: ScheduleFlowByDirection },
 
       //{ path: '/addcw', component: AddCw },
       {

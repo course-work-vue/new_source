@@ -80,7 +80,7 @@
                             @click="selectSubject(subject)"
                         >
                             <th :class="{ 'table-active': selectedSubjectObj?.subject_id === subject.subject_id }">
-                                {{ subject.subject_name }}
+                                {{ subject.subject_name }} ({{ subject.sub_type }})
                             </th>
                         </tr>
                     </tbody>
@@ -456,20 +456,31 @@ export default {
         },
 
         filteredSubjects() {
-            // console.log(this.selectedProgram?.id);
-            
-            if (!this.selectedProgram?.id || !this.subjectsList?.length) return [];
+            if (!this.selectedDir?.dir_id || !this.subjectsList?.length) {
+                return [];
+            }
 
-            const ggg = this.subjectsList.filter(subject => 
-                subject.program_id === this.selectedProgram.id &&
-                subject.sub_type !== 'Лекционное занятие' &&
-                subject.semester === this.absoluteSemester &&
-            subject.department === 'Информационных технологий'
-            );
+            // Сначала фильтруем по направлению, семестру и курсу
+            const filtered = this.subjectsList.filter(subject => {
+                const matchesDirection = subject.prof_dir_id === this.selectedDir.dir_id;
+                const matchesSemester = subject.semester === this.selectedSem;
+                const matchesCourse = this.calculateCourse(subject.start_year) === this.selectedCourse;
+                return matchesDirection && matchesSemester && matchesCourse;
+            });
 
-            console.log('Фильтр предметов:', ggg);
-                        
-            return ggg;
+            // Создаем Map для хранения уникальных предметов
+            const uniqueSubjects = new Map();
+
+            // Для каждого предмета создаем ключ на основе его характеристик
+            filtered.forEach(subject => {
+                const key = `${subject.subject_name}_${subject.sub_type}_${subject.semester}_${subject.hours}`;
+                if (!uniqueSubjects.has(key)) {
+                    uniqueSubjects.set(key, subject);
+                }
+            });
+
+            // Возвращаем массив уникальных предметов
+            return Array.from(uniqueSubjects.values());
         },
 
         selectedProgram() {
@@ -577,7 +588,17 @@ export default {
                 d.kurs === this.selectedCourse &&
                 d.semester === this.absoluteSemester
             );
-        }
+        },
+
+        subjectsMessage() {
+            if (!this.selectedDir?.dir_id) {
+                return 'Выберите направление';
+            }
+            if (this.filteredSubjects.length === 0) {
+                return 'Нет доступных предметов';
+            }
+            return '';
+        },
     },
 
     watch: {
@@ -588,7 +609,7 @@ export default {
         selectedDir(newVal) {
             if (newVal.dir_id) {
                 this.loadSubjects();
-                // console.log(this.subjectsList);
+                console.log(this.subjectsList);
                 
             };
 
@@ -890,11 +911,18 @@ export default {
             try {
                 const response = await UserService.getAllSubjects();
                 this.subjectsList = response.data;
-                // console.log('Loaded subjects:', response.data);
-                
+                this.showSubjects = true;
             } catch (error) {
                 console.error('Error loading subjects:', error);
+                this.subjects = [];
             }
+        },
+
+        calculateCourse(startYear) {
+            const currentDate = new Date();
+            const academicYear = currentDate.getMonth() < 7 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+            const yearDiff = academicYear - startYear;
+            return Math.min(Math.max(1, yearDiff + 1), 4);
         },
 
        
@@ -1101,9 +1129,7 @@ export default {
             this.selectedDir = dir;
             this.resetSelections();
             this.showSelector = false;
-            await this.loadDisciples(); // Добавляем загрузку дисциплин
-            await this.loadInitialData();
-            // this.$forceUpdate();
+            await this.loadSubjects();
         },
 
         // async selectDirection(dir) {

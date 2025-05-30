@@ -363,9 +363,24 @@ getDisciples(){
   return axios.post(API_URL, query, { headers: authHeader() });
 }
 
-getPrograms_imp(){
+getPrograms_imp() {
   const query = {
-    query: `SELECT * from import_programs;`,
+    query: `
+      SELECT 
+        p.id,
+        p.profile_id,
+        p.start_year,
+        pr.prof_name,
+        pr.prof_dir_id,
+        d.dir_name,
+        d.dir_code
+      FROM i_programs p
+      JOIN profiles pr ON p.profile_id = pr.prof_id
+      JOIN directions d ON pr.prof_dir_id = d.dir_id
+      WHERE pr.deleted_at IS NULL
+        AND d.deleted_at IS NULL
+      ORDER BY d.dir_name ASC, pr.prof_name ASC;
+    `
   };
   return axios.post(API_URL, query, { headers: authHeader() });
 }
@@ -373,9 +388,33 @@ getPrograms_imp(){
 
   
 // ВЗАИМОДЕЙСТВИЕ С ТАБЛИЦЕЙ SUBJECTS
-  getAllSubjects(){
+  getAllSubjects() {
     const query = {
-      query: `SELECT * from subjects;`,
+      query: `
+        SELECT 
+          s.subject_id,
+          s.subject_name,
+          s.sub_type,
+          s.disciple_id,
+          s.hours,
+          s.semester,
+          s.department,
+          s.program_id,
+          p.profile_id,
+          p.start_year,
+          pr.prof_name,
+          pr.prof_dir_id,
+          d.dir_name,
+          d.dir_code
+        FROM subjects s
+        JOIN i_programs p ON s.program_id = p.id
+        JOIN profiles pr ON p.profile_id = pr.prof_id
+        JOIN directions d ON pr.prof_dir_id = d.dir_id
+        WHERE pr.deleted_at IS NULL
+          AND d.deleted_at IS NULL
+          AND s.department = 'Информационных технологий'
+        ORDER BY s.subject_name ASC;
+      `
     };
     return axios.post(API_URL, query, { headers: authHeader() });
   }
