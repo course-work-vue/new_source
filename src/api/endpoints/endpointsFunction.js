@@ -18,6 +18,8 @@ export default Object.freeze({
 
 //журнал
     teacher_connections: prefix + 'select_teacher_connections',
+    add_teacher:prefix +'add_teacher',
+    delete_teacher: prefix +'delete_teacher',
     journal: prefix + 'select_journal',
     grade_types: prefix + 'select_grade_types',
     create_journal_date: prefix + 'create_journal_date',
