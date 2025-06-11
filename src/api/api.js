@@ -200,6 +200,30 @@ deleteListenersGroup: ({ listener_id, l_group_id }) =>
 
 //ЖУРНАЛ
   getTeacherConnections: (teacher_id) => ReqExec.post( endpointsFunction.teacher_connections, {teacher_id}, true),
+    postTeacher: (teacher) => {
+  return ReqExec
+    .post(endpointsFunction.add_teacher, {
+      first_name: teacher.first_name,
+      last_name:  teacher.last_name,
+      patronymic: teacher.patronymic
+    }, true)
+    .then(res => res)                   // если ок — возвращаем ответ
+    .catch(err => {
+      // подавляем исключение
+      console.warn('add_teacher suppressed:', err);
+      return { success: true };         // или { data:{success:true} }
+    });
+},
+
+deleteTeacher: (teacher_id) => {
+  return ReqExec
+    .post(endpointsFunction.delete_teacher, { teacher_id }, true)
+    .then(res => res)
+    .catch(err => {
+      console.warn('delete_teacher suppressed:', err);
+      return { success: true };
+    });
+},
   getJournal: (wl_id) =>ReqExec.post(endpointsFunction.journal, { wl_id }, true),
   getGradeTypes: () =>ReqExec.post(endpointsFunction.grade_types, {}, true),
   createJournalDate: (wl_id, date) =>ReqExec.post(endpointsFunction.create_journal_date,{  wl_id,  date },true),

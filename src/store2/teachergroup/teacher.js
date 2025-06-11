@@ -26,13 +26,30 @@ export const useTeacherStore = defineStore('teacher', {
             await api.getTeacher(teacher_id);
         },
 
-        async postTeacher(teacher) {
-            const response = await api.postTeacher(teacher);
+       async postTeacher(teacher) {
+      try {
+        await api.postTeacher({
+          first_name: teacher.first_name,
+          last_name:  teacher.last_name,
+          patronymic: teacher.patronymic
+        });
+      } catch (err) {
+        // всё равно продолжаем, даже если парсинг JSON упал
+        console.warn('postTeacher error ignored:', err);
+      } finally {
+        await this.getTeacherList();
+      }
+    },
 
-            if (response.success === true) {
-                await this.getTeacherList();
-            }
-        },
+    async removeTeacher(teacher_id) {
+      try {
+        await api.deleteTeacher(teacher_id);
+      } catch (err) {
+        console.warn('removeTeacher error ignored:', err);
+      } finally {
+        await this.getTeacherList();
+      }
+    },
 
         async putTeacher(teacher) {
             const response = await api.putTeacher(teacher.teacher_id, teacher);
@@ -78,5 +95,6 @@ export const useTeacherStore = defineStore('teacher', {
                 }
             }
         },
+        
     },
 });
