@@ -2,11 +2,12 @@
   <div class="journal-list-container">
     <div v-if="loading" class="loading-state">Загрузка журнала...</div>
     <div v-else>
+      
       <!-- Заголовок журнала -->
       <div class="journal-title">
-        <h1>Преподаватель: {{ meta.teacher.fullName }}</h1>
-        <h2>Группа: {{ meta.group.code }}</h2>
-        <h2>Дисциплина: «{{ meta.subject.name }}»</h2>
+        <h1>Группа: {{ meta.group.code }}</h1>
+        <h2>Преподаватель: {{ meta.teacher.fullName }}</h2>
+        <h3>Дисциплина: «{{ meta.subject.name }}»</h3>
       </div>
 
       <!-- Панель управления -->
@@ -33,7 +34,7 @@
             </div>
           </template>
         </div>
-
+          
         <div class="me-2 mb-2">
   <button class="btn btn-success" @click="openParamsModal">
     <i class="material-icons-outlined me-1">insights</i>
@@ -46,6 +47,14 @@
     Сформировать уведомление
   </button>
 </div>
+<button class="btn btn-info btn-sm me-2 mb-2" @click="exportFullExcel">
+    <i class="material-icons-outlined me-1" style="font-size:18px">file_download</i>
+    Отчет XLSX
+  </button>
+  <button class="btn btn-info btn-sm mb-2" @click="exportFullCsv">
+    <i class="material-icons-outlined me-1" style="font-size:18px">file_download</i>
+    Отчет CSV
+  </button>
         <!-- Переключатель подсветки -->
         <div class="form-check form-switch me-4 mb-2">
           <input
@@ -298,6 +307,7 @@
       </select>
     </div>
   </div>
+  
   <template #footer>
     <Button
       label="Скачать Excel"
@@ -417,7 +427,7 @@ export default {
   return String(params.data.student_id);
 },
     defaultColDef() {
-      return { sortable: true, filter: true, resizable: true };
+      return { sortable: true, filter: true, resizable: true,minWidth: 60 };
     },
     frameworkComponents() {
       return { DateHeader, PsHeader,StatsHeader };
@@ -426,6 +436,166 @@ export default {
   },
   
   methods: {
+     async exportFullExcel() {
+    const groupCode   = this.meta.group.code;
+    const teacherName = this.meta.teacher.fullName;
+    const subjectName = this.meta.subject.name;
+
+    // Собираем ряды
+    const rows = this.rowData.map(r => {
+      const rec = { 'ФИО студента': r.fullName };
+      this.dates.forEach(d => {
+        rec[`П/С ${d.date}`] = r[`att_${d.id}`] || '';
+        const types = this.dateGradeTypes.find(x => x.date_id === d.id)?.grade_types || [];
+        types.forEach(gt => {
+          rec[`${gt.name} ${d.date}`] = r[`grade_${d.id}_${gt.id}`] ?? '';
+        });
+      });
+      return rec;
+    });
+
+    // Шапки
+    const gradeCols = ['ФИО студента'];
+    const attCols   = ['ФИО студента'];
+    this.dates.forEach(d => {
+      attCols.push(`П/С ${d.date}`);
+      (this.dateGradeTypes.find(x => x.date_id === d.id)?.grade_types || [])
+        .forEach(gt => gradeCols.push(`${gt.name} ${d.date}`));
+    });
+
+    // Подготовка данных
+    const gradeData = [
+      ['Группа', groupCode],
+      ['Преподаватель', teacherName],
+      ['Дисциплина', subjectName],
+      [],
+      gradeCols,
+      ...rows.map(r => gradeCols.map(c => r[c]))
+    ];
+    const attData = [
+      ['Группа', groupCode],
+      ['Преподаватель', teacherName],
+      ['Дисциплина', subjectName],
+      [],
+      attCols,
+      ...rows.map(r => attCols.map(c => r[c]))
+    ];
+
+    // Функции
+    const setColumnWidths = (ws, colsCount) => {
+      ws['!cols'] = Array(colsCount).fill().map((_, idx) =>
+        idx === 0 ? { wch: 40 } : { wch: 15 }
+      );
+    };
+    const applyStyles = (ws, data) => {
+      const border = {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } }
+      };
+      const rowsCount = data.length;
+      const colsCount = data[4].length;
+      for (let R = 0; R < rowsCount; R++) {
+        for (let C = 0; C < colsCount; C++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[addr];
+          if (!cell) continue;
+          cell.s = cell.s || {};
+          cell.s.border = border;
+          if (C === 0) {
+            cell.s.alignment = { wrapText: true, vertical: 'top' };
+          }
+        }
+      }
+    };
+
+    // Создаём книгу
+    const wb = XLSX.utils.book_new();
+
+    // Лист успеваемости
+    const wsG = XLSX.utils.aoa_to_sheet(gradeData);
+    setColumnWidths(wsG, gradeCols.length);
+    applyStyles(wsG, gradeData);
+    XLSX.utils.book_append_sheet(wb, wsG, 'Успеваемость');
+
+    // Лист посещаемости
+    const wsA = XLSX.utils.aoa_to_sheet(attData);
+    setColumnWidths(wsA, attCols.length);
+    applyStyles(wsA, attData);
+    XLSX.utils.book_append_sheet(wb, wsA, 'Посещаемость');
+
+    // Запись с поддержкой стилей
+    const wbout = XLSX.write(wb, {
+      bookType:   'xlsx',
+      type:       'array',
+      cellStyles: true
+    });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `FullReport_${groupCode}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+   exportFullCsv() {
+    const { code: groupCode } = this.meta.group;
+    const teacherName = this.meta.teacher.fullName;
+    const subjectName = this.meta.subject.name;
+    const lines = [];
+
+    // Заголовок
+    lines.push(`Группа,${groupCode}`);
+    lines.push(`Преподаватель,${teacherName}`);
+    lines.push(`Дисциплина,${subjectName}`);
+    lines.push('');
+
+    // Функция для блока
+    const appendBlock = (title, cols, rows) => {
+      lines.push(title);
+      lines.push(cols.join(','));
+      rows.forEach(r => {
+        lines.push(cols.map(c => JSON.stringify(r[c] ?? '')).join(','));
+      });
+      lines.push('');
+    };
+
+    // Подготовка базовых строк
+    const rows = this.rowData.map(r => {
+      const obj = { 'ФИО студента': r.fullName };
+      this.dates.forEach(d => {
+        obj[`П/С ${d.date}`] = r[`att_${d.id}`] || '';
+        (this.dateGradeTypes.find(x => x.date_id === d.id)?.grade_types || []).forEach(gt => {
+          obj[`${gt.name} ${d.date}`] = r[`grade_${d.id}_${gt.id}`] ?? '';
+        });
+      });
+      return obj;
+    });
+
+    // Блок успеваемости
+    const gradeCols = ['ФИО студента'];
+    this.dates.forEach(d => {
+      (this.dateGradeTypes.find(x => x.date_id === d.id)?.grade_types || [])
+        .forEach(gt => gradeCols.push(`${gt.name} ${d.date}`));
+    });
+    appendBlock('=== Успеваемость ===', gradeCols, rows);
+
+    // Блок посещаемости
+    const attCols = ['ФИО студента'];
+    this.dates.forEach(d => attCols.push(`П/С ${d.date}`));
+    appendBlock('=== Посещаемость ===', attCols, rows);
+
+    // Скачиваем
+    const csv = lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `FullReport_${groupCode}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
     exportCsvReport() {
   const groupCode   = this.meta.group.code;
   const teacherName = this.meta.teacher.fullName;
