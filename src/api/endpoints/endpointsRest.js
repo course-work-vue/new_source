@@ -41,6 +41,8 @@ export default Object.freeze({
     pay_graph: prefix + 'pay_graph',
     program: prefix + 'programs',
 
+    pdf_file: prefix + 'pdf_file',
+
     //ИМПОРТ
 
     uploaded_file: prefix+'uploaded_files',

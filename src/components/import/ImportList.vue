@@ -183,9 +183,10 @@
           id="disciple_semester_filter"
           class="form-select"
           v-model="discipleFormValues.semestres"
+          multiple 
         >
           <option
-            v-for="semesterOption in semestresOptions"
+            v-for="semesterOption in semestresOptionsForMultiSelect"
             :key="semesterOption.value"
             :value="semesterOption.value"
           >
@@ -394,16 +395,17 @@
     <div class="row g-2 mb-2">
       <div class="col-6 p-0 pe-3">
         <div class="form-group d-flex align-items-center">
-          <label class="form-label me-3" for="details_semester_filter"
+          <label class="form-label me-3" for="details_semester_filter" 
             >Семестр:</label
           >
           <select
             class="form-select"
             id="details_semester_filter"
-            v-model="detailFilter.semestres" 
+            v-model="detailFilter.semestres"
+            multiple 
           >
             <option
-              v-for="semesterOption in semestresOptions"
+              v-for="semesterOption in semestresOptionsForMultiSelect"
               :key="semesterOption.value"
               :value="semesterOption.value"
             >
@@ -810,19 +812,19 @@ const selectedCount = computed(() => {
           flex: 3,
         },
         {
-          field: "current_course",
-          headerName: 'Курс',
-          flex: 1,
-        },
-        {
           field: "years",
           headerName: 'Учебный год',
           flex: 1,
         },
         {
-          headerName: '',
+          field: "actualization_year",
+          headerName: 'Год актуализации',
+          flex: 1,
+        },
+        {
+          headerName: 'Выбрать',
           field: "selected",
-          flex: 0.5,
+          flex: 0.6,
           cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
           cellRenderer: (params) => {
             const isSelected = params.value || false;
@@ -1282,21 +1284,64 @@ const clearDetailFilters = () => {
     const selectedDisciplineCode = ref(null); // Для заголовка
     const selectedProgramId = ref(null);      // ID для фильтрации деталей <--- ВАЖНО!
 
-    const detailRowData = computed(() => {
-  if (!selectedProgramId.value) {
-    return [];
-  }
-  const allDisciplesFromStore = import_discipleList.value || [];
-  return allDisciplesFromStore.filter(disciple => disciple.program_id === selectedProgramId.value);
-});
+    const semestresOptionsForMultiSelect = computed(() => {
+      const uniqueSemesters = new Set();
+      return importDiscipleStore.import_disciple_semestresList
+        .filter(item => item.semester !== null && item.semester !== undefined && String(item.semester).trim() !== '')
+        .map(item => ({
+          label: String(item.semester),
+          value: Number(item.semester) // Гарантируем, что значение - число
+        }))
+        .filter(option => { // Удаление дубликатов, если они есть
+          if (uniqueSemesters.has(option.value)) {
+            return false;
+          }
+          uniqueSemesters.add(option.value);
+          return true;
+        })
+        .sort((a, b) => a.value - b.value); // Сортировка по числовому значению
+    });
 
-     const editFunction = (event) => {
-      if (instance.proxy.resetUpd) { // Check if method exists on proxy
+    const detailRowData = computed(() => {
+      // Эта часть должна быть актуальной с вашим кодом, особенно selectedProgramId
+      // Предполагается, что selectedProgramId - это ref, содержащий ID выбранной программы
+      if (!selectedProgramId.value) { // Если у вас selectedProgramId не ref, а часть data(), доступ будет instance.proxy.selectedProgramId
+        return [];
+      }
+      const allDisciplesFromStore = import_discipleList.value || [];
+      let filteredDisciples = allDisciplesFromStore.filter(disciple =>
+        disciple.program_id === selectedProgramId.value
+      );
+
+      const detailFilterValues = instance?.proxy?.detailFilter;
+
+      if (detailFilterValues) {
+        // Фильтрация по семестру (для множественного выбора)
+        if (detailFilterValues.semestres && detailFilterValues.semestres.length > 0) {
+          // detailFilter.semestres будет массивом чисел (выбранных семестров)
+          // disciple.semester также ожидается числом
+          const selectedSemesters = detailFilterValues.semestres; // Это массив чисел
+          filteredDisciples = filteredDisciples.filter(d =>
+            d.semester !== null && d.semester !== undefined && selectedSemesters.includes(Number(d.semester))
+          );
+        }
+
+        // Фильтрация по кафедре (остается без изменений)
+        if (detailFilterValues.departments !== null && detailFilterValues.departments !== undefined && String(detailFilterValues.departments).trim() !== '') {
+          filteredDisciples = filteredDisciples.filter(d =>
+            String(d.department) === String(detailFilterValues.departments)
+          );
+        }
+      }
+      return filteredDisciples;
+    });
+
+    const editFunction = (event) => {
+      if (instance.proxy.resetUpd) { 
           instance.proxy.resetUpd();
       }
-      // selectedDisciplineCode is in data(), access via instance.data or instance.proxy
       instance.data.selectedDisciplineCode = event.data.code;
-      selectedProgramId.value = event.data.id; // This is already a ref
+      selectedProgramId.value = event.data.id; // Обновляем ref selectedProgramId
       console.log(`Установлен selectedProgramId (from setup): ${selectedProgramId.value}`);
       if (instance.proxy.openDetailsForm) {
           instance.proxy.openDetailsForm();
@@ -1539,6 +1584,7 @@ const filteredWorkloadData = computed(() => {
       onGridReady,
       columnDefs,
       archiveColumnDefs,
+      semestresOptionsForMultiSelect,
       detailColumnDefs,
       compareColumnDefs,
       columnDefs2,
@@ -1652,7 +1698,7 @@ const filteredWorkloadData = computed(() => {
       },
 
       detailFilter: {
-      semestres: null,
+      semestres: [],
       departments: null,
       },
       detailErrors: {},      // если AutoForm возвращает ошибки
@@ -1805,7 +1851,7 @@ this.compareFormScheme = new FormScheme([
   this.openDetailsForm();
     },
 
-async onFileChange2(event) {
+async onFileChange(event) {
   const successMessage = ref('');
   const errorMessage = ref('');
   const isLoading = ref(false);
@@ -1848,7 +1894,7 @@ async onFileChange2(event) {
 
 
 
-    async onFileChange(event) {
+    async onFileChange1(event) {
       const files = event.target.files;
       const programsData = [];
 

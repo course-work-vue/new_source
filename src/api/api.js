@@ -124,6 +124,8 @@ deleteListenersGroup: ({ listener_id, l_group_id }) =>
   deleteProgram: (program) =>
     ReqExec.put(endpoints.procedure.program, program.id, program),
   
+    getPdfFile: () => ReqExec.get(endpoints.rest.pdf_file, null, true),
+
   //ИМПОРТ
 
   getImport_ProgramList: () => ReqExec.get(endpoints.rest.import_program, null, true),

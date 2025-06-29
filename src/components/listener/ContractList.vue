@@ -132,6 +132,7 @@ import ReqExec from "@/services/RequestExecutor";
 
 import ButtonCell from "@/components/listener/ListenerButtonCell.vue";
 import ButtonCell2 from "@/components/listener/ContractButtonCell.vue";
+import ButtonCell3 from "@/components/listener/ContractButtonCell2.vue";
 import ContractHrefCellRenderer from "@/components/listener/ContractHrefCellRenderer.vue";
 import ContractHrefCellRenderer2 from "@/components/listener/ContractHrefCellRenderer2.vue";
 import ContractHrefCellRenderer3 from "@/components/listener/ContractHrefCellRenderer3.vue";
@@ -149,7 +150,13 @@ import { useContractStore } from "@/store2/listenergroup/contract";
 import { useListenerStore } from "@/store2/listenergroup/listener";
 import { usePayerStore } from "@/store2/listenergroup/payer";
 import { useProgramStore } from "@/store2/listenergroup/program";
+import { usePdfCertificateStore } from "@/store2/listenergroup/pdfcertificate";
 import { AG_GRID_LOCALE_RU } from "@/ag-grid-russian.js";
+import { PDFDocument } from 'pdf-lib';
+import certificateTemplateUrl from '@/assets/certificate_template.pdf';
+import fontUrl from '@/assets/fonts/roboto/Roboto.ttf';
+import fontkit from '@pdf-lib/fontkit';
+
 
 import {
   Document,
@@ -174,6 +181,7 @@ export default {
     AgGridVue,
     ButtonCell,
     ButtonCell2,
+    ButtonCell3,
     ContractHrefCellRenderer,
     ContractHrefCellRenderer2,
     ContractHrefCellRenderer3,
@@ -232,6 +240,17 @@ export default {
         {
           field: "program_name",
           headerName: "Программа",
+        },
+        {
+          sortable: false,
+          filter: false,
+          headerName: "Сертификат",
+          headerClass: "text-center",
+          cellRenderer: "ButtonCell3",
+          cellRendererParams: {
+          },
+          maxWidth: 120,
+          resizable: false,
         },
         {
           sortable: false,
@@ -374,6 +393,139 @@ export default {
     ...mapActions(useListenerStore, ["getListenerList"]),
     ...mapActions(usePayerStore, ["getPayerList"]),
     ...mapActions(useProgramStore, ["getProgramList"]),
+    ...mapActions(usePdfCertificateStore, ["getPdfFile"]),
+
+     async generateAndDownloadCertificate(contractData) {
+      console.log('--- Начинаем генерацию сертификата ---');
+      console.log('Данные контракта:', contractData);
+
+      try {
+        console.log('1. Загружаем шаблон и шрифт...');
+        const [templateBytes, fontArrayBuffer] = await Promise.all([
+          fetch(certificateTemplateUrl).then(r => r.arrayBuffer()),
+          fetch(fontUrl).then(r => r.arrayBuffer())
+        ]);
+        console.log('Шаблон и шрифт загружены.');
+
+        console.log('2. Загружаем PDF и регистрируем fontkit...');
+        const pdfDoc = await PDFDocument.load(templateBytes);
+        pdfDoc.registerFontkit(fontkit);
+
+        console.log('3. Внедряем кастомный шрифт...');
+        const fontBytes = new Uint8Array(fontArrayBuffer);
+        const customFont = await pdfDoc.embedFont(fontBytes, { subset: false });
+        console.log('Шрифт внедрен.');
+
+        console.log('4. Получаем форму...');
+        const form = pdfDoc.getForm();
+
+        console.log('5. Заполняем поля...');
+
+        // --- Подготовка данных для заполнения ---
+        const nameParts = (contractData.full_name || '').split(' ');
+        const lastName = nameParts[0] || '';
+        const firstName = nameParts[1] || '';
+        const patronymic = nameParts[2] || '';
+
+        const startDate = contractData.date_enroll
+          ? (() => {
+              const raw = new Date(contractData.date_enroll).toLocaleDateString('ru-RU', {
+                day:   'numeric',
+                month: 'long',
+                year:  'numeric'
+              });
+              return raw.replace(/\s*г\.$/, '') + ' года';
+            })()
+          : '';
+        const endDate = contractData.date_kick
+          ? (() => {
+              const raw = new Date(contractData.date_kick).toLocaleDateString('ru-RU', {
+                day:   'numeric',
+                month: 'long',
+                year:  'numeric'
+              });
+              return raw.replace(/\s*г\.$/, '') + ' года';
+            })()
+          : '';;
+
+        const programName = contractData.program_name || '';
+
+        const programStore = useProgramStore();
+        const program = programStore.programMap ? programStore.programMap[contractData.program_id] : null;
+        const programHoursRaw = program && program.hours ? String(program.hours) : '';
+        const programHours = programHoursRaw ? `${programHoursRaw} часов` : '';
+
+        const certDate = contractData.cert_date
+          ? (() => {
+              const raw = new Date(contractData.cert_date).toLocaleDateString('ru-RU', {
+                day:   'numeric',
+                month: 'long',
+                year:  'numeric'
+              });
+              return raw.replace(/\s*г\.$/, '') + ' года';
+            })()
+          : '';
+        
+        // --- Карта полей в соответствии с запросом ---
+        const fillMap = {
+          Text1: certDate, // Оставляем, т.к. не было указаний по этому полю
+          Text2: lastName,
+          Text3: firstName,
+          Text4: patronymic,
+          Text5: startDate,
+          Text6: endDate,
+          Text7: programName,
+          Text8: programHours,
+        };
+
+        for (const [fieldName, value] of Object.entries(fillMap)) {
+          try {
+            form.getTextField(fieldName).setText(value || '');
+          } catch (e) {
+             console.warn(`Поле ${fieldName} не найдено в PDF шаблоне.`);
+          }
+        }
+        console.log('Поля заполнены:', fillMap);
+
+        console.log('6. Обновляем внешний вид и делаем поля read-only...');
+        for (const fieldName of Object.keys(fillMap)) {
+          try {
+            const tf = form.getTextField(fieldName);
+            tf.updateAppearances(customFont);
+            tf.enableReadOnly();
+          } catch {}
+        }
+        console.log('Шрифты и режим read-only установлены.');
+
+        console.log('7. Сохраняем PDF...');
+        const pdfBytes = await pdfDoc.save();
+        console.log('8. Инициируем скачивание...');
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Certificate-${contractData.contr_number}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('--- Генерация и скачивание завершены успешно! ---');
+      } catch (error) {
+        console.error("!!! ОШИБКА ПРИ ГЕНЕРАЦИИ СЕРТИФИКАТА !!!", error);
+        alert("Произошла ошибка при создании PDF-файла.");
+      }
+    },
+
+    onGridReady(params) {
+      this.gridApi = params.api;
+      this.gridColumnApi = params.columnApi;
+    },
+    onFilterTextBoxChanged() {
+      if (this.gridApi) {
+        this.gridApi.setQuickFilter(
+          document.getElementById("filter-text-box").value
+        );
+      }
+    },
+
     onGridReady(params) {
       this.gridApi = params.api;
       this.gridColumnApi = params.columnApi;
@@ -420,11 +572,13 @@ export default {
         this.contract = event.data;
         this.showSidebar = true;
       }
-      else {
-        if (event.colDef && event.colDef.headerName === "Договор") {
-          this.previewContract(event.data);
-        }
+      else if (event.colDef.headerName === "Договор") {
+        this.previewContract(event.data);
       }
+      else if (event.colDef.headerName === "Сертификат") {
+        this.generateAndDownloadCertificate(event.data); 
+      }
+
     },
     resetContract() {
       this.contract = new Contract({});
@@ -439,17 +593,13 @@ export default {
     async submit() {
       const currentContract = { ...this.contract };
 
-      // --- Начало проверки на уникальность номера договора ---
       const DIPLICATE_CONTRACT_NUMBER_ERROR_KEY = 'contr_number';
       const DIPLICATE_CONTRACT_NUMBER_ERROR_MESSAGE = 'Договор с таким номером уже существует';
 
-      // 1. Очистим предыдущую ошибку уникальности для этого поля, если она была
-      // Это важно, чтобы не показывать старую ошибку, если пользователь исправил номер
-      // и чтобы не конфликтовать с другими возможными ошибками от AutoForm для этого поля (например, "обязательное поле")
       let currentErrors = { ...this.errors };
       if (currentErrors[DIPLICATE_CONTRACT_NUMBER_ERROR_KEY] === DIPLICATE_CONTRACT_NUMBER_ERROR_MESSAGE) {
         delete currentErrors[DIPLICATE_CONTRACT_NUMBER_ERROR_KEY];
-        this.errors = currentErrors; // Обновляем реактивно
+        this.errors = currentErrors; 
       }
 
       // 2. Выполняем проверку, если номер договора указан
@@ -539,6 +689,7 @@ export default {
         this.getProgramList(),
         this.getListenerList(),
         this.getPayerList(),
+        this.getPdfFile(),
        ]);
        console.log("Initial data fetched successfully.");
    } catch (error) {
@@ -613,11 +764,14 @@ export default {
 
     const contractNumber = ContractForDocx.contr_number;
 
+    const today = new Date();
+
+    console.log("сегодня: "+ today)
+
     const contract = {
       daySigned: "15",         // День подписания (строка)
-  monthSignedAsText: "мая", // Месяц подписания прописью (строка)
-  yearSigned: "24",        // Год подписания (двузначный, строка)
-  // или fullYearSigned: "2024" // Год подписания (четырехзначный, строка)
+      monthSignedAsText: "мая", // Месяц подписания прописью (строка)
+      yearSigned: "24",        // Год подписания (двузначный, строка)
   
   signerName: "Петрова Петра Петровича", // ФИО подписанта со стороны исполнителя (в нужном падеже)
   powerOfAttorneyDate: "10.01.2024",   // Дата доверенности
@@ -1291,6 +1445,9 @@ export default {
     ...mapState(useContractStore, ["contractList"]),
     ...mapState(useListenerStore, ["listenerList"]),
     ...mapState(usePayerStore, ["payerList"]),
+    ...mapState(usePdfCertificateStore, {
+        pdfData: 'pdfFile' // Маппим состояние pdfFile из store в локальное свойство pdfData
+    }),
     programOptions() {
       const programStore = useProgramStore();
       return Object.values(programStore.programMap || {})
