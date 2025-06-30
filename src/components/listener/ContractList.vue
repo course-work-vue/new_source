@@ -681,6 +681,96 @@ export default {
       }
     },
 
+    numberToWordsRu(number) {
+    if (number === 0) return 'Ноль';
+    if (!number || typeof number !== 'number') return '';
+
+    const fraction = Math.round((number % 1) * 100);
+    let number_ = Math.floor(number);
+
+    const units = [
+        '', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять',
+    ];
+    const teens = [
+        '', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать',
+        'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать',
+    ];
+    const tens = [
+        '', 'десять', 'двадцать', 'тридцать', 'сорок', 'пятьдесят',
+        'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто',
+    ];
+    const hundreds = [
+        '', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот',
+        'шестьсот', 'семьсот', 'восемьсот', 'девятьсот',
+    ];
+
+    const morph = (value, words) => {
+        value = Math.abs(value) % 100;
+        const num = value % 10;
+        if (value > 10 && value < 20) return words[2];
+        if (num > 1 && num < 5) return words[1];
+        if (num === 1) return words[0];
+        return words[2];
+    };
+
+    const segments = [
+        { key: 1000000000, words: ['миллиард', 'миллиарда', 'миллиардов'] },
+        { key: 1000000,    words: ['миллион', 'миллиона', 'миллионов'] },
+        { key: 1000,       words: ['тысяча', 'тысячи', 'тысяч'], isFeminine: true },
+        { key: 1,          words: ['рубль', 'рубля', 'рублей'] },
+    ];
+
+    let result = '';
+
+    if (number_ === 0) {
+        result = 'Ноль ' + morph(0, segments.find(s => s.key === 1).words);
+    } else {
+        segments.forEach(segment => {
+            if (number_ >= segment.key) {
+                let segmentValue = Math.floor(number_ / segment.key);
+                number_ %= segment.key;
+                
+                let words = [];
+                const h = Math.floor(segmentValue / 100);
+                if (h > 0) words.push(hundreds[h]);
+
+                const t_u = segmentValue % 100;
+                const t = Math.floor(t_u / 10);
+                const u = t_u % 10;
+                
+                if (t_u > 10 && t_u < 20) {
+                    words.push(teens[t_u - 10]);
+                } else {
+                    if (t > 0) words.push(tens[t]);
+                    if (u > 0) {
+                       if (segment.isFeminine) {
+                           words.push(u === 1 ? 'одна' : (u === 2 ? 'две' : units[u]));
+                       } else {
+                           words.push(units[u]);
+                       }
+                    }
+                }
+                
+                if (words.length > 0) {
+                    result += words.join(' ') + ' ' + morph(segmentValue, segment.words) + ' ';
+                }
+            }
+        });
+    }
+
+    let finalResult = result.trim();
+    if (finalResult.length > 0) {
+        finalResult = finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
+    }
+    
+    // Добавляем копейки, если они есть
+    if (fraction > 0) {
+        finalResult += ` ${fraction} ${morph(fraction, ['копейка', 'копейки', 'копеек'])}`;
+    }
+    
+    return finalResult;
+  },
+
     async fetchInitialData() {
    console.log("Fetching initial data...");
    try {
@@ -760,41 +850,183 @@ export default {
     };
   },
 
+  pluralize(n, one, two, five) {
+    let num = Math.abs(n) % 100;
+    if (num >= 11 && num <= 19) {
+      return five;
+    }
+    let lastDigit = num % 10;
+    if (lastDigit === 1) {
+      return one;
+    }
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return two;
+    }
+    return five;
+  },
+
+
+  parseRuDate(dateInput) {
+    // Если это уже объект Date, просто возвращаем его
+    if (dateInput instanceof Date) {
+      return dateInput;
+    }
+    // Если это не строка, возвращаем null
+    if (typeof dateInput !== 'string') {
+      return null;
+    }
+
+    // Ищем совпадение с форматом ДД.ММ.ГГГГ (разделитель / или . или -)
+    const parts = dateInput.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+    if (parts) {
+      // parts[1] = день, parts[2] = месяц, parts[3] = год
+      // В конструкторе Date месяц идет с 0 до 11, поэтому вычитаем 1.
+      const date = new Date(Date.UTC(parts[3], parts[2] - 1, parts[1]));
+      return date;
+    }
+    
+    // Если формат другой (например, ISO), пробуем стандартный парсер
+    const standardDate = new Date(dateInput);
+    if (!isNaN(standardDate.getTime())) {
+        return standardDate;
+    }
+
+    return null; // Возвращаем null, если не смогли распознать формат
+  },
+
+  getDurationInMonthsAndDays(start, end) {
+    if (!start || !end || end < start) {
+      return "_______"; // Возвращаем плейсхолдер, если даты некорректны
+    }
+
+    let startYear = start.getUTCFullYear();
+    let startMonth = start.getUTCMonth();
+    let startDate = start.getUTCDate();
+
+    let endYear = end.getUTCFullYear();
+    let endMonth = end.getUTCMonth();
+    let endDate = end.getUTCDate();
+    
+    let monthDiff = (endYear - startYear) * 12 + (endMonth - startMonth);
+    
+    let dayDiff = endDate - startDate;
+
+    if (dayDiff < 0) {
+      monthDiff--; 
+      const daysInPrevMonth = new Date(Date.UTC(endYear, endMonth, 0)).getUTCDate();
+      dayDiff = daysInPrevMonth + dayDiff;
+    }
+    
+    const parts = [];
+    if (monthDiff > 0) {
+      parts.push(`${monthDiff} ${this.pluralize(monthDiff, 'месяц', 'месяца', 'месяцев')}`);
+    }
+    if (dayDiff > 0) {
+      parts.push(`${dayDiff} ${this.pluralize(dayDiff, 'день', 'дня', 'дней')}`);
+    }
+    
+    if (parts.length === 0) {
+      if (start.getTime() === end.getTime()) {
+        return "0 дней";
+      }
+      return "менее одного дня";
+    }
+
+    return parts.join(' и ');
+  },
+
   async createContractDocx(ContractForDocx) {
+    
+    const listenerStore = useListenerStore();
+    const payerStore = usePayerStore();
+    const programStore = useProgramStore();
 
-    const contractNumber = ContractForDocx.contr_number;
+    const listener = listenerStore.listenerMap ? listenerStore.listenerMap[ContractForDocx.listener_id] : null;
+    const payer = payerStore.payerMap ? payerStore.payerMap[ContractForDocx.payer_id] : null;
+    const program = programStore.programMap ? programStore.programMap[ContractForDocx.program_id] : null;
 
-    const today = new Date();
+    const getInitials = (fullName) => {
+      if (!fullName || typeof fullName !== 'string') return '__________';
+      const parts = fullName.split(' ').filter(p => p);
+      if (parts.length === 0) return '__________';
+      let initials = parts[0];
+      if (parts.length > 1) initials += ` ${parts[1][0]}.`;
+      if (parts.length > 2) initials += `${parts[2][0]}.`;
+      return initials;
+    };
 
-    console.log("сегодня: "+ today)
+    const payerFullName = payer?.full_name ?? '____________________';
+    const payerAddress = payer?.registration_address ?? '____________________';
+    const payerPassportSeriesNumber = payer?.passport ?? '____ ______';
+    const payerPassportIssuedBy = payer?.issued_by ?? '____________________';
+    const payerPassportIssueDate = payer?.issue_date ? new Date(payer.issue_date).toLocaleDateString('ru-RU') : 'дд.мм.гггг';
+    const payerPassportFull = `Серия ${payerPassportSeriesNumber}, выдан ${payerPassportIssuedBy} ${payerPassportIssueDate}`;
+    const payerPhone = payer?.phone_number ?? '____________________';
+    const payerInitials = getInitials(payerFullName);
+
+    const listenerFullName = listener?.full_name ?? '____________________';
+    const listenerBirthDate = listener?.birth_date ? new Date(listener.birth_date).toLocaleDateString('ru-RU') : 'дд.мм.гггг';
+    const listenerAddress = listener?.registration_address ?? '____________________';
+    const listenerPassportSeriesNumber = listener?.passport ?? '____ ______';
+    const listenerPassportIssuedBy = listener?.issued_by ?? '____________________';
+    const listenerPassportIssueDate = listener?.issue_date ? new Date(listener.issue_date).toLocaleDateString('ru-RU') : 'дд.мм.гггг';
+    const listenerPassportFull = `Серия ${listenerPassportSeriesNumber}, выдан ${listenerPassportIssuedBy} ${listenerPassportIssueDate}`;
+    const listenerPhone = listener?.phone_number ?? '____________________';
+    const listenerInitials = getInitials(listenerFullName);
+
+    const requiredAmount = program?.required_amount ?? 0;
+    const formattedAmount = new Intl.NumberFormat('ru-RU').format(requiredAmount);
+    const amountInWords = this.numberToWordsRu(requiredAmount);
+    const dateEnroll = ContractForDocx.date_enroll ? new Date(ContractForDocx.date_enroll) : null;
+    const dateKick = ContractForDocx.date_kick ? new Date(ContractForDocx.date_kick) : null;
+    const durationText = this.getDurationInMonthsAndDays(dateEnroll, dateKick);
+    const contractNumber = ContractForDocx.contr_number ?? "_______";
+
+    const monthNames = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+    
+    function formatDateRuns(date) {
+  if (!date) {
+    // Возвращаем заглушку, если дата не передана
+    return [new TextRun({ text: "«__» _________ ____", bold: true, underline: true, font: "Arial", size: 16 })];
+  }
+  const day = String(date.getDate());
+  const month = monthNames[date.getMonth()]; // Используем массив названий месяцев
+  const year = String(date.getFullYear());
+
+  return [
+    new TextRun({ text: "«", bold: true, underline: true,font: "Arial", size: 16 }),
+    new TextRun({ text: day, bold: true, underline: true, font: "Arial", size: 16 }),
+    new TextRun({ text: "»", bold: true, underline: true,font: "Arial", size: 16 }),
+    new TextRun({ text: ` ${month} `, bold: true, underline: true, font: "Arial", size: 16 }), // месяц словом
+    new TextRun({ text: year, bold: true, underline: true, font: "Arial", size: 16 }),
+  ];
+}
+
+// собираем окончательный массив TextRun’ов
+const runs = [
+  new TextRun({ text: "с ",      bold: true, font: "Arial", size: 16 }),
+  ...formatDateRuns(dateEnroll),
+  new TextRun({ text: " по ",    bold: true, font: "Arial", size: 16 }),
+  ...formatDateRuns(dateKick),
+  new TextRun({ text: " года",   bold: true, font: "Arial", size: 16 }),
+];
+    
+    const date = ContractForDocx.cert_date ? new Date(ContractForDocx.cert_date) : new Date();
+    const daySigned = String(date.getDate());
+    const monthSignedAsText = monthNames[date.getMonth()];
+    const yearSigned = String(date.getFullYear()).slice(-2);
+    const customerFullName = payerFullName;
+    const studentFullName = listenerFullName;
 
     const contract = {
-      daySigned: "15",         // День подписания (строка)
-      monthSignedAsText: "мая", // Месяц подписания прописью (строка)
-      yearSigned: "24",        // Год подписания (двузначный, строка)
-  
-  signerName: "Петрова Петра Петровича", // ФИО подписанта со стороны исполнителя (в нужном падеже)
-  powerOfAttorneyDate: "10.01.2024",   // Дата доверенности
-  powerOfAttorneyNumber: "Д-555/24",   // Номер доверенности
-  
-  customerFullName: "Сидоров Сидор Сидорович", // ФИО Заказчика
-  // ... другие поля для Заказчика (адрес, паспорт и т.д.)
-  
-  studentFullName: "Сидоров Илья Сидорович", // ФИО Обучающегося
-  // ... другие поля для Обучающегося (дата рождения, адрес, паспорт и т.д.)
-
-  programName: "Супер Программа Обучения", // Название программы
-  programForm: "очная с применением ДОТ",  // Форма обучения
-  programDurationMonths: "6",              // Длительность в месяцах
-  programStartDate: "01.09.2024",          // Дата начала
-  programEndDate: "28.02.2025",            // Дата окончания
-  programVolumeHours: "144",               // Объем в часах
-
-  priceFull: "50000",                      // Полная стоимость цифрами
-  priceFullText: "пятьдесят тысяч",        // Полная стоимость прописью
-
-  departmentName: "Центр Инноваций",      // Название подразделения
-    }
+      daySigned, monthSignedAsText, yearSigned,
+      signerName: "Кустова Семена Юрьевича",
+      powerOfAttorneyDate: "10.01.2024",
+      powerOfAttorneyNumber: "Д-555/24",
+      customerFullName, studentFullName,
+      programForm: "очная с применением ДОТ",
+      departmentName: "Центр Инноваций",
+    };
 
     const doc = new Document({
     creator: "Python docx_to_docxjs converter",
@@ -940,7 +1172,7 @@ export default {
             new TextRun({ text: contract.daySigned || "___", underline: true, font: "Arial", size: 16 }), // Пример: contract.daySigned
             new TextRun({ text: "» ", underline: true, font: "Arial", size: 16 }), // Добавил пробел после кавычки
             new TextRun({ text: contract.monthSignedAsText || "_________ ", underline: true, font: "Arial", size: 16 }), // Пример: contract.monthSignedAsText (название месяца прописью)
-            new TextRun({ text: ` 20${contract.yearSigned || "24"}`, font: "Arial", size: 16 }), // Год, если contract.yearSigned двузначный
+            new TextRun({ text: ` 20${contract.yearSigned || "24"}`, underline: true, font: "Arial", size: 16 }), // Год, если contract.yearSigned двузначный
             // Или new TextRun({ text: ` ${contract.fullYearSigned || "2024"}`, font: "Arial", size: 16 }), // если contract.fullYearSigned четырехзначный
             new TextRun({ text: " г.", font: "Arial", size: 16 })
         ]
@@ -956,44 +1188,31 @@ export default {
         alignment: AlignmentType.JUSTIFY, 
         style: "ConsPlusNonformat", 
         children: [
-            // Длинный текст, который был разбит на несколько TextRun. Если форматирование везде одинаковое (Arial, 16),
-            // его можно объединить в один TextRun для лучшей читаемости и производительности.
-            // Я оставлю пока как есть, так как это могло быть сделано скриптом из-за невидимых изменений форматирования в оригинале.
-            // Но если вы уверены, что форматирование одинаковое, объединяйте.
             new TextRun({ text: "Федеральное государственное бюджетное образовательное учреждение высшего образования «Кубанский государственный университет», осуществляющее образовательную деятельность на основании лицензии на осуществление образовательной деятельности серии 90Л01 № 0009015, регистрационный номер 1982 от 03.03.2016 г., выданной Федеральной службой по надзору в сфере образования и науки, действующей бессрочно, свидетельства о государственной аккредитации серии 90А01 № 0003197, регистрационный номер 3042 от ", font: "Arial", size: 16 }),
             new TextRun({ text: "27.03.2019 г., выданного ", font: "Arial", size: 16 }),
             new TextRun({ text: "Федеральной службой по надзору в сфере образования и науки, ", font: "Arial", size: 16 }),
-            new TextRun({ text: "действующего бессрочно (п.16 ст.136 ФЗ  ", font: "Arial", size: 16 }) // В оригинале был пробел после ФЗ, проверьте, нужен ли он
-        ] 
-    }), // Paragraph index 7
-
-    new Paragraph({ 
-        alignment: AlignmentType.JUSTIFY, 
-        style: "ConsPlusNonformat", 
-        children: [
+            new TextRun({ text: "действующего бессрочно (п.16 ст.136 ФЗ  ", font: "Arial", size: 16 }),
             new TextRun({ text: "№ 170-ФЗ от 11.06.2021 г.) ", font: "Arial", size: 16 }),
             new TextRun({ text: "(далее – «Исполнитель»/«Университет»),", font: "Arial", size: 16 }),
             new TextRun({ text: " в лице ", font: "Arial", size: 16 }),
             new TextRun({ text: `проректора по довузовскому и дополнительному профессиональному образованию ${contract.signerName || "Кустова Семена Юрьевича"}, действующего на основании доверенности `, font: "Arial", size: 16 }), // Пример: contract.signerName
-            new TextRun({ text: `от ${contract.powerOfAttorneyDate || "09.02.2024"}`, font: "Arial", size: 16 }), // Пример: contract.powerOfAttorneyDate
-            new TextRun({ text: ` № ${contract.powerOfAttorneyNumber || "176/01"}`, font: "Arial", size: 16 }), // Пример: contract.powerOfAttorneyNumber
-            new TextRun({ text: ", с одной стороны, и ", font: "Arial", size: 16 }), // Объединил ", " и "с одной стороны" и " и"
-            // Место для ФИО Заказчика
-            new TextRun({ text: contract.customerFullName || "Иванов Иван Иванович", bold: true, underline: true, font: "Arial", size: 16 }),
-            // Лишние подчеркивания вокруг ФИО убраны, т.к. само ФИО уже подчеркнуто
-            new TextRun({ text: ",", font: "Arial", size: 16 })
+            new TextRun({ text: `от ${contract.powerOfAttorneyDate || "09.02.2024"}`, font: "Arial", size: 16 }), 
+            new TextRun({ text: ` № ${contract.powerOfAttorneyNumber || "176/01"}`, font: "Arial", size: 16 }), 
+            new TextRun({ text: ", с одной стороны, и ", font: "Arial", size: 16 }), 
+            new TextRun({ text: contract.customerFullName, bold: true, underline: true, font: "Arial", size: 16 }),
+            new TextRun({ text: "________________________________", font: "Arial", size: 16 }),
+            new TextRun({ text: ",", font: "Arial", size: 16 }),
+
         ] 
-    }), // Paragraph index 8
+    }), 
+    
+    // Paragraph index 8
 
     new Paragraph({ 
         alignment: AlignmentType.JUSTIFY, 
         style: "ConsPlusNonformat", 
         children: [
-            // Этот абзац содержит много пробелов для отступа. Это плохая практика.
-            // Лучше использовать свойство `indent` или `spacing` в абзаце или стиле.
-            // Пока оставлю, но рекомендую переделать.
-            // new TextRun({ text: "                ", font: "Arial", size: 16 }), // 16pt
-            // new TextRun({ text: "                         ", font: "Arial", size: 16 }), // 16pt
+            new TextRun({ text: "     ", font: "Arial", size: 12 }),
             new TextRun({ text: "(фамилия, имя, отчество (при наличии) законного представителя несовершеннолетнего лица, зачисляемого на обучение)", font: "Arial", size: 12 })
         ] 
     }), // Paragraph index 9
@@ -1003,21 +1222,20 @@ export default {
         style: "ConsPlusNonformat", 
         children: [
             new TextRun({ text: "именуемый(ая) в дальнейшем «Заказчик», с другой стороны,", font: "Arial", size: 16 }) 
-            // Объединил несколько TextRun
         ] 
     }), // Paragraph index 10
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "и ", font: "Arial", size: 16 }),
       new TextRun({ text: "_____________________", font: "Arial", size: 16 }),
-      new TextRun({ text: "Иванов Илья Иванович", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: `${contract.studentFullName}`, bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "________________________________", font: "Arial", size: 16 }),
       new TextRun({ text: "___________", font: "Arial", size: 16 }),
       new TextRun({ text: "_________", font: "Arial", size: 16 }),
-      new TextRun({ text: "_____________________", font: "Arial", size: 16 }),
+      new TextRun({ text: "______", font: "Arial", size: 16 }),
       new TextRun({ text: ",", font: "Arial", size: 16 })] }), // Paragraph index 11
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "   ", font: "Arial", size: 12 }),
-      new TextRun({ text: "                                                                                ", font: "Arial", size: 12 }),
+      new TextRun({ text: "                                                                           ", font: "Arial", size: 12 }),
       new TextRun({ text: " ", font: "Arial", size: 12 }),
-      new TextRun({ text: "         ", font: "Arial", size: 12 }),
+      new TextRun({ text: "      ", font: "Arial", size: 12 }),
       new TextRun({ text: " (фамилия, имя, отчество (при наличии) лица, зачисляемого на обучение)", font: "Arial", size: 12 })] }), // Paragraph index 12
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "и", font: "Arial", size: 16 }),
       new TextRun({ text: "менуемый", font: "Arial", size: 16 }),
@@ -1035,7 +1253,7 @@ export default {
         new TextRun({ text: "1.1.", font: "Arial", size: 16 }),
         new TextRun({ text: "Исполнитель обязуется предоставить образовательную услугу, а Заказчик обязуется оплатить обучение по дополнительной общеобразовательной (общеразвивающей) программе ", font: "Arial", size: 16 }),
       new TextRun({ text: "«", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "Дополнительные занятия по математике для десятиклассников", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: `${ContractForDocx.program_name}`, bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "»", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 })] }), 
       // Paragraph index 15
@@ -1043,8 +1261,7 @@ export default {
       alignment: AlignmentType.CENTER, 
       style: "ConsPlusNonformat", 
       children: [new TextRun({ text: "  ", font: "Arial", size: 12 }),
-      new TextRun({ text: "                                                                                  ", font: "Arial", size: 12 }),
-      new TextRun({ text: " ", font: "Arial", size: 12 }),
+      new TextRun({ text: "                    ", font: "Arial", size: 12 }),
       new TextRun({ text: "(наименование дополнительной образовательной программы", font: "Arial", size: 12 }),
       new TextRun({ text: ")", font: "Arial", size: 12 })] }), // Paragraph index 16
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "              ", underline: true, font: "Arial", size: 16 }),
@@ -1057,69 +1274,51 @@ export default {
     children: [
       new TextRun({ text: "1.2.", font: "Arial", size: 16 }),
       new TextRun({ text: "Срок освоения образовательной программы на момент подписания Договора составляет ", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " месяцев", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	_", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", font: "Arial", size: 16 })] }), 
+        new TextRun({ 
+          text: durationText, // <-- Вставляем вычисленный текст
+          underline: true, 
+          font: "Arial", 
+          size: 16 
+        }),
+      ] 
+     }), 
       
       // Paragraph index 19
-      new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "(указывается количество дней/месяцев)", font: "Arial", size: 12 })] }), // Paragraph index 20
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "с «", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "» ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "20", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "24", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "года", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " по «", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "»", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "20", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "25", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "года", bold: true, font: "Arial", size: 16 }),
+      new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", 
+      children: [
+        new TextRun({ text: "                                                                                                                                                        ", font: "Arial", size: 16 }),
+        new TextRun({ text: "(указывается количество дней/месяцев)", font: "Arial", size: 12 })] }), 
+        
+        // Paragraph index 20
+
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", 
+    children: [
+      ...runs,
       new TextRun({ text: " в объеме ", bold: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "54", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: ` ${ContractForDocx.listened_hours}`, bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	 ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "часов.", bold: true, font: "Arial", size: 16 })] }), // Paragraph index 21
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat" }), // Paragraph index 22
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "Срок освоения образовательной программы по индивидуальному учебному плану, при его наличии, в том числе ускоренному обучению, составляет ", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
+    new TextRun({ 
+          text: durationText,
+          underline: true, 
+          font: "Arial", 
+          size: 16 
+        }),  
       new TextRun({ text: ", ", font: "Arial", size: 16 }),
-      new TextRun({ text: "с «", bold: true, font: "Arial", size: 16 }),
+      ...runs,
+      new TextRun({ text: " в объеме ", bold: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "» ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " 20", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 20 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "года по «", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	_", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "»", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " 20 ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "года в объеме ", bold: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: ` ${ContractForDocx.listened_hours}`, bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	 ", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "часов.", bold: true, font: "Arial", size: 16 })] }), // Paragraph index 23
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "(указывается количество дней/месяцев)", font: "Arial", size: 12 })] }), // Paragraph index 24
+      new TextRun({ text: "часов.", bold: true, font: "Arial", size: 16 })] }), 
+      // Paragraph index 23
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", 
+    children: [        
+      new TextRun({ text: "                                                                                                                           ", font: "Arial", size: 16 }),
+new TextRun({ text: "(указывается количество дней/месяцев)", font: "Arial", size: 12 })] }), // Paragraph index 24
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "1.3.", font: "Arial", size: 16 }),
       new TextRun({ text: "После освоения Обучающимся образовательной программы ему выдается документ об обучении, установленного Университетом образца, – ", font: "Arial", size: 16 }),
       new TextRun({ text: "Сертификат о дополнительном образовании", underline: true, font: "Arial", size: 16 }),
@@ -1171,14 +1370,15 @@ export default {
       new TextRun({ text: "Исполнитель обязан:", font: "Arial", size: 16 })] }), // Paragraph index 47
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "3.1.1.", font: "Arial", size: 16 }),
       new TextRun({ text: "Зачислить лицо, выполнившее установленные законодательством Российской Федерации, учредительными документами, локальными нормативными актами Исполнителя условия приема, в Кубанский государственный университет в качестве Обучающегося в образовательном подразделении ", font: "Arial", size: 16 }),
-      new TextRun({ text: "	              ", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: "	                    ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "   ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "«", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "Макрос", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "»", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "	 ", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "Института тестовых технологий и дополнительного образования.", font: "Arial", size: 16 })] }), // Paragraph index 48
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", children: [new TextRun({ text: "(наименование образовательного подразделения)", font: "Arial", size: 12 })] }), // Paragraph index 49
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNonformat", 
+    children: [new TextRun({ text: "                                                                   (наименование образовательного подразделения)", font: "Arial", size: 12 })] }), // Paragraph index 49
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.2.", font: "Arial", size: 16 }),
       new TextRun({ text: "Довести до Заказчика информацию, содержащую сведения о предоставлении платных образовательных услуг в порядке и объеме, которые предусмотрены ", font: "Arial", size: 16 }),
       new TextRun({ text: " Российской Федерации «О защите прав потребителей» и Федеральным ", font: "Arial", size: 16 }),
@@ -1190,7 +1390,6 @@ export default {
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.4.", font: "Arial", size: 16 }),
       new TextRun({ text: "Обеспечить Обучающемуся предусмотренные выбранной образовательной программой условия ее освоения, а также специальные условия при необходимости.", font: "Arial", size: 16 })] }), // Paragraph index 52
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "3.1.5.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 }),
       new TextRun({ text: "Сохранить место за Обучающимся в случае пропуска занятий по уважительным причинам (с учетом оплаты услуг, предусмотренных", font: "Arial", size: 16 }),
       new TextRun({ text: " ", font: "Arial", size: 16 }),
       new TextRun({ text: " настоящего Договора).", font: "Arial", size: 16 })] }), // Paragraph index 53
@@ -1230,23 +1429,14 @@ export default {
     new Paragraph({ alignment: AlignmentType.CENTER, style: "ConsPlusNormal", children: [new TextRun({ text: "IV. Стоимость услуг, сроки и порядок их оплаты ", font: "Arial", size: 16 })] }), // Paragraph index 72
     new Paragraph({ style: "ConsPlusNormal" }), // Paragraph index 73
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "4.1.", font: "Arial", size: 16 }),
-      new TextRun({ text: "Полная стоимость платных образовательных услуг за весь период обучения Обучающегося составляет", font: "Arial", size: 16 }),
-      new TextRun({ text: " ____", font: "Arial", size: 16 }),
-      new TextRun({ text: "24 3", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "00", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "____________", font: "Arial", size: 16 }),
-      new TextRun({ text: " ", font: "Arial", size: 16 }),
-      new TextRun({ text: "_", underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "_", underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "(", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "двадцать четыре тысячи триста", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: ")", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "__", underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "рублей (НДС не облагается в соответствии с ", font: "Arial", size: 16 }),
-      new TextRun({ text: "пп", font: "Arial", size: 16 }),
-      new TextRun({ text: ". 14 п. 2 ст. 149 Налогового кодекса РФ).", font: "Arial", size: 16 })] }), // Paragraph index 74
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: " ", font: "Arial", size: 12 }),
-      new TextRun({ text: "  сумма прописью", font: "Arial", size: 12 })] }), // Paragraph index 75
+      new TextRun({ text: "Полная стоимость платных образовательных услуг за весь период обучения Обучающегося составляет ", font: "Arial", size: 16 }),
+        new TextRun({ text: `${formattedAmount}`, bold: true, underline: true, font: "Arial", size: 16 }),
+        new TextRun({ text: ` (${amountInWords})`, bold: true, underline: true, font: "Arial", size: 16 }),
+        new TextRun({ text: " рублей (НДС не облагается в соответствии с ", font: "Arial", size: 16 }),
+        new TextRun({ text: "пп", font: "Arial", size: 16 }),
+        new TextRun({ text: ". 14 п. 2 ст. 149 Налогового кодекса РФ).", font: "Arial", size: 16 })
+      ]
+    }),
     new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "4.2. Увеличение стоимости образовательных услуг после заключения Договора не допускается, за исключением увеличения стоимости указанных услуг", font: "Arial", size: 16 }),
       new TextRun({ text: " с учетом уровня инфляции, предусмотренного основными характеристиками федерального бюджета на очередной финансовый ", font: "Arial", size: 16 }),
       new TextRun({ text: "год", underline: true, font: "Arial", size: 16 }),
@@ -1263,8 +1453,8 @@ export default {
       new TextRun({ text: "	", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "______", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: "_", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: " ", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "2024_______", bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: ` 20${contract.yearSigned || "25"}`, bold: true, underline: true, font: "Arial", size: 16 }),
+      new TextRun({ text: "_______", bold: true, underline: true, font: "Arial", size: 16 }),
       new TextRun({ text: " (если продолжительность обучения составляет не менее 6 месяцев).", font: "Arial", size: 16 })] }), // Paragraph index 78
     new Paragraph({ alignment: AlignmentType.JUSTIFY, children: [new TextRun({ text: "4.3.2.", font: "Arial", size: 16 }),
       new TextRun({ text: "Оплата образовательных услуг может осуществляться за счет средств материнского (семейного) капитала, при этом оплата производится единовременно не позднее даты завершения обучения.", font: "Arial", size: 16 })] }), // Paragraph index 79
@@ -1373,26 +1563,91 @@ export default {
       new TextRun({ text: "Изменения Договора оформляются дополнительными соглашениями к Договору.", font: "Arial", size: 16 })] }), 
       // Paragraph index 127
 
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { line: 240, rule: 'auto' }, style: "Абзацсписка1", children: [new TextRun({ text: "8.5.", font: "Arial", size: 16 }),
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.5.", font: "Arial", size: 16 }),
       new TextRun({ text: "Обучающийся/Заказчик согласен на обработку своих персональных данных в целях исполнения Сторонами своих обязательств. Обработка персональных данных осуществляется Исполнителем в порядке, установленном законодательством Российской Федерации (приложение 1 к Договору).", font: "Arial", size: 16 })] }), // Paragraph index 128
     
-      new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { line: 240, rule: 'auto' }, style: "Абзацсписка1", children: [new TextRun({ text: "8.6.", font: "Arial", size: 16 }),
+      new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "8.6.", font: "Arial", size: 16 }),
       new TextRun({ text: "Настоящий договор (а также дополнительные соглашения к нему) может быть заключен путем обмена сторонами посредством электронной почты с адресов, указанных в реквизитах сторон настоящего договора, сканированными копиями подписанного соответствующей стороной текста договора. В соответствии со статьей 160 Гражданского кодекса РФ такой обмен стороны признают соблюдением письменной формы сделки и надлежащим подписанием договора.", font: "Arial", size: 16 })] }), // Paragraph index 129
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 240 }, children: [new TextRun({ text: "IХ", font: "Arial", size: 16 }),
       new TextRun({ text: ". Адреса и реквизиты ", font: "Arial", size: 16 }),
-      new TextRun({ text: "с", font: "Arial", size: 16 }),
-      new TextRun({ text: "торон", font: "Arial", size: 16 })] }), // Paragraph index 130
+      new TextRun({ text: "сторон", font: "Arial", size: 16 })] }), 
+      
+      // Paragraph index 130
+
     new Paragraph({ alignment: AlignmentType.CENTER }), 
     
       // Paragraph index 138
 
     new Table({
-      rows: [
-        new TableRow({ children: [new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Исполнитель", font: "Arial", size: 16 })] })] }), new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, indent: { left: -114 }, children: [new TextRun({ text: "Заказчик", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 })] })] }), new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Обучающийся", font: "Arial", size: 16 })] })] })] }),
-        new TableRow({ children: [new TableCell({ children: [new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Федеральное государственное бюджетное ", font: "Arial", size: 16 }), new TextRun({ text: "образовательное учреждение высшего образования", font: "Arial", size: 16 }), new TextRun({ text: " «Кубанский государственный университет»", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Место нахождения: ", font: "Arial", size: 16 }), new TextRun({ text: ". Краснодар, ул. Ставропольская, 149 ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "тел.", font: "Arial", size: 16 }), new TextRun({ text: ":", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 }), new TextRun({ text: "(861)21-99-530", italic: true, font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "e", font: "Arial", size: 16 }), new TextRun({ text: "-", font: "Arial", size: 16 }), new TextRun({ text: "mail", font: "Arial", size: 16 }), new TextRun({ text: ": ", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Официальный сайт: www.kubsu.ru", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Банковские реквизиты:", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ИНН 2312038420 КПП 231201001 ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "УФК по Краснодарскому краю ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "(ФГБОУ ВО «КУБАНСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ» ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "л/с 20186Х22950, ", font: "Arial", size: 16 }), new TextRun({ text: "\n", font: "Arial", size: 16 }), new TextRun({ text: "где Х – большая латинская буква)", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ЕКС 40102810945370000010", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Номер казначейского счета 03214643000000011800", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "БИК 010349101", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ЮЖ", font: "Arial", size: 16 }), new TextRun({ text: "НОЕ ГУ Банка России//УФК по Краснодарскому краю г. Краснодар", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ОКТМО 03701000", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ОКПО 02067847 ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ОКОНХ 92100", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Обязательно указать в НП:", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "КБК – 00000000000000000130 ", font: "Arial", size: 16 })] })] }), new TableCell({ children: [new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Фамил", font: "Arial", size: 16 }), new TextRun({ text: "ия, имя, отчество (при наличии)", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "/наименование юридического лица", font: "Arial", size: 16 })] }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell" }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "Иванов Иван Иванович", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 })] }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "А", font: "Arial", size: 16 }), new TextRun({ text: "дрес места жительства", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "г. Краснодар, ул. ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "Лесная, д.6, кв. 10", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ spacing: { before: 120 }, style: "ConsPlusCell", children: [new TextRun({ text: "Паспорт: серия, номер, ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "когда и кем выдан ", font: "Arial", size: 16 })] }), new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: "хххх", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "хххххх", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " выдан ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "ГУ МВД России по Краснодарскому краю", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "17.07.2017", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell" }), new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: "Банковские реквизиты (при наличии), ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "телефон:", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 }), new TextRun({ text: "+7(", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "989)042-75-85", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" })] }), new TableCell({ children: [new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Фамилия, имя, отчество", font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 }), new TextRun({ text: "(при наличии)", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "Иванов Илья Иванович", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Дата рождения ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "15.10", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: ".2008", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "А", font: "Arial", size: 16 }), new TextRun({ text: "дрес места жительства", font: "Arial", size: 16 })] }), new Paragraph({ indent: { left: -108 }, style: "ConsPlusCell", children: [new TextRun({ text: "г. Краснодар, ул. ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "Лесная, д.6, кв. 10", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ indent: { left: -108 }, style: "ConsPlusCell" }), new Paragraph({ indent: { left: -108 }, style: "ConsPlusCell", children: [new TextRun({ text: "Паспорт: серия, номер, ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "когда и кем выдан ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "хххх", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " ", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "хххххх", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: " выдан ГУ МВД России по Краснодарскому краю 22.08.2022", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ indent: { left: -390 }, style: "ConsPlusCell", children: [new TextRun({ text: "Банковские реквизиты (при наличии), ", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "телефон: ", font: "Arial", size: 16 }), new TextRun({ text: "+7(", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: "989)042-75-85", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "С правилами внутреннего распорядка обучающихся ", font: "Arial", size: 16 }), new TextRun({ text: "Кубанского государственного университета", font: "Arial", size: 16 }), new TextRun({ text: " ознакомлен", font: "Arial", size: 16 }), new TextRun({ text: "(а)", font: "Arial", size: 16 }), new TextRun({ text: ":", font: "Arial", size: 16 })] }), new Paragraph({ style: "ConsPlusCell" }), new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { before: 240 }, style: "ConsPlusCell", children: [new TextRun({ text: "__________                    ", italic: true, font: "Arial", size: 16 }), new TextRun({ text: "  ", italic: true, font: "Arial", size: 16 }), new TextRun({ text: "Иванов И.И", bold: true, underline: true, font: "Arial", size: 16 }), new TextRun({ text: ".", bold: true, underline: true, font: "Arial", size: 16 })] }), new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "(", italic: true, font: "Arial", size: 12 }), new TextRun({ text: "   ", italic: true, font: "Arial", size: 12 }), new TextRun({ text: " ", italic: true, font: "Arial", size: 12 }), new TextRun({ text: "подпись)                                                  Ф.И.О.", italic: true, font: "Arial", size: 12 })] })] })] })
-      ]
-      // TODO: Add other table properties like layout, borders if needed
-    }), // Table index 0
+                width: { size: '100%', type: WidthType.PERCENTAGE },
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: '33.33%', type: WidthType.PERCENTAGE }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Исполнитель", font: "Arial", size: 16 })] })] }),
+                            new TableCell({ width: { size: '33.33%', type: WidthType.PERCENTAGE }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Заказчик", font: "Arial", size: 16 })] })] }),
+                            new TableCell({ width: { size: '33.33%', type: WidthType.PERCENTAGE }, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Обучающийся", font: "Arial", size: 16 })] })] })
+                        ]
+                    }),
+                    new TableRow({
+                        children: [
+                            // --- Ячейка: Исполнитель (остается без изменений) ---
+                            new TableCell({
+                                children: [
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Федеральное государственное бюджетное образовательное учреждение высшего образования «Кубанский государственный университет»", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Место нахождения: 350040, г. Краснодар, ул. Ставропольская, 149", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "тел.: (861) 21-99-530", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Официальный сайт: www.kubsu.ru", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Банковские реквизиты:", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ИНН 2312038420 КПП 231201001", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "УФК по Краснодарскому краю (ФГБОУ ВО «КУБАНСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ» л/с 20186Х22950, где Х – большая латинская буква)", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ЕКС 40102810945370000010", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Номер казначейского счета 03214643000000011800", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "БИК 010349101", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ЮЖНОЕ ГУ Банка России//УФК по Краснодарскому краю г. Краснодар", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "ОКТМО 03701000", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Обязательно указать в НП:", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "КБК – 00000000000000000130", font: "Arial", size: 16 })] })
+                                ]
+                            }),
+                            // --- Ячейка: Заказчик (ДИНАМИЧЕСКИЕ ДАННЫЕ) ---
+                            new TableCell({
+                                children: [
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Фамилия, имя, отчество (при наличии)", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: payerFullName, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Адрес места жительства", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: payerAddress, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 120 }, style: "ConsPlusCell", children: [new TextRun({ text: "Паспорт: серия, номер, когда и кем выдан", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: payerPassportFull, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: "Телефон:", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: payerPhone, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                ]
+                            }),
+                            // --- Ячейка: Обучающийся (ДИНАМИЧЕСКИЕ ДАННЫЕ) ---
+                            new TableCell({
+                                children: [
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Фамилия, имя, отчество (при наличии)", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: listenerFullName, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Дата рождения", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: listenerBirthDate, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: "Адрес места жительства", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: listenerAddress, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 120 }, style: "ConsPlusCell", children: [new TextRun({ text: "Паспорт: серия, номер, когда и кем выдан", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: listenerPassportFull, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ spacing: { before: 50 }, style: "ConsPlusCell", children: [new TextRun({ text: "Телефон:", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ style: "ConsPlusCell", children: [new TextRun({ text: listenerPhone, bold: true, underline: true, font: "Arial", size: 16 })] }),
+                                    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusNormal", children: [new TextRun({ text: "С правилами внутреннего распорядка обучающихся Кубанского государственного университета ознакомлен(а):", font: "Arial", size: 16 })] }),
+                                    new Paragraph({ alignment: AlignmentType.JUSTIFY, spacing: { before: 240 }, style: "ConsPlusCell", children: [
+                                        new TextRun({ text: "__________ ", font: "Arial", size: 16 }),
+                                        new TextRun({ text: listenerInitials, bold: true, underline: true, font: "Arial", size: 16 })
+                                    ] }),
+                                    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "(подпись)                           Ф.И.О.", italic: true, font: "Arial", size: 12 })] }),
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            }),
+    // Table index 0
 
 
 // Paragraph index 131
@@ -1414,17 +1669,19 @@ export default {
       new TextRun({ text: " ", font: "Arial", size: 16 }),
       new TextRun({ text: "      ", font: "Arial", size: 16 }),
       new TextRun({ text: "Иванов И.И", bold: true, underline: true, font: "Arial", size: 16 }),
-      new TextRun({ text: ".", bold: true, underline: true, font: "Arial", size: 16 })] }), // Paragraph index 135
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "(подпись)", italic: true, font: "Arial", size: 12 }),
-      new TextRun({ text: "	", italic: true, font: "Arial", size: 16 }),
-      new TextRun({ text: "(подпись)", italic: true, font: "Arial", size: 12 }),
-      new TextRun({ text: "	Ф.И.О. ", italic: true, font: "Arial", size: 12 }),
-      new TextRun({ text: "	(подпись)", italic: true, font: "Arial", size: 12 }),
-      new TextRun({ text: "	Ф.И.О.", italic: true, font: "Arial", size: 12 })] }), // Paragraph index 136
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell" }), // Paragraph index 137
-    new Paragraph({ alignment: AlignmentType.JUSTIFY, indent: { left: 6946 }, style: "ConsPlusCell", children: [new TextRun({ text: "М.П.", font: "Arial", size: 16 }),
-      new TextRun({ text: "	", font: "Arial", size: 16 })] }), 
+      new TextRun({ text: ".", bold: true, underline: true, font: "Arial", size: 16 })] }), 
 
+      // Paragraph index 135
+
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell", children: [new TextRun({ text: "              (подпись)", italic: true, font: "Arial", size: 12 }),
+      new TextRun({ text: "                                                      ", font: "Arial", size: 16 }),
+      new TextRun({ text: "	", italic: true, font: "Arial", size: 16 }),
+      new TextRun({ text: "     (подпись)", italic: true, font: "Arial", size: 12 }),
+      new TextRun({ text: "	                     Ф.И.О. ", italic: true, font: "Arial", size: 12 }),
+      new TextRun({ text: "                                     ", font: "Arial", size: 16 }),
+      new TextRun({ text: "	            (подпись)", italic: true, font: "Arial", size: 12 }),
+      new TextRun({ text: "	                Ф.И.О.", italic: true, font: "Arial", size: 12 })] }), // Paragraph index 136
+    new Paragraph({ alignment: AlignmentType.JUSTIFY, style: "ConsPlusCell" }), // Paragraph index 137
 
       ],
     }],

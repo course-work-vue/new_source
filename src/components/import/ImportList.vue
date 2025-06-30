@@ -1,6 +1,5 @@
 <template>
   <div class="container-fluid p-0 d-flex flex-column flex-1">
-    <!-- Title Row -->
     <div class="row g-2">
       <div class="col-12 p-0 title-container">
         <span>Импорт учебных планов</span>
@@ -47,10 +46,6 @@
 
           <button @click="openCompareForm" :disabled="selectedCount < 2" type="button" class="btn btn-warning btn-sm d-flex align-items-center">
             <i class="material-icons-outlined me-1">compare_arrows</i>Пересечение
-          </button>
-
-          <button @click="openDisciplinesForm" type="button" class="btn btn-info btn-sm d-flex align-items-center text-white"> <!-- Added text-white for better contrast on btn-info -->
-            <i class="material-icons-outlined me-1">menu_book</i>Дисциплины
           </button>
 
           <button @click="openWorkloadForm" type="button" class="btn btn-success btn-sm d-flex align-items-center text-white">
@@ -122,6 +117,10 @@
       </div>
     </div>
 
+    <div v-if="matchPercentage > 0" class="alert alert-info p-2 mb-2">
+      <strong>Планы совпадают по набору дисциплин на: {{ matchPercentage }}%</strong>
+  </div>
+
     <div style="height: 50vh"> <!-- Keep height for sidebar content -->
       <div class="h-100"> <!-- Removed pt-5 -->
         <ag-grid-vue
@@ -144,122 +143,6 @@
     </div>
   </Sidebar>
 
-  <Sidebar
-  v-model:visible="showDisciple"
-  @hide="resetDiscipleFilters"
-  position="bottom"
-  modal
-  header="Все дисциплины"
-  class="custom-sidebar h-auto"
-  :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }"
->
-  <div class="d-flex flex-column mb-3">
-        <div class="search-container d-flex align-items-center mb-2">
-            <div class="search-input-wrapper position-relative flex-grow-1">
-                <i class="material-icons-outlined search-icon">search</i>
-                <input class="form-control search-input" type="text"
-                        v-model="detailQuickFilterValue"
-                        id="detail-filter-text-box"
-                        v-on:input="onDetailFilterTextBoxChanged()"
-                        placeholder="Поиск"
-                        style="width: 100%; padding-left: 35px;" />
-            </div>
-            <button @click="clearDetailFilters" :disabled="!detailFiltersActive"
-                    class="btn btn-outline-secondary clear-filter-btn d-flex align-items-center ms-2" type="button">
-                <i class="material-icons-outlined" style="font-size: 18px;">close</i>
-                <span class="ms-1">Очистить</span>
-            </button>
-        </div>
-        
-    </div>
-
-  
-   <div class="row g-2 mb-2">
-    <!-- Фильтр по семестру -->
-    <div class="col-4 p-0 pe-3">
-      <div class="form-group d-flex align-items-center">
-        <label class="form-label me-2" for="disciple_semester_filter">Семестр:</label>
-        <select
-          id="disciple_semester_filter"
-          class="form-select"
-          v-model="discipleFormValues.semestres"
-          multiple 
-        >
-          <option
-            v-for="semesterOption in semestresOptionsForMultiSelect"
-            :key="semesterOption.value"
-            :value="semesterOption.value"
-          >
-            {{ semesterOption.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Фильтр по кафедре -->
-    <div class="col-4 p-0 pe-3">
-      <div class="form-group d-flex align-items-center">
-        <label class="form-label ms-2 me-2" for="disciple_department_filter">Кафедра:</label>
-        <select
-          id="disciple_department_filter"
-          class="form-select"
-          v-model="discipleFormValues.departments"
-        >
-          <option
-            v-for="deptOption in departmentsOptions"
-            :key="deptOption.value"
-            :value="deptOption.value"
-          >
-            {{ deptOption.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div class="col-4 p-0">
-      <div class="form-group d-flex align-items-center">
-        <label class="form-label ms-2 me-2" for="disciple_program_filter">Направление:</label>
-        <select
-          id="disciple_program_filter"
-          class="form-select"
-          v-model="discipleFormValues.codes"
-        >
-          <option :value="null">Не выбрано</option> <!-- Добавил опцию "Не выбрано" -->
-          <option
-            v-for="programOption in programsOptions"
-            :key="programOption.value"
-            :value="programOption.value"
-          >
-            {{ programOption.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- остальной контент -->
-  <div style="height: 50vh">
-    <div class="h-100">
-      <ag-grid-vue
-        class="ag-theme-alpine grid-compact"
-        style="width: 100%; height: 100%;"
-        :columnDefs="detailColumnDefs.value"
-        :rowData="filteredDiscipleDataForAllPrograms"
-        :defaultColDef="defaultColDef"
-        :localeText="localeText"
-        rowSelection="multiple"
-        animateRows="true"
-        :rowHeight="35"
-        @cell-clicked="cellWasClicked"
-        @grid-ready="onGridReadyDetails"
-        @firstDataRendered="onFirstDataRendered"
-        @filter-changed="onDetailFilterChanged"
-        :pagination="true"
-        :paginationPageSize="paginationPageSize"
-      />
-    </div>
-  </div>
-</Sidebar>
 
   <Sidebar v-model:visible="showArchive" @hide="resetArchiveFilters" position="bottom" modal header="Архив" class="custom-sidebar h-auto"
     :style="{ width: '80%', maxHeight: '750px', height: 'auto', margin: 'auto' }">
@@ -369,7 +252,7 @@
     </div>
   </Sidebar>
 
-  <Sidebar v-model:visible="showDetails" @hide="" position="bottom" modal :header="`Направление ${selectedDisciplineCodeForTemplate}`"
+  <Sidebar v-model:visible="showDetails" @hide="clearDetailFilters" position="bottom" modal :header="`Направление ${selectedDisciplineCodeForTemplate}`"
     class="custom-sidebar h-auto" :style="{ width: '80%', maxHeight: '80vh', height: 'auto', margin: 'auto' }">
 
     <div class="d-flex flex-column mb-3">
@@ -398,20 +281,32 @@
           <label class="form-label me-3" for="details_semester_filter" 
             >Семестр:</label
           >
-          <select
-            class="form-select"
-            id="details_semester_filter"
-            v-model="detailFilter.semestres"
-            multiple 
-          >
-            <option
-              v-for="semesterOption in semestresOptionsForMultiSelect"
-              :key="semesterOption.value"
-              :value="semesterOption.value"
-            >
-              {{ semesterOption.label }}
-            </option>
-          </select>
+          <MultiSelect
+  v-model="detailFilter.semestres"
+  :options="semestresOptionsForMultiSelect"
+  optionLabel="label"
+  optionValue="value"
+  placeholder="Выберите семестры"
+  class="w-full"
+  inputId="details_semester_filter"
+  :showToggleAll="false"
+>
+  <template #header>
+    <div class="p-multiselect-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+      <div class="d-flex align-items-center">
+        <Checkbox v-model="allSemestersSelected" :binary="true" class="me-2" />
+        <label @click="allSemestersSelected = !allSemestersSelected" style="cursor: pointer;">
+            {{ allSemestersSelected ? 'Снять выделение' : 'Выбрать все' }}
+        </label>
+      </div>
+      <!-- Стандартный крестик для закрытия панели. PrimeVue добавит его автоматически, 
+           но если нет, можно раскомментировать и стилизовать: -->
+      <!-- <button class="p-multiselect-close p-link" aria-label="Закрыть" type="button">
+        <i class="pi pi-times"></i>
+      </button> -->
+    </div>
+  </template>
+</MultiSelect>
         </div>
       </div>
       <div class="col-6 p-0">
@@ -419,19 +314,16 @@
           <label class="form-label ms-3 me-3" for="details_department_filter"
             >Кафедра:</label
           >
-          <select
-            class="form-select"
-            id="details_department_filter"
+          <MultiSelect
             v-model="detailFilter.departments"
-          >
-            <option
-              v-for="deptOption in departmentsOptions"
-              :key="deptOption.value"
-              :value="deptOption.value"
-            >
-            {{ deptOption.label }}
-            </option>
-          </select>
+            :options="departmentsOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Выберите отделы"
+            class="w-full" 
+            inputId="details_department_filter"
+            :showToggleAll="false" 
+          />
         </div>
       </div>
     </div>
@@ -622,6 +514,9 @@ import Import_Disciple_Semester from "../../model/import-group/Import_Disciple_S
 import axios from 'axios';
 axios.defaults.baseURL = 'http://localhost:8080';
 
+import MultiSelect from 'primevue/multiselect';
+import Checkbox from 'primevue/checkbox';
+
 
 function transformDisciples(discipleList) {
   const grouped = {};
@@ -647,6 +542,8 @@ export default {
     AgGridVue,
     ButtonCell,
     AutoForm,
+    MultiSelect,
+    Checkbox,
   },
   setup() {
 
@@ -667,7 +564,6 @@ export default {
     const onGridReadyCompare = (params) => {
       console.log("Compare Grid is ready");
       gridApiCompare.value = params.api;
-      // gridColumnApiCompare.value = params.columnApi; // Если необходимо
     };
 
     const onCompareFilterTextBoxChanged = () => {
@@ -1093,33 +989,64 @@ const selectedCount = computed(() => {
     const { import_programList } = storeToRefs(importProgramStore);
     const { import_discipleList } = storeToRefs(importDiscipleStore);
 
-    const rowDataForComparison = computed(() => {
-  console.log("[Computed] Пересчет rowDataForComparison");
 
-  const selectedProgramIds = (rowData.value || []) 
+const unionData = computed(() => {
+  const selectedProgramIds = (rowData.value || [])
                               .filter(program => program.selected === true)
-                              .map(program => program.id); 
-
-  console.log(`[Computed] rowDataForComparison: ID выбранных программ:`, selectedProgramIds);
+                              .map(program => program.id);
 
   if (selectedProgramIds.length < 2) {
-      console.log("[Computed] rowDataForComparison: Менее 2 программ выбрано, возвращаем пустой массив.");
-      return [];
+    return [];
   }
 
   const allDisciples = importDiscipleStore.import_discipleList || [];
-  console.log(`[Computed] rowDataForComparison: Всего дисциплин в store: ${allDisciples.length}`);
-
   const relevantDisciples = allDisciples.filter(disciple =>
     disciple.program_id !== undefined && selectedProgramIds.includes(disciple.program_id)
   );
-  console.log(`[Computed] rowDataForComparison: Дисциплин, относящихся к выбранным программам: ${relevantDisciples.length}`);
 
-  const transformedData = transformDisciples(relevantDisciples);
-  console.log("[Computed] rowDataForComparison: Трансформированные данные для таблицы:", transformedData);
-
-  return transformedData;
+  return transformDisciples(relevantDisciples);
 });
+
+// ИЗМЕНЕНО: Вычисляемое свойство для ПЕРЕСЕЧЕНИЯ (теперь на основе unionData)
+const intersectionData = computed(() => {
+  const selectedProgramIds = (rowData.value || [])
+                                .filter(program => program.selected === true)
+                                .map(program => program.id);
+  
+  const requiredCount = selectedProgramIds.length;
+  if (requiredCount < 2) {
+      return [];
+  }
+
+  // Фильтруем данные из объединения
+  return unionData.value.filter(disciple => {
+    const actualCount = Object.keys(disciple.hoursByProgram).length;
+    return actualCount === requiredCount;
+  });
+});
+
+// ИЗМЕНЕНО: rowDataForComparison теперь просто ссылается на intersectionData
+const rowDataForComparison = computed(() => {
+    return intersectionData.value;
+});
+
+// НОВОЕ: Вычисляем процент совпадения
+const matchPercentage = computed(() => {
+  const unionCount = unionData.value.length;
+  const intersectionCount = intersectionData.value.length;
+  
+  // Защита от деления на ноль, если нет данных
+  if (unionCount === 0) {
+    return 0;
+  }
+  
+  const percentage = (intersectionCount / unionCount) * 100;
+  
+  // Возвращаем значение, округленное до одного знака после запятой
+  return percentage.toFixed(1);
+});
+
+
 
     onMounted(async () => {
     });
@@ -1336,6 +1263,23 @@ const clearDetailFilters = () => {
       return filteredDisciples;
     });
 
+    const allSemestersSelected = computed({
+        get: () => {
+            // Проверяем, что есть опции и что количество выбранных совпадает с количеством доступных
+            return semestresOptionsForMultiSelect.value.length > 0 &&
+                   instance.proxy.detailFilter.semestres.length === semestresOptionsForMultiSelect.value.length;
+        },
+        set: (value) => {
+            let selected = [];
+            if (value) {
+                // Если чекбокс устанавливается в "true", выбираем все
+                selected = semestresOptionsForMultiSelect.value.map(s => s.value);
+            }
+            // Обновляем модель
+            instance.proxy.detailFilter.semestres = selected;
+        }
+    });
+
     const editFunction = (event) => {
       if (instance.proxy.resetUpd) { 
           instance.proxy.resetUpd();
@@ -1539,20 +1483,6 @@ const workloadColumnDefs = reactive({
       width: 120,
       flex: 1,
     },
-    // If you need a sum of lecture, practice, lab for workload, that would be a valueGetter
-    // Example:
-    // {
-    //   headerName: 'Всего аудиторных',
-    //   valueGetter: (params) => {
-    //     if (!params.data) return 0;
-    //     return (params.data.lecture_hours || 0) + 
-    //            (params.data.practice_hours || 0) + 
-    //            (params.data.lab_hours || 0);
-    //   },
-    //   type: 'numericColumn',
-    //   width: 130,
-    //   flex: 1,
-    // }
   ],
 });
 
@@ -1604,6 +1534,7 @@ const filteredWorkloadData = computed(() => {
       departmentsOptions,
       defaultColDef,
       localeText,
+      allSemestersSelected,
 
       deselectRows: () => {
         gridApi.value.deselectAll()
@@ -1640,7 +1571,6 @@ const filteredWorkloadData = computed(() => {
       localeText,
       defaultColDef,
       dynamicColumnDefs,
-      rowDataForComparison,
       cellWasClicked, 
       onFirstDataRendered, 
       paginationPageSize,
@@ -1662,6 +1592,7 @@ const filteredWorkloadData = computed(() => {
       workloadFormValues,
       workloadColumnDefs,
       filteredWorkloadData,
+      matchPercentage,
     };
 
   },
@@ -1851,7 +1782,7 @@ this.compareFormScheme = new FormScheme([
   this.openDetailsForm();
     },
 
-async onFileChange(event) {
+async onFileChangeS3(event) {
   const successMessage = ref('');
   const errorMessage = ref('');
   const isLoading = ref(false);
@@ -1894,7 +1825,7 @@ async onFileChange(event) {
 
 
 
-    async onFileChange1(event) {
+    async onFileChange(event) {
       const files = event.target.files;
       const programsData = [];
 
@@ -1965,7 +1896,7 @@ async onFileChange(event) {
               }
 
               console.log(extractedData);
-              //await this.postImport_Program(extractedData);
+              await this.postImport_Program(extractedData);
               await this.getImport_ProgramList(); 
 
               const courseSheets = ["Курс 4"];
@@ -2029,7 +1960,7 @@ async onFileChange(event) {
                         semester: validatedSemester
                       };
 
-                      //allDisciplePromises.push(this.postImport_Disciple(import_disciple));
+                      allDisciplePromises.push(this.postImport_Disciple(import_disciple));
                     }
                   }
                 } else {
@@ -2041,18 +1972,17 @@ async onFileChange(event) {
             console.log(`Запускаем параллельное добавление ${allDisciplePromises.length} дисциплин...`);
 
             await Promise.all(allDisciplePromises);
+            this.loadImportDisciples();
+
 
             console.log("Все дисциплины успешно добавлены.");
         } else {
             console.log("Дисциплины для добавления не найдены.");
         }
 
-        
-
         resolve(extractedData); 
 
         this.loadImportPrograms();
-        this.loadImportDisciples();
 
 
             } catch (error) {
@@ -2067,6 +1997,10 @@ async onFileChange(event) {
           reader.readAsArrayBuffer(file);
         });
       };
+
+
+///XML!!!
+
 
       const readPLXFile = (file) => {
         console.log(`Обрабатываем .plx файл: ${file.name}`);
@@ -2270,38 +2204,40 @@ async onFileChange(event) {
     },
 
     async deleteAllActiveProgramsApiCall() {
-      this.isLoading = true;
-      this.successMessage = '';
-      this.errorMessage = '';
-      const deleteAllUrl = '/api/v1/import-programs/all-active'; // Или ваш полный URL API
+  this.isLoading = true;
+  this.successMessage = '';
+  this.errorMessage = '';
+  const deleteAllUrl = '/api/v1/import-programs/all'; 
 
-      try {
-        const response = await axios.delete(deleteAllUrl);
+  try {
+    const response = await axios.delete(deleteAllUrl);
 
-        if (response.status === 204) {
-          this.successMessage = 'Все активные программы и связанные дисциплины успешно помечены как удаленные.';
-          // !!! ВАЖНО: Обновите данные в таблице после удаления !!!
-          await this.loadImportPrograms(); // Вызовите метод, который перезагружает данные для основной таблицы
-          // Возможно, потребуется также очистить или обновить связанные данные, если они отображаются
-          // await this.loadImportDisciples(); // Если нужно обновить и дисциплины
-        } else {
-          this.errorMessage = `Операция завершена, но получен неожиданный статус: ${response.status}`;
-        }
-      } catch (error) {
-        console.error("Ошибка при удалении всех программ:", error);
-        if (error.response && error.response.data && error.response.data.message) {
-          this.errorMessage = `Ошибка сервера: ${error.response.data.message}`;
-        } else if (error.response) {
-          this.errorMessage = `Ошибка сервера: Статус ${error.response.status}`;
-        } else if (error.request) {
-          this.errorMessage = 'Не удалось связаться с сервером. Проверьте соединение или настройки CORS.';
-        } else {
-          this.errorMessage = `Произошла ошибка: ${error.message}`;
-        }
-      } finally {
-        this.isLoading = false;
-      }
-    },
+    if (response.status === 204) {
+      this.successMessage = 'Все активные программы успешно удалены.';
+      
+      await this.getImport_ProgramList();
+      await this.getImport_DiscipleList();
+      
+      this.loadImportPrograms(); 
+
+    } else {
+      this.errorMessage = `Операция завершена, но получен неожиданный статус: ${response.status}`;
+    }
+  } catch (error) {
+    console.error("Ошибка при удалении всех программ:", error);
+    if (error.response && error.response.data && error.response.data.message) {
+      this.errorMessage = `Ошибка сервера: ${error.response.data.message}`;
+    } else if (error.response) {
+      this.errorMessage = `Ошибка сервера: Статус ${error.response.status}`;
+    } else if (error.request) {
+      this.errorMessage = 'Не удалось связаться с сервером. Проверьте соединение или настройки CORS.';
+    } else {
+      this.errorMessage = `Произошла ошибка: ${error.message}`;
+    }
+  } finally {
+    this.isLoading = false;
+  }
+},
 
     deleteAllActiveProgramsConfirmed() {
       this.successMessage = '';
@@ -2315,6 +2251,76 @@ async onFileChange(event) {
     },
 
     async deleteSelected() {
+      // 1. Найти все выбранные для удаления строки и собрать их ID
+      const selectedRows = this.rowData.value.filter(row => row.selected === true);
+      const idsToDelete = selectedRows.map(row => row.id).filter(id => id != null); // Убедимся, что ID не null
+
+      // 2. Проверить, есть ли что удалять
+      if (idsToDelete.length === 0) {
+        this.errorMessage = 'Не выбраны программы для удаления.';
+        // Очистить сообщение через несколько секунд для лучшего UX
+        setTimeout(() => this.errorMessage = '', 3000);
+        return;
+      }
+
+      // 3. Запросить подтверждение у пользователя
+      const confirmationMessage = `Вы уверены, что хотите удалить ${idsToDelete.length} выбранных программ? Это действие также удалит все связанные с ними дисциплины.`;
+      if (!window.confirm(confirmationMessage)) {
+        console.log('Удаление отменено пользователем.');
+        return;
+      }
+
+      // 4. Установить состояние загрузки и сбросить сообщения
+      this.isLoading = true;
+      this.successMessage = '';
+      this.errorMessage = '';
+
+      // 5. Создать массив промисов для параллельного удаления
+      const deletePromises = idsToDelete.map(id =>
+        // Используем axios, который уже настроен в вашем проекте
+        // и эндпоинт из предоставленного Java контроллера
+        axios.delete(`/api/v1/import-programs/${id}`)
+      );
+
+      try {
+        // Promise.allSettled дождется выполнения всех промисов, даже если некоторые из них завершатся с ошибкой
+        const results = await Promise.allSettled(deletePromises);
+
+        const successfulDeletes = [];
+        const failedDeletes = [];
+
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            successfulDeletes.push(idsToDelete[index]);
+          } else {
+            console.error(`Ошибка при удалении программы с ID ${idsToDelete[index]}:`, result.reason);
+            failedDeletes.push(idsToDelete[index]);
+          }
+        });
+
+        // 6. Сформировать сообщения для пользователя
+        if (successfulDeletes.length > 0) {
+          this.successMessage = `Успешно удалено ${successfulDeletes.length} программ(ы).`;
+        }
+
+        if (failedDeletes.length > 0) {
+          // Дополняем сообщение об ошибке, если уже есть сообщение об успехе
+          this.errorMessage = `${this.errorMessage} Не удалось удалить ${failedDeletes.length} программ(ы). Подробности в консоли.`.trim();
+        }
+
+      } catch (error) {
+        // Этот блок маловероятен с Promise.allSettled, но является хорошей практикой
+        this.errorMessage = 'Произошла критическая ошибка в процессе удаления.';
+        console.error("Critical error during batch deletion:", error);
+      } finally {
+        // 7. Обновить данные в UI независимо от результата, чтобы отразить успешные удаления
+        // Вызываем существующие Pinia actions для обновления состояния
+        await this.getImport_ProgramList();
+        await this.getImport_DiscipleList(); // Также обновляем дисциплины, так как они тоже удаляются
+        this.loadImportPrograms(); // Этот метод обновляет rowData.value
+
+        this.isLoading = false;
+      }
     },
 
     async saveData() {
