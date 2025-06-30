@@ -222,12 +222,21 @@ export default {
     openTeacherSchedule(teacher_id) {
       UserService.getGroupSchedule(teacher_id)
         .then((res) => {
-          this.teacherSchedule = res.data;
-          if (res.data.length > 0) {
-            this.currentTeacherName = res.data[0].full_name;
+          // Если res.data — массив, используем его. Если объект — оборачиваем в массив.
+          if (Array.isArray(res.data)) {
+            this.teacherSchedule = res.data;
+          } else if (typeof res.data === 'object' && res.data !== null) {
+            this.teacherSchedule = [res.data];
+          } else {
+            this.teacherSchedule = [];
+          }
+
+          if (this.teacherSchedule.length > 0) {
+            this.currentTeacherName = this.teacherSchedule[0].full_name;
           } else {
             this.currentTeacherName = 'Не найдено';
           }
+
           this.showTeacherScheduleModal = true;
         })
         .catch((err) => {
@@ -243,9 +252,12 @@ export default {
 
    
     getTeacherLessonsForSlot(day_id, pair) {
+      if (!Array.isArray(this.teacherSchedule)) return [];
+
       return this.teacherSchedule.filter(
         lesson => lesson.day_id === day_id && parseInt(lesson.time) === pair
       );
+      
     },
 
     onDragStart(lesson) {
