@@ -1704,21 +1704,18 @@ addPayment(contract_id, expiration_date, date_40, all_sum, deposited_amount, lef
     return axios.post(API_URL, query, { headers: authHeader() });
   }
 
-    
 
-    assignAuditoriumToSchedule(lesson_id, aud_id){
+   assignAuditoriumToSchedule(lesson_id, aud_id) {
       const query = {
         query: `
-      "aud_id" = '${aud_id}'
-      WHERE
-      "lesson_id" = '${lesson_id}';
+          UPDATE teachschedule
+          SET aud_id = ${aud_id}
+          WHERE lesson_id = ${lesson_id};
         `,
       };
-      return axios.put(API_URL+"teachschedule", query, { headers: authHeader() });
+      return axios.post(API_URL, query, { headers: authHeader() });
     }
 
-
-  
 
   getTeachSchedule(group_id) {
     const query = {
