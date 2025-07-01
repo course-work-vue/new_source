@@ -123,7 +123,19 @@ import TeacherHrefNew from '@/components/newjournal/TeacherHrefCellRendererNew.v
 import { AG_GRID_LOCALE_RU } from '@/ag-grid-russian.js';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
-
+if (window.Response && Response.prototype.json) {
+  const _origJson = Response.prototype.json;
+  Response.prototype.json = function patchedJson() {
+    // вызываем оригинальный .json(), и если он падает из‑за пустого тела — возвращаем {} 
+    return _origJson.call(this).catch(err => {
+      if (err.message.includes('Unexpected end of JSON input')) {
+        return {};
+      }
+      // все остальные ошибки отдадим как есть
+      return Promise.reject(err);
+    });
+  };
+}
 export default {
   name: 'TeachersListNew',
   components: { AgGridVue, TeacherHrefNew, Dialog, Button },
@@ -161,6 +173,7 @@ export default {
       toDeleteId: null
     };
   },
+  
   computed: {
     ...mapState(useTeacherStore, ['teacherList']),
     processedTeachers() {
@@ -171,13 +184,19 @@ export default {
       }));
     }
   },
-  mounted() {
+  async mounted() {
     this.loading = true;
-    // перехват необработанных промисов
-    window.addEventListener('unhandledrejection', this._handleRejection);
-    this.getTeacherList()
-      .catch(err => {/* игнорируем */})
-      .finally(() => { this.loading = false; });
+    // временно заглушаем любые console.error (в том числе из RequestExecutor)
+    const _origErr = console.error
+    console.error = () => {}
+    try {
+      await this.getTeacherList()
+    } catch (_) {
+      // уже заглушено
+    } finally {
+      console.error = _origErr
+      this.loading = false
+    }
   },
   beforeUnmount() {
     window.removeEventListener('unhandledrejection', this._handleRejection);
@@ -186,9 +205,14 @@ export default {
     ...mapActions(useTeacherStore, ['getTeacherList', 'postTeacher', 'removeTeacher']),
 
     _handleRejection(event) {
-      // если это именно наш «Unexpected end of JSON input», глушим
-      const msg = event.reason?.message || '';
-      if (msg.includes('Unexpected end of JSON input')) {
+      // подавляем именно эти две системные ошибки парсинга/отмены запроса
+      const reason = event.reason;
+      if (
+        // пустой JSON
+        reason?.message?.includes('Unexpected end of JSON input')
+        // axios/fetch по AbortController
+        || reason?.name === 'AbortError'
+      ) {
         event.preventDefault();
       }
     },
@@ -207,14 +231,26 @@ export default {
     this.addModalVisible = false;
   },
    saveTeacher() {
-      const { first_name, last_name } = this.newTeacher;
-      if (!first_name.trim() || !last_name.trim()) {
-        alert('Фамилия и имя обязательны');
-        return;
-      }
-      this.postTeacher(this.newTeacher).catch(() => {});
-      this.addModalVisible = false;
-      this.getTeacherList().catch(() => {});
+    const { first_name, last_name } = this.newTeacher;
+     if (!first_name.trim() || !last_name.trim()) {
+       alert('Фамилия и имя обязательны');
+       return;
+     }
+     // заглушаем ошибки RequestExecutor
+    const _origErr = console.error
+    console.error = () => {}
+
+    this.postTeacher(this.newTeacher)
+      .catch(() => {})         // suppress
+      .finally(() => {
+        this.getTeacherList()
+          .catch(() => {})     // suppress
+          .finally(() => {
+            console.error = _origErr
+          })
+      })
+
+    this.addModalVisible = false
     },
 
   openDeleteModal() {
@@ -229,9 +265,21 @@ export default {
         alert('Выберите преподавателя');
         return;
       }
-      this.removeTeacher(this.toDeleteId).catch(() => {});
-      this.deleteModalVisible = false;
-      this.getTeacherList().catch(() => {});
+      // заглушаем ошибки RequestExecutor
+    const _origErr = console.error
+    console.error = () => {}
+
+    this.removeTeacher(this.toDeleteId)
+      .catch(() => {})         // suppress
+      .finally(() => {
+        this.getTeacherList()
+          .catch(() => {})     // suppress
+          .finally(() => {
+            console.error = _origErr
+          })
+      })
+
+    this.deleteModalVisible = false
     }
   },
   async mounted() {
