@@ -148,36 +148,43 @@ const routes = [
         path: "/listeners",
         name: "Слушатели",
         component: ListenerList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/payers",
         name: "Плательщики",
         component: PayerList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/lgroups",
         name: "Группы слушателей",
         component: lGroupList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/addlgroup",
         name: "Добавить группу",
         component: addLgroup,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/contracts",
         name: "Договоры",
         component: ContractList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/programs",
         name: "Программы",
         component: ProgramList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
       {
         path: "/payments",
         name: "Платежи",
         component: PaymentList,
+        meta: { roles: ["super_admin", "superadmin", "control_listener"] },
       },
 
       // КОНЕЦ КОМПОНЕНТОВ ДЛЯ СЛУШАТЕЛЕЙ

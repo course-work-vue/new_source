@@ -102,7 +102,7 @@
                   class="form-check-input"
                   :value="role.roleid"
                   v-model="selectedRoles"
-                  :disabled="isOwnRole(role.roleid)"
+                  :disabled="isOwnRole(role.rolename)"
                 />
                 <span :class="{'own-role': isOwnRole(role.roleid)}">{{ role.rolename }}</span>
               </label>
@@ -422,15 +422,8 @@ export default {
     ]),
     ...mapActions(useGroupStore, ["getGroupList"]),
     // Check if the role belongs to this user's initial roles
-    isOwnRole(roleId) {
-      if (!this.user.id) return false;
-      
-      // Find the initial roles this user had before editing
-      const initialRoles = this.userRoleList
-        .filter(ur => ur.userid === this.user.id)
-        .map(ur => ur.roleid);
-        
-      return initialRoles.includes(roleId);
+    isOwnRole(roleName) {
+        return roleName === this.user.username
     },
     async deauthUserWithId(userId) {
       await this.deauthUser(userId);
