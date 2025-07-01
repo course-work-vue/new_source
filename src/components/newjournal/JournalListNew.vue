@@ -971,21 +971,27 @@ async saveComment() {
 },
           editable: true,
           cellEditor: 'agTextCellEditor',
-          valueParser: params => params.newValue,
-          onCellValueChanged: e => {
-            const raw = e.newValue;
-            if (raw === '') {
-              e.node.setDataValue(field, '');
-              return;
-            }
-            const val = Number(raw);
-            if (isNaN(val) || val < min || val > max) {
-              alert(`Ошибка: значение должно быть от ${min} до ${max}`);
-              e.node.setDataValue(field, e.oldValue);
-              return;
-            }
-            this.updateGrade(e.data.student_id, d.id, gt.id, val);
-          },
+         onCellValueChanged: e => {
+   // 1) Если стерли значение — удаляем оценку
+   if (e.newValue === '') {
+     e.node.setDataValue(field, '');
+     this.updateGrade(e.data.student_id, d.id, gt.id, null);
+     return;
+   }
+   // 2) Иначе — валидация и upsert
+   const raw = e.newValue;
+   const val = Number(raw);
+   if (isNaN(val) || val < min || val > max) {
+     alert(`Ошибка: значение должно быть от ${min} до ${max}`);
+     e.node.setDataValue(field, e.oldValue);
+     return;
+   }
+   this.updateGrade(e.data.student_id, d.id, gt.id, val);
+ },
+valueParser: params => {
+  // чтобы в onCellValueChanged newValue === '' а не '""'
+  return params.newValue === '' ? '' : params.newValue;
+},
           filter: 'agNumberColumnFilter',
           width: 65,
           minWidth: 65,
@@ -1142,24 +1148,36 @@ if (!isNaN(val) &&
         return;
       }
       // --- обновляем локальную модель ---
-      let rec = this.details.find(d =>
+      // --- обновляем локальную модель ---
+      const rec = this.details.find(d =>
         d.student_id === studentId && d.date_id === dateId
       );
-      if (!rec) {
-        // ЗДЕСЬ: явно указываем ключи student_id и date_id
-        rec = {
-          student_id: studentId,
-          date_id: dateId,
-          status: '',
-          grades: []
-        };
-        this.details.push(rec);
-      }
-      let g = rec.grades.find(x => x.grade_type_id === gradeTypeId);
-      if (g) {
-        g.value = value;
+      if (value === null) {
+        // удаляем оценку из details
+        if (rec) {
+          rec.grades = rec.grades.filter(x => x.grade_type_id !== gradeTypeId);
+          // если после удаления нет ни оценок, ни статуса посещаемости — убираем запись целиком
+          if (!rec.status && rec.grades.length === 0) {
+            this.details = this.details.filter(d => d !== rec);
+          }
+        }
       } else {
-        rec.grades.push({ grade_type_id: gradeTypeId, value });
+        // upsert оценки
+        if (rec) {
+          const g = rec.grades.find(x => x.grade_type_id === gradeTypeId);
+          if (g) {
+            g.value = value;
+          } else {
+            rec.grades.push({ grade_type_id: gradeTypeId, value });
+          }
+        } else {
+          this.details.push({
+            student_id: studentId,
+            date_id:    dateId,
+            status:     '',
+            grades:     [{ grade_type_id: gradeTypeId, value }]
+          });
+        }
       }
 
       // --- пересобираем грид и форсируем перерисовку ---
