@@ -97,7 +97,7 @@
           :getRowId="getRowId"
           immutableColumns
           @grid-ready="onGridReady"
-          style="width: 100%; height: 70vh;"
+          style="width: 100%; height: 69vh;"
         />
       </div>
       
@@ -1336,7 +1336,7 @@ confirmParams() {
 }
 
 .journal-list-container {
-  padding: 20px;
+ 
   width: 100%;
   max-width: none;
   margin: 0 auto;
@@ -1391,7 +1391,7 @@ confirmParams() {
 }
 
 .grid-container {
-  height: 70vh;
+  height: 69vh;
   width: 100%;
 }
 
