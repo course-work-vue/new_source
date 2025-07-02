@@ -27,6 +27,7 @@ const model = ref([
       {
         label: "Студенты",
         icon: "pi pi-fw pi-users",
+        roles: ["super_admin", "superadmin", "control_student"],
         items: [
           {
             label: "Список студентов",
@@ -63,48 +64,77 @@ const model = ref([
       {
         label: "Слушатели",
         icon: "pi pi-fw pi-user-edit",
+        roles: ["super_admin", "superadmin", "control_listener"],
         items: [
           {
             label: "Список слушателей",
             icon: "pi pi-fw pi-list",
             to: "/listeners",
+            roles: ["super_admin", "superadmin", "control_listener"],
           },
           {
             label: "Плательщики",
             icon: "pi pi-fw pi-money-bill",
             to: "/payers",
+            roles: ["super_admin", "superadmin", "control_listener"],
           },
-          { label: "Группы", icon: "pi pi-fw pi-users", to: "/lgroups" },
-          { label: "Договоры", icon: "pi pi-fw pi-file", to: "/contracts" },
-          { label: "Программы", icon: "pi pi-fw pi-book", to: "/programs" },
+          {
+            label: "Группы",
+            icon: "pi pi-fw pi-users",
+            to: "/lgroups",
+            roles: ["super_admin", "superadmin", "control_listener"],
+          },
+          {
+            label: "Договоры",
+            icon: "pi pi-fw pi-file",
+            to: "/contracts",
+            roles: ["super_admin", "superadmin", "control_listener"],
+          },
+          {
+            label: "Программы",
+            icon: "pi pi-fw pi-book",
+            to: "/programs",
+            roles: ["super_admin", "superadmin", "control_listener"],
+          },
           {
             label: "График платежей",
             icon: "pi pi-fw pi-calendar",
             to: "/payments",
+            roles: ["super_admin", "superadmin", "control_listener"],
           },
         ],
       },
       {
         label: "Расписание",
         icon: "pi pi-fw pi-calendar",
+
+        roles: ["super_admin", "superadmin", "control_schedule"],
         items: [
           {
             label: "Нагрузка",
             icon: "pi pi-fw pi-calendar-times",
             to: "/ScheduleLoads",
+            roles: ["super_admin", "superadmin", "control_schedule"],
           },
           {
             label: "Расписание",
             icon: "pi pi-fw pi-calendar",
             to: "/schedules",
+            roles: ["super_admin", "superadmin", "control_schedule"],
           },
-          { label: "Аудитории", icon: "pi pi-fw pi-building", to: "/audits" },
+          {
+            label: "Аудитории",
+            icon: "pi pi-fw pi-building",
+            to: "/audits",
+            roles: ["super_admin", "superadmin", "control_schedule"],
+          },
         ],
       },
       {
         label: "Импорт данных",
         icon: "pi pi-fw pi-file-excel",
         to: "/import",
+        roles: ["super_admin", "superadmin", "control_export"],
       },
       {
         label: "Админ панель",
@@ -152,6 +182,7 @@ const model = ref([
         label: "Журнал",
         icon: "pi pi-fw pi-book",
         to: "/teacherListNew",
+        roles: ["super_admin", "superadmin", "control_journal"],
       },
 
       {

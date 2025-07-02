@@ -69,10 +69,9 @@ export const useFunctionUserStore = defineStore('functionUser', {
             try {
                 const response = await api.deleteFunctionUser(functionUser);
                 if (response.success === true) {
-                    const index = this.functionUserList.findIndex(fu => fu.id === functionUser.id);
-                    if (index !== -1) {
-                        this.functionUserList.splice(index, 1); // Удаляем запись
-                    }
+
+
+                    await this.getFunctionUserList();
                     ToastService.showSuccess('Функция пользователя успешно удалена');
                 } else {
                     ToastService.showError('Не удалось удалить функцию пользователя');
