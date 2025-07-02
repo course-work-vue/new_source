@@ -427,6 +427,9 @@ export default {
         const firstName = nameParts[1] || '';
         const patronymic = nameParts[2] || '';
 
+        const initials = (firstName ? firstName[0] : '') + (patronymic ? patronymic[0] : '');
+
+
         const startDate = contractData.date_enroll
           ? (() => {
               const raw = new Date(contractData.date_enroll).toLocaleDateString('ru-RU', {
@@ -503,7 +506,7 @@ export default {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `Certificate-${contractData.contr_number}.pdf`;
+        link.download = `Сертификат_${lastName || 'БезФамилии'}${initials}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
